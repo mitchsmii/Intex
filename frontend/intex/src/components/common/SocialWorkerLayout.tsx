@@ -2,10 +2,17 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import './SocialWorkerLayout.css'
 
+const socialWorkerNav = [
+  { to: '/socialworker/dashboard', label: 'Dashboard', icon: '\u{1F3E0}' },
+  { to: '/socialworker/dashboard/residents', label: 'Residents', icon: '\u{1F465}' },
+  { to: '/socialworker/dashboard/analytics', label: 'Analytics', icon: '\u{1F4CA}' },
+  { to: '/socialworker/dashboard/messages', label: 'Messages', icon: '\u{1F4AC}' },
+]
+
 function SocialWorkerLayout() {
   return (
     <div className="sw-layout">
-      <Sidebar />
+      <Sidebar items={socialWorkerNav} />
       <main className="sw-content">
         <Outlet />
       </main>

@@ -7,18 +7,11 @@ interface NavItem {
   icon: string
 }
 
-const defaultItems: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', icon: '\u{1F3E0}' },
-  { to: '/dashboard/residents', label: 'Residents', icon: '\u{1F465}' },
-  { to: '/dashboard/analytics', label: 'Analytics', icon: '\u{1F4CA}' },
-  { to: '/dashboard/messages', label: 'Messages', icon: '\u{1F4AC}' },
-]
-
 interface SidebarProps {
-  items?: NavItem[]
+  items: NavItem[]
 }
 
-function Sidebar({ items = defaultItems }: SidebarProps) {
+function Sidebar({ items }: SidebarProps) {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
