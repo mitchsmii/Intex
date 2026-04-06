@@ -1,0 +1,153 @@
+.home {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nav */
+.home-nav {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-light);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.home-nav-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.home-logo {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cove-tidal);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.home-logo-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.home-nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.home-nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.home-nav-links a:hover {
+  color: var(--text-primary);
+}
+
+.home-nav-signin {
+  background: var(--cove-tidal) !important;
+  color: var(--text-inverse) !important;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+.home-nav-signin:hover {
+  background: var(--cove-deep) !important;
+}
+
+/* Hero */
+.home-hero {
+  background: linear-gradient(135deg, var(--cove-seafoam), var(--cove-seaglass));
+  text-align: center;
+  padding: var(--space-2xl) var(--space-lg);
+  flex: 0;
+}
+
+.home-hero h1 {
+  font-size: 2.4rem;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-md);
+  font-weight: 700;
+}
+
+.home-hero p {
+  font-size: 1.15rem;
+  color: var(--cove-deep);
+  opacity: 0.8;
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Role Cards */
+.home-roles {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: var(--space-2xl) var(--space-lg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  flex: 1;
+}
+
+.home-role-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+.home-role-card h3 {
+  font-size: 1.2rem;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-sm);
+  font-weight: 600;
+}
+
+.home-role-card p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* Footer */
+.home-footer {
+  background: var(--cove-deep);
+  color: var(--text-inverse);
+  text-align: center;
+  padding: var(--space-lg);
+}
+
+.home-footer p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .home-roles {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero h1 {
+    font-size: 1.8rem;
+  }
+
+  .home-nav-links a:not(.home-nav-signin) {
+    display: none;
+  }
+}

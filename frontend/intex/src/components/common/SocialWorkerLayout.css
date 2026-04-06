@@ -1,0 +1,11 @@
+.sw-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sw-content {
+  margin-left: 240px;
+  flex: 1;
+  background: var(--bg-page);
+  padding: var(--space-xl);
+}
