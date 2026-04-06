@@ -8,6 +8,7 @@ const adminNav = [
   { to: '/admin/roles', label: 'Roles', icon: '\u{1F511}' },
   { to: '/admin/reports', label: 'Reports', icon: '\u{1F4C8}' },
   { to: '/admin/donation-report', label: 'Donation Report', icon: '\u{1F4B0}' },
+  { to: '/donor/donate', label: 'Donate Now', icon: '\u{1F49A}' },
 ]
 
 function AdminLayout() {
