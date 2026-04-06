@@ -5,6 +5,9 @@ import DonorLayout from './components/common/DonorLayout'
 import AdminLayout from './components/common/AdminLayout'
 import HomePage from './pages/public/HomePage'
 import SocialWorkerHomePage from './pages/socialworker/SocialWorkerHomePage'
+import ResidentsPage from './pages/socialworker/ResidentsPage'
+import AnalyticsPage from './pages/socialworker/AnalyticsPage'
+import ResidentDetailPage from './pages/socialworker/ResidentDetailPage'
 import DonateNowPage from './pages/donor/DonateNowPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
 
@@ -20,6 +23,9 @@ function App() {
         {/* Social Worker pages */}
         <Route path="/dashboard" element={<SocialWorkerLayout />}>
           <Route index element={<SocialWorkerHomePage />} />
+          <Route path="residents" element={<ResidentsPage />} />
+          <Route path="residents/:id" element={<ResidentDetailPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
 
         {/* Donor pages */}
