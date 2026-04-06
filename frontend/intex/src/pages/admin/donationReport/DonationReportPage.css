@@ -1,0 +1,584 @@
+@import '../../../styles/variables.css';
+
+/* ── Page shell ── */
+.dr-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.dr-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.dr-title {
+  font-size: 1.6rem;
+  color: var(--text-primary);
+  margin: 0 0 0.25rem;
+}
+
+.dr-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.dr-badge {
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-full);
+  background: var(--cove-sand);
+  color: var(--cove-deep);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+
+/* ── Shared card ── */
+.dr-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+.dr-card-title {
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  margin: 0 0 0.2rem;
+}
+
+.dr-card-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-md);
+}
+
+/* ── KPI grid ── */
+.dr-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.dr-kpi-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  border-left-width: 4px;
+}
+
+.dr-kpi-up   { border-left-color: var(--color-success); }
+.dr-kpi-warn { border-left-color: var(--color-warning); }
+.dr-kpi-down { border-left-color: var(--color-error);   }
+
+.dr-kpi-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.4rem;
+}
+
+.dr-kpi-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+
+.dr-kpi-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Burn Rate Panel ── */
+.dr-burn-panel {
+  background: var(--cove-deep);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg) var(--space-xl);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.dr-burn-panel-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+  margin-bottom: var(--space-md);
+}
+
+.dr-burn-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-md);
+}
+
+.dr-burn-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dr-burn-stat-label {
+  font-size: 0.82rem;
+  opacity: 0.75;
+  font-weight: 500;
+}
+
+.dr-burn-stat-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dr-burn-in  .dr-burn-stat-value { color: #a8d5ba; }
+.dr-burn-out .dr-burn-stat-value { color: #f0e6d3; }
+.net-pos     .dr-burn-stat-value { color: #a8d5ba; }
+.net-neg     .dr-burn-stat-value { color: #f9afb1; }
+
+.dr-burn-divider {
+  font-size: 2rem;
+  opacity: 0.4;
+  align-self: flex-end;
+  padding-bottom: 0.15rem;
+}
+
+.dr-burn-panel-note {
+  font-size: 0.83rem;
+  opacity: 0.75;
+  line-height: 1.5;
+  margin: 0;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  padding-top: var(--space-md);
+}
+
+/* ── Line Chart ── */
+.dr-linechart-legend {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-sm);
+  font-size: 0.83rem;
+  font-weight: 600;
+}
+
+.legend-income { color: #5e9ea0; }
+.legend-burn   { color: #d4a44a; }
+
+.dr-linechart-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.dr-linechart-svg {
+  width: 100%;
+  min-width: 480px;
+  display: block;
+}
+
+/* ── Mid grid ── */
+.dr-mid-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--space-lg);
+}
+
+/* ── Thresholds ── */
+.dr-thresholds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.dr-threshold-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dr-threshold-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dr-threshold-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dr-threshold-pct {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-full);
+}
+
+.thresh-good { background: #d4f0e4; color: var(--color-success); }
+.thresh-warn { background: #fdf0d4; color: var(--color-warning); }
+.thresh-low  { background: #fde8e8; color: var(--color-error);   }
+
+.dr-threshold-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dr-prog-track {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--cove-seafoam);
+  overflow: hidden;
+}
+
+.dr-prog-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+.dr-prog-fill.thresh-good { background: var(--color-success); }
+.dr-prog-fill.thresh-warn { background: var(--color-warning); }
+.dr-prog-fill.thresh-low  { background: var(--color-error);   }
+
+.dr-threshold-amounts {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ── Sources ── */
+.dr-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dr-source-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dr-source-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dr-source-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dr-source-label { font-size: 0.85rem; color: var(--text-primary); flex: 1; }
+.dr-source-pct   { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+
+.dr-source-track {
+  height: 6px;
+  background: var(--cove-seafoam);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.dr-source-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  opacity: 0.75;
+  transition: width 0.4s ease;
+}
+
+/* ── Shelter capacity ── */
+.dr-shelter-grid {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.dr-shelter-occupancy {
+  min-width: 200px;
+}
+
+.dr-shelter-occ-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dr-shelter-occ-count {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--cove-deep);
+}
+
+.dr-shelter-beds {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-bottom: var(--space-sm);
+}
+
+.dr-bed {
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+}
+
+.bed-occupied  { background: var(--cove-tidal);   border-color: var(--cove-deep);    }
+.bed-available { background: var(--cove-seafoam);  border-color: var(--cove-seaglass); border-style: dashed; }
+
+.dr-shelter-legend {
+  display: flex;
+  gap: var(--space-md);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dr-bed-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Shelter stats */
+.dr-shelter-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dr-shelter-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem var(--space-md);
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  background: white;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.dr-shelter-stat-row:last-child { border-bottom: none; }
+.dr-shelter-stat-row strong { color: var(--text-primary); }
+.dr-shelter-stat-divider { background: var(--bg-page); font-weight: 600; }
+
+.stat-income { color: var(--color-success) !important; }
+.stat-warn   { color: var(--color-warning) !important; }
+
+/* Intake callout */
+.dr-intake-box {
+  background: var(--cove-deep);
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-sm);
+  min-width: 160px;
+}
+
+.dr-intake-number {
+  font-size: 4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--cove-seaglass);
+}
+
+.dr-intake-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dr-intake-sub {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.dr-intake-detail {
+  font-size: 0.75rem;
+  opacity: 0.65;
+  line-height: 1.5;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: var(--space-sm);
+}
+
+/* ── Bottom grid ── */
+.dr-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--space-lg);
+}
+
+/* ── Table ── */
+.dr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.dr-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 0 var(--space-sm) var(--space-sm);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.dr-table td {
+  padding: var(--space-sm);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.dr-table tr:last-child td { border-bottom: none; }
+.dr-table tr:hover td { background: var(--bg-hover); }
+
+.dr-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.dr-rank-1     { background: #fde68a; color: #92400e; }
+.dr-rank-2     { background: #e5e7eb; color: #374151; }
+.dr-rank-3     { background: #fed7aa; color: #92400e; }
+.dr-rank-other { background: var(--cove-seafoam); color: var(--cove-deep); }
+
+.dr-donor-name { font-weight: 500; color: var(--text-primary); }
+.dr-amount     { font-weight: 700; color: var(--cove-deep);    }
+.dr-muted      { color: var(--text-muted); font-size: 0.82rem; }
+
+/* ── Tags ── */
+.dr-tag {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tag-monthly { background: #d4ebd0; color: var(--cove-deep); }
+.tag-onetime { background: var(--cove-sand); color: #7c5a2e; }
+
+/* ── Recent donations ── */
+.dr-recent { display: flex; flex-direction: column; }
+
+.dr-recent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--border-light);
+  gap: var(--space-sm);
+}
+
+.dr-recent-row:last-child { border-bottom: none; }
+
+.dr-recent-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  min-width: 0;
+}
+
+.dr-recent-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dr-recent-name {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dr-recent-meta  { font-size: 0.75rem; color: var(--text-muted); }
+
+.dr-recent-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.dr-recent-amount {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .dr-kpi-grid      { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dr-mid-grid      { grid-template-columns: minmax(0, 1fr); }
+  .dr-bottom-grid   { grid-template-columns: minmax(0, 1fr); }
+  .dr-shelter-grid  { grid-template-columns: minmax(0, 1fr); }
+  .dr-burn-stats    { gap: var(--space-lg); }
+  .dr-burn-stat-value { font-size: 1.6rem; }
+}
+
+@media (max-width: 600px) {
+  .dr-kpi-grid      { grid-template-columns: minmax(0, 1fr); }
+  .dr-burn-stat-value { font-size: 1.3rem; }
+  .dr-intake-number { font-size: 3rem; }
+}
