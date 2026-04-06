@@ -10,6 +10,7 @@ import AnalyticsPage from './pages/socialworker/AnalyticsPage'
 import ResidentDetailPage from './pages/socialworker/ResidentDetailPage'
 import DonateNowPage from './pages/donor/DonateNowPage'
 import DonorHomePage from './pages/donor/DonorHomePage'
+import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
         <Route path="/donor" element={<DonorLayout />}>
           <Route index element={<DonorHomePage />} />
           <Route path="donate" element={<DonateNowPage />} />
+          <Route path="history" element={<DonationHistoryPage />} />
         </Route>
 
         {/* Admin pages */}
