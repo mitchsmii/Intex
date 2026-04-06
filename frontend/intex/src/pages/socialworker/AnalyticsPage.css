@@ -1,0 +1,10 @@
+.analytics-title {
+  font-size: 1.5rem;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-md);
+  font-weight: 600;
+}
+
+.analytics-placeholder {
+  color: var(--text-muted);
+}

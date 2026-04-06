@@ -8,11 +8,10 @@ interface NavItem {
 }
 
 const defaultItems: NavItem[] = [
-  { to: '/dashboard', label: 'Cases', icon: '\u{1F4CB}' },
-  { to: '/dashboard/notes', label: 'Notes', icon: '\u{270F}\u{FE0F}' },
-  { to: '/dashboard/resources', label: 'Resources', icon: '\u{1F4DA}' },
+  { to: '/dashboard', label: 'Dashboard', icon: '\u{1F3E0}' },
+  { to: '/dashboard/residents', label: 'Residents', icon: '\u{1F465}' },
+  { to: '/dashboard/analytics', label: 'Analytics', icon: '\u{1F4CA}' },
   { to: '/dashboard/messages', label: 'Messages', icon: '\u{1F4AC}' },
-  { to: '/dashboard/reports', label: 'Reports', icon: '\u{1F4CA}' },
 ]
 
 interface SidebarProps {
