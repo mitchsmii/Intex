@@ -13,6 +13,8 @@ function Navbar() {
           <a href="#mission">Mission</a>
           <a href="#about">About</a>
           <a href="#contact">Contact</a>
+          <Link to="/donor/donate" className="navbar-donate">Donate</Link>
+          <Link to="/admin/donation-report" className="navbar-report">Donation Report</Link>
           <Link to="/dashboard" className="navbar-signin">Sign In</Link>
         </div>
       </div>
