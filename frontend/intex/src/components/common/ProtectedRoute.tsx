@@ -7,11 +7,7 @@ interface ProtectedRouteProps {
 
 function getRoleHomePath(roles: string[]): string {
   if (roles.includes('Admin')) return '/admin'
-<<<<<<< Updated upstream
   if (roles.includes('SocialWorker')) return '/socialworker/dashboard'
-=======
-  if (roles.includes('SocialWorker')) return '/social-worker'
->>>>>>> Stashed changes
   if (roles.includes('Donor')) return '/donor'
   return '/'
 }
