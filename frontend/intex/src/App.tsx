@@ -21,7 +21,7 @@ function App() {
         </Route>
 
         {/* Social Worker pages */}
-        <Route path="/dashboard" element={<SocialWorkerLayout />}>
+        <Route path="/socialworker/dashboard" element={<SocialWorkerLayout />}>
           <Route index element={<SocialWorkerHomePage />} />
           <Route path="residents" element={<ResidentsPage />} />
           <Route path="residents/:id" element={<ResidentDetailPage />} />
