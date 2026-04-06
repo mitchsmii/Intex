@@ -4,11 +4,12 @@ import SocialWorkerLayout from './components/common/SocialWorkerLayout'
 import DonorLayout from './components/common/DonorLayout'
 import AdminLayout from './components/common/AdminLayout'
 import HomePage from './pages/public/HomePage'
+import LoginPage from './pages/public/LoginPage'
+import DonateNowPage from './pages/donor/DonateNowPage'
 import SocialWorkerHomePage from './pages/socialworker/SocialWorkerHomePage'
 import ResidentsPage from './pages/socialworker/ResidentsPage'
 import AnalyticsPage from './pages/socialworker/AnalyticsPage'
 import ResidentDetailPage from './pages/socialworker/ResidentDetailPage'
-import DonateNowPage from './pages/donor/DonateNowPage'
 import DonorHomePage from './pages/donor/DonorHomePage'
 import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
@@ -20,6 +21,8 @@ function App() {
         {/* Public pages */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/donate" element={<DonateNowPage />} />
         </Route>
 
         {/* Social Worker pages */}
