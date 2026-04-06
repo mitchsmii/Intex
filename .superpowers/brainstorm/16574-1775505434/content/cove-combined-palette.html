@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cove — Combined Palette</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #1a1a2e; color: #e0e0e0; padding: 40px; }
+  h1 { font-size: 28px; margin-bottom: 8px; color: #fff; }
+  .subtitle { color: #999; margin-bottom: 40px; font-size: 16px; }
+  .palette-card { background: #16213e; border-radius: 16px; padding: 28px; margin-bottom: 32px; }
+  .palette-label { font-size: 20px; font-weight: 600; margin-bottom: 6px; color: #fff; }
+  .palette-desc { color: #aaa; margin-bottom: 20px; font-size: 14px; line-height: 1.5; }
+  .swatches { display: flex; border-radius: 12px; overflow: hidden; height: 120px; }
+  .swatch { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 10px; font-size: 12px; font-weight: 500; }
+  .swatch-light { color: rgba(0,0,0,0.5); }
+  .swatch-dark { color: rgba(255,255,255,0.5); }
+  .swatch-name { font-size: 10px; margin-top: 4px; }
+  .sources { display: flex; gap: 24px; margin-top: 32px; }
+  .source { background: #16213e; border-radius: 12px; padding: 20px; flex: 1; }
+  .source-label { font-size: 14px; font-weight: 600; color: #888; margin-bottom: 12px; }
+  .source-swatches { display: flex; border-radius: 8px; overflow: hidden; height: 50px; }
+  .source-swatch { flex: 1; }
+  .highlight { position: relative; }
+  .highlight::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 3px; background: #4a90a4; border-radius: 2px; }
+  .origin-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+  .from-b { background: rgba(94,158,160,0.2); color: #5e9ea0; }
+  .from-a { background: rgba(240,230,211,0.2); color: #f0e6d3; }
+  .hint { text-align: center; color: #666; margin-top: 32px; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<h1>Cove — Your Combined Palette</h1>
+<p class="subtitle">Seafoam Morning's first four + Dawn Cove's warm sandy cream finish</p>
+
+<div class="palette-card">
+  <div class="palette-label">Cove Palette</div>
+  <div class="palette-desc">Deep forest-ocean teal through sea glass greens, landing on warm sandy cream. The best of both worlds — earthy coastal freshness with a warm, inviting finish.</div>
+  <div class="swatches">
+    <div class="swatch swatch-dark" style="background-color: #2c4a52;">
+      #2c4a52
+      <span class="swatch-name">Deep Cove</span>
+    </div>
+    <div class="swatch swatch-dark" style="background-color: #5e9ea0;">
+      #5e9ea0
+      <span class="swatch-name">Tidal</span>
+    </div>
+    <div class="swatch swatch-light" style="background-color: #a8d5ba;">
+      #a8d5ba
+      <span class="swatch-name">Sea Glass</span>
+    </div>
+    <div class="swatch swatch-light" style="background-color: #d4ebd0;">
+      #d4ebd0
+      <span class="swatch-name">Seafoam</span>
+    </div>
+    <div class="swatch swatch-light" style="background-color: #f0e6d3;">
+      #f0e6d3
+      <span class="swatch-name">Warm Sand</span>
+    </div>
+  </div>
+</div>
+
+<div class="sources">
+  <div class="source">
+    <div class="source-label">From B — Seafoam Morning (first 4)</div>
+    <div class="source-swatches">
+      <div class="source-swatch" style="background-color: #2c4a52;"></div>
+      <div class="source-swatch" style="background-color: #5e9ea0;"></div>
+      <div class="source-swatch" style="background-color: #a8d5ba;"></div>
+      <div class="source-swatch" style="background-color: #d4ebd0;"></div>
+    </div>
+  </div>
+  <div class="source">
+    <div class="source-label">From A — Dawn Cove (last 1)</div>
+    <div class="source-swatches">
+      <div class="source-swatch" style="background-color: #f0e6d3;"></div>
+    </div>
+  </div>
+</div>
+
+<p class="hint">Does this feel right? Let me know in the terminal.</p>
+
+</body>
+</html>
