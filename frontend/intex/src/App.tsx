@@ -15,11 +15,13 @@ import AnalyticsPage from './pages/socialworker/AnalyticsPage'
 import DonorHomePage from './pages/donor/DonorHomePage'
 import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
+import CookieConsent from './components/common/CookieConsent'
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <CookieConsent />
         <Routes>
           {/* Public pages */}
           <Route element={<PublicLayout />}>
