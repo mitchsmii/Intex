@@ -11,6 +11,14 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<User> AppUsers { get; set; }
     public DbSet<Resident> Residents { get; set; }
     public DbSet<Safehouse> Safehouses { get; set; }
+
+    // Donation / supporter tables
+    public DbSet<Supporter> Supporters { get; set; }
+    public DbSet<Donation> Donations { get; set; }
+    public DbSet<DonationAllocation> DonationAllocations { get; set; }
+    public DbSet<SafehouseMonthlyMetric> SafehouseMonthlyMetrics { get; set; }
+
+    // Case-management tables
     public DbSet<SocialWorker> SocialWorkers { get; set; }
     public DbSet<ProcessRecording> ProcessRecordings { get; set; }
     public DbSet<HomeVisitation> HomeVisitations { get; set; }
