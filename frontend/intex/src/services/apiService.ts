@@ -153,6 +153,18 @@ export interface TopSupporter {
   firstDate: string | null
 }
 
+// ── POST helpers ──────────────────────────────────────────────────────────
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
 // ── API calls ──────────────────────────────────────────────────────────────
 
 export const api = {
@@ -165,6 +177,11 @@ export const api = {
   getDonationsBySupporter:    (id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
   getDonationsMonthlySummary: () => get<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
   getTopSupporters:           (top = 5) => get<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
+  getDonationsTotal:          () => get<{ total: number }>('/api/donations/total'),
+  upsertSupporter:            (body: { firstName: string; lastName: string; email: string; phone?: string; displayName?: string }) =>
+    post<Supporter>('/api/supporters/upsert', body),
+  createDonation:             (body: { supporterId: number; amount: number; currencyCode: string; isRecurring: boolean; donationType?: string; channelSource?: string; notes?: string }) =>
+    post<DonationRaw>('/api/donations', body),
   getAllocationSummary:       () => get<AllocationSummary>('/api/donationallocations/summary'),
   getLatestMetrics:           () => get<SafehouseMonthlyMetric[]>('/api/safehousemonthlymetrics/latest'),
   getIncidentReports:         () => get<IncidentReport[]>('/api/incidentreports'),

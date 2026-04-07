@@ -11,6 +11,33 @@ public class DonationsController : ControllerBase
     private readonly AppDbContext _context;
     public DonationsController(AppDbContext context) => _context = context;
 
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] CreateDonationDto dto)
+    {
+        var donation = new Donation
+        {
+            SupporterId   = dto.SupporterId,
+            Amount        = dto.Amount,
+            CurrencyCode  = dto.CurrencyCode,
+            IsRecurring   = dto.IsRecurring,
+            DonationType  = dto.DonationType ?? "Monetary",
+            ChannelSource = dto.ChannelSource ?? "Website",
+            CampaignName  = dto.CampaignName,
+            Notes         = dto.Notes,
+            DonationDate  = DateOnly.FromDateTime(DateTime.UtcNow),
+        };
+        _context.Donations.Add(donation);
+        await _context.SaveChangesAsync();
+        return Ok(donation);
+    }
+
+    [HttpGet("total")]
+    public async Task<IActionResult> Total()
+    {
+        var total = await _context.Donations.SumAsync(d => d.Amount ?? 0);
+        return Ok(new { total });
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {

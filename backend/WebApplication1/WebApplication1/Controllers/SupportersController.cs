@@ -18,6 +18,37 @@ public class SupportersController : ControllerBase
         return Ok(supporters);
     }
 
+    // Find supporter by email, or create one if they don't exist yet.
+    // Returns the supporter record (existing or newly created).
+    [HttpPost("upsert")]
+    public async Task<IActionResult> Upsert([FromBody] UpsertSupporterDto dto)
+    {
+        var existing = await _context.Supporters
+            .Where(s => s.Email!.ToLower() == dto.Email.ToLower())
+            .FirstOrDefaultAsync();
+
+        if (existing != null)
+            return Ok(existing);
+
+        var supporter = new Supporter
+        {
+            FirstName       = dto.FirstName,
+            LastName        = dto.LastName,
+            Email           = dto.Email,
+            Phone           = dto.Phone,
+            DisplayName     = string.IsNullOrWhiteSpace(dto.DisplayName)
+                                ? (dto.FirstName + " " + dto.LastName).Trim()
+                                : dto.DisplayName,
+            SupporterType   = "Individual",
+            Status          = "Active",
+            CreatedAt       = DateTime.UtcNow,
+        };
+
+        _context.Supporters.Add(supporter);
+        await _context.SaveChangesAsync();
+        return Ok(supporter);
+    }
+
     [HttpGet("lookup")]
     public async Task<IActionResult> Lookup(
         [FromQuery] string firstName,
