@@ -58,30 +58,42 @@
 /* Grid */
 .residents-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--space-md);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-lg);
+}
+
+.residents-grid .resident-card {
+  margin: 0;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Card */
 .resident-card {
   background: var(--bg-card);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
-  padding: var(--space-md);
-  transition: box-shadow 0.2s;
+  padding: var(--space-lg);
+  transition: box-shadow 0.2s, transform 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
 }
 
 .resident-card:hover {
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
   cursor: pointer;
 }
 
 .resident-card-header {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
+  gap: var(--space-md);
+  margin-bottom: 0;
 }
 
 .resident-avatar {
@@ -117,8 +129,8 @@
 /* Badges */
 .resident-badges {
   display: flex;
-  gap: var(--space-xs);
-  margin-bottom: var(--space-md);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
   flex-wrap: wrap;
 }
 
@@ -163,7 +175,9 @@
 .resident-details {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-xs) var(--space-md);
+  gap: var(--space-md) var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-light);
 }
 
 .resident-detail {

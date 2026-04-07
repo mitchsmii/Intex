@@ -11,4 +11,8 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<User> AppUsers { get; set; }
     public DbSet<Resident> Residents { get; set; }
     public DbSet<Safehouse> Safehouses { get; set; }
+    public DbSet<ProcessRecording> ProcessRecordings { get; set; }
+    public DbSet<HomeVisitation> HomeVisitations { get; set; }
+    public DbSet<InterventionPlan> InterventionPlans { get; set; }
+    public DbSet<IncidentReport> IncidentReports { get; set; }
 }
