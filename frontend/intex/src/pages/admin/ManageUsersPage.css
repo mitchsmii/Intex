@@ -206,6 +206,33 @@
   color: var(--cove-deep);
 }
 
+/* ── Sortable column headers ── */
+.mu-th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.mu-th-sort:hover {
+  color: var(--cove-tidal);
+}
+
+.mu-th-active {
+  color: var(--cove-deep) !important;
+}
+
+.mu-sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.5;
+  margin-left: 2px;
+}
+
+.mu-th-active .mu-sort-icon {
+  opacity: 1;
+  color: var(--cove-tidal);
+}
+
 /* ── Empty states ── */
 .mu-empty {
   color: var(--text-muted);

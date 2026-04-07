@@ -3,12 +3,30 @@ import { api } from '../../../services/apiService'
 import type { Resident, Safehouse } from '../../../services/apiService'
 import '../ManageUsersPage.css'
 
+type SortKey = 'code' | 'caseNo' | 'age' | 'safehouse' | 'worker' | 'risk' | 'reint' | 'status' | 'admitted'
+type Dir = 'asc' | 'desc'
+
+function SortTh({ label, col, sort, dir, onSort }: {
+  label: string; col: SortKey; sort: SortKey; dir: Dir; onSort: (c: SortKey) => void
+}) {
+  const active = sort === col
+  return (
+    <th className={`mu-th-sort${active ? ' mu-th-active' : ''}`} onClick={() => onSort(col)}>
+      {label}<span className="mu-sort-icon">{active ? (dir === 'asc' ? ' ↑' : ' ↓') : ' ↕'}</span>
+    </th>
+  )
+}
+
+const RISK_ORDER: Record<string, number> = { Low: 0, Medium: 1, High: 2, Critical: 3 }
+
 export default function ResidentsManagePage() {
-  const [residents,  setResidents]  = useState<Resident[]>([])
-  const [safehouses, setSafehouses] = useState<Safehouse[]>([])
-  const [loading,    setLoading]    = useState(true)
-  const [search,     setSearch]     = useState('')
+  const [residents,    setResidents]    = useState<Resident[]>([])
+  const [safehouses,   setSafehouses]   = useState<Safehouse[]>([])
+  const [loading,      setLoading]      = useState(true)
+  const [search,       setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState('active')
+  const [sortCol,      setSortCol]      = useState<SortKey>('code')
+  const [sortDir,      setSortDir]      = useState<Dir>('asc')
 
   useEffect(() => {
     Promise.allSettled([
@@ -23,24 +41,42 @@ export default function ResidentsManagePage() {
     return sh ? (sh.safehouseCode ?? sh.name ?? `SH${id}`) : `SH${id}`
   }
 
-  function age(dob: string | null) {
-    if (!dob) return '—'
-    const diff = Date.now() - new Date(dob).getTime()
-    return String(Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25)))
+  function ageNum(dob: string | null) {
+    if (!dob) return -1
+    return Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25))
   }
 
-  const displayed = residents.filter(r => {
-    const isActive = !r.dateClosed
-    if (statusFilter === 'active' && !isActive) return false
-    if (statusFilter === 'closed' && isActive) return false
-    if (search) {
-      const q = search.toLowerCase()
-      return (r.internalCode ?? '').toLowerCase().includes(q) ||
-        (r.caseControlNo ?? '').toLowerCase().includes(q) ||
-        (r.assignedSocialWorker ?? '').toLowerCase().includes(q)
-    }
-    return true
-  })
+  function toggleSort(col: SortKey) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+
+  const displayed = residents
+    .filter(r => {
+      const isActive = !r.dateClosed
+      if (statusFilter === 'active' && !isActive) return false
+      if (statusFilter === 'closed' && isActive) return false
+      if (search) {
+        const q = search.toLowerCase()
+        return (r.internalCode ?? '').toLowerCase().includes(q) ||
+          (r.caseControlNo ?? '').toLowerCase().includes(q) ||
+          (r.assignedSocialWorker ?? '').toLowerCase().includes(q)
+      }
+      return true
+    })
+    .sort((a, b) => {
+      let cmp = 0
+      if (sortCol === 'code')     cmp = (a.internalCode ?? '').localeCompare(b.internalCode ?? '')
+      else if (sortCol === 'caseNo')   cmp = (a.caseControlNo ?? '').localeCompare(b.caseControlNo ?? '')
+      else if (sortCol === 'age')      cmp = ageNum(a.dateOfBirth) - ageNum(b.dateOfBirth)
+      else if (sortCol === 'safehouse') cmp = shName(a.safehouseId ?? null).localeCompare(shName(b.safehouseId ?? null))
+      else if (sortCol === 'worker')   cmp = (a.assignedSocialWorker ?? '').localeCompare(b.assignedSocialWorker ?? '')
+      else if (sortCol === 'risk')     cmp = (RISK_ORDER[a.currentRiskLevel ?? ''] ?? -1) - (RISK_ORDER[b.currentRiskLevel ?? ''] ?? -1)
+      else if (sortCol === 'reint')    cmp = (a.reintegrationStatus ?? '').localeCompare(b.reintegrationStatus ?? '')
+      else if (sortCol === 'status')   cmp = (a.dateClosed ? 1 : 0) - (b.dateClosed ? 1 : 0)
+      else if (sortCol === 'admitted') cmp = (a.dateOfAdmission ?? '').localeCompare(b.dateOfAdmission ?? '')
+      return sortDir === 'asc' ? cmp : -cmp
+    })
 
   const active   = residents.filter(r => !r.dateClosed).length
   const closed   = residents.filter(r => r.dateClosed).length
@@ -58,7 +94,7 @@ export default function ResidentsManagePage() {
       <div className="mu-header">
         <div>
           <h1 className="mu-title">Residents</h1>
-          <p className="mu-subtitle">{active} active · {closed} closed cases · {reint} reintegrated</p>
+          <p className="mu-subtitle">{active} active · {closed} closed · {reint} reintegrated</p>
         </div>
         <div className="mu-header-actions">
           <select className="mu-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
@@ -66,13 +102,8 @@ export default function ResidentsManagePage() {
             <option value="closed">Closed Only</option>
             <option value="all">All Residents</option>
           </select>
-          <input
-            className="mu-search"
-            type="search"
-            placeholder="Search by code or worker…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <input className="mu-search" type="search" placeholder="Search by code or worker…"
+            value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 
@@ -90,49 +121,42 @@ export default function ResidentsManagePage() {
         ))}
       </div>
 
-      {loading ? (
-        <p className="mu-empty">Loading…</p>
-      ) : (
+      {loading ? <p className="mu-empty">Loading…</p> : (
         <div className="mu-card">
           <table className="mu-table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Case No.</th>
-                <th>Age</th>
-                <th>Safehouse</th>
-                <th>Social Worker</th>
-                <th>Risk Level</th>
-                <th>Reintegration</th>
-                <th>Status</th>
-                <th>Admitted</th>
+                <SortTh label="Code"          col="code"      sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Case No."      col="caseNo"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Age"           col="age"       sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Safehouse"     col="safehouse" sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Social Worker" col="worker"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Risk Level"    col="risk"      sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Reintegration" col="reint"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Status"        col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Admitted"      col="admitted"  sort={sortCol} dir={sortDir} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
               {displayed.length === 0 && (
                 <tr><td colSpan={9} className="mu-empty-cell">No residents found.</td></tr>
               )}
-              {displayed.map(r => (
-                <tr key={r.residentId}>
-                  <td className="mu-td-name">{r.internalCode ?? `R-${r.residentId}`}</td>
-                  <td className="mu-muted">{r.caseControlNo ?? '—'}</td>
-                  <td>{age(r.dateOfBirth)}</td>
-                  <td>{shName(r.safehouseId)}</td>
-                  <td>{r.assignedSocialWorker ?? '—'}</td>
-                  <td>
-                    <span className={`mu-badge ${riskClass(r.currentRiskLevel)}`}>
-                      {r.currentRiskLevel ?? '—'}
-                    </span>
-                  </td>
-                  <td>{r.reintegrationStatus ?? '—'}</td>
-                  <td>
-                    <span className={`mu-badge ${r.dateClosed ? 'mu-badge-off' : 'mu-badge-ok'}`}>
-                      {r.dateClosed ? 'Closed' : 'Active'}
-                    </span>
-                  </td>
-                  <td>{r.dateOfAdmission ? new Date(r.dateOfAdmission).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
-                </tr>
-              ))}
+              {displayed.map(r => {
+                const a = ageNum(r.dateOfBirth)
+                return (
+                  <tr key={r.residentId}>
+                    <td className="mu-td-name">{r.internalCode ?? `R-${r.residentId}`}</td>
+                    <td className="mu-muted">{r.caseControlNo ?? '—'}</td>
+                    <td>{a >= 0 ? String(a) : '—'}</td>
+                    <td>{shName(r.safehouseId ?? null)}</td>
+                    <td>{r.assignedSocialWorker ?? '—'}</td>
+                    <td><span className={`mu-badge ${riskClass(r.currentRiskLevel)}`}>{r.currentRiskLevel ?? '—'}</span></td>
+                    <td>{r.reintegrationStatus ?? '—'}</td>
+                    <td><span className={`mu-badge ${r.dateClosed ? 'mu-badge-off' : 'mu-badge-ok'}`}>{r.dateClosed ? 'Closed' : 'Active'}</span></td>
+                    <td>{r.dateOfAdmission ? new Date(r.dateOfAdmission).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

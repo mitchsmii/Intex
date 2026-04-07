@@ -11,12 +11,28 @@ function fmtAmt(n: number | null, currency?: string | null) {
 
 const INDIVIDUAL_TYPES = ['Individual', 'Person', 'Alumni', 'Volunteer', 'Staff', '']
 
+type SortKey = 'name' | 'email' | 'region' | 'channel' | 'count' | 'total' | 'recurring' | 'status' | 'firstDate'
+type Dir = 'asc' | 'desc'
+
+function SortTh({ label, col, sort, dir, onSort }: {
+  label: string; col: SortKey; sort: SortKey; dir: Dir; onSort: (c: SortKey) => void
+}) {
+  const active = sort === col
+  return (
+    <th className={`mu-th-sort${active ? ' mu-th-active' : ''}`} onClick={() => onSort(col)}>
+      {label}<span className="mu-sort-icon">{active ? (dir === 'asc' ? ' ↑' : ' ↓') : ' ↕'}</span>
+    </th>
+  )
+}
+
 export default function DonorsPage() {
   const [supporters, setSupporters] = useState<Supporter[]>([])
   const [donations,  setDonations]  = useState<Donation[]>([])
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [chanFilter, setChanFilter] = useState('')
+  const [sortCol,    setSortCol]    = useState<SortKey>('name')
+  const [sortDir,    setSortDir]    = useState<Dir>('asc')
 
   useEffect(() => {
     Promise.allSettled([
@@ -25,7 +41,6 @@ export default function DonorsPage() {
     ]).finally(() => setLoading(false))
   }, [])
 
-  // Donors = individual supporters (not org/partner types)
   const donors = supporters.filter(s =>
     !s.supporterType ||
     INDIVIDUAL_TYPES.some(t => (s.supporterType ?? '').toLowerCase() === t.toLowerCase())
@@ -35,16 +50,37 @@ export default function DonorsPage() {
   const totalBySupporter     = (id: number) => donationsBySupporter(id).reduce((s, d) => s + (d.amount ?? 0), 0)
   const isRecurring          = (id: number) => donationsBySupporter(id).some(d => d.isRecurring)
 
+  function toggleSort(col: SortKey) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+
   const channels = [...new Set(donors.map(d => d.acquisitionChannel).filter(Boolean))] as string[]
 
-  const filtered = donors.filter(d => {
-    const matchSearch = !search ||
-      (d.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
-      (`${d.firstName ?? ''} ${d.lastName ?? ''}`).toLowerCase().includes(search.toLowerCase()) ||
-      (d.email ?? '').toLowerCase().includes(search.toLowerCase())
-    const matchChan = !chanFilter || d.acquisitionChannel === chanFilter
-    return matchSearch && matchChan
-  })
+  const filtered = donors
+    .filter(d => {
+      const matchSearch = !search ||
+        (d.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (`${d.firstName ?? ''} ${d.lastName ?? ''}`).toLowerCase().includes(search.toLowerCase()) ||
+        (d.email ?? '').toLowerCase().includes(search.toLowerCase())
+      const matchChan = !chanFilter || d.acquisitionChannel === chanFilter
+      return matchSearch && matchChan
+    })
+    .sort((a, b) => {
+      let cmp = 0
+      const nameA = a.displayName ?? `${a.firstName ?? ''} ${a.lastName ?? ''}`.trim()
+      const nameB = b.displayName ?? `${b.firstName ?? ''} ${b.lastName ?? ''}`.trim()
+      if      (sortCol === 'name')      cmp = nameA.localeCompare(nameB)
+      else if (sortCol === 'email')     cmp = (a.email ?? '').localeCompare(b.email ?? '')
+      else if (sortCol === 'region')    cmp = ([a.region, a.country].filter(Boolean).join(', ')).localeCompare([b.region, b.country].filter(Boolean).join(', '))
+      else if (sortCol === 'channel')   cmp = (a.acquisitionChannel ?? '').localeCompare(b.acquisitionChannel ?? '')
+      else if (sortCol === 'count')     cmp = donationsBySupporter(a.supporterId).length - donationsBySupporter(b.supporterId).length
+      else if (sortCol === 'total')     cmp = totalBySupporter(a.supporterId) - totalBySupporter(b.supporterId)
+      else if (sortCol === 'recurring') cmp = (isRecurring(a.supporterId) ? 1 : 0) - (isRecurring(b.supporterId) ? 1 : 0)
+      else if (sortCol === 'status')    cmp = (a.status ?? '').localeCompare(b.status ?? '')
+      else if (sortCol === 'firstDate') cmp = (a.firstDonationDate ?? '').localeCompare(b.firstDonationDate ?? '')
+      return sortDir === 'asc' ? cmp : -cmp
+    })
 
   const totalRaised = donors.reduce((s, d) => s + totalBySupporter(d.supporterId), 0)
   const currency    = donations[0]?.currencyCode ?? 'PHP'
@@ -62,22 +98,17 @@ export default function DonorsPage() {
             <option value="">All Channels</option>
             {channels.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <input
-            className="mu-search"
-            type="search"
-            placeholder="Search by name or email…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <input className="mu-search" type="search" placeholder="Search by name or email…"
+            value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 
       <div className="mu-kpi-row">
         {[
-          { label: 'Total Donors', value: String(donors.length) },
+          { label: 'Total Donors',     value: String(donors.length) },
           { label: 'Recurring Donors', value: String(recurring) },
-          { label: 'Active Status', value: String(donors.filter(d => d.status === 'Active').length) },
-          { label: 'Total Raised', value: fmtAmt(totalRaised, currency) },
+          { label: 'Active Status',    value: String(donors.filter(d => d.status === 'Active').length) },
+          { label: 'Total Raised',     value: fmtAmt(totalRaised, currency) },
         ].map(k => (
           <div key={k.label} className="mu-kpi">
             <div className="mu-kpi-value">{k.value}</div>
@@ -86,23 +117,21 @@ export default function DonorsPage() {
         ))}
       </div>
 
-      {loading ? (
-        <p className="mu-empty">Loading…</p>
-      ) : (
+      {loading ? <p className="mu-empty">Loading…</p> : (
         <div className="mu-card">
           <table className="mu-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
+                <SortTh label="Name"        col="name"      sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Email"       col="email"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <th>Phone</th>
-                <th>Region</th>
-                <th>Channel</th>
-                <th>Donations</th>
-                <th>Total Given</th>
-                <th>Recurring</th>
-                <th>Status</th>
-                <th>First Gift</th>
+                <SortTh label="Region"      col="region"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Channel"     col="channel"   sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Donations"   col="count"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Total Given" col="total"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Recurring"   col="recurring" sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Status"      col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="First Gift"  col="firstDate" sort={sortCol} dir={sortDir} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
@@ -125,11 +154,9 @@ export default function DonorsPage() {
                     <td className="mu-td-num">{ds.length || '—'}</td>
                     <td className="mu-td-num">{ds.length ? fmtAmt(tot, ds[0]?.currencyCode) : '—'}</td>
                     <td>
-                      {rec ? (
-                        <span className="mu-badge mu-badge-ok">Monthly</span>
-                      ) : (
-                        <span className="mu-badge mu-badge-off">One-Time</span>
-                      )}
+                      <span className={`mu-badge ${rec ? 'mu-badge-ok' : 'mu-badge-off'}`}>
+                        {rec ? 'Monthly' : 'One-Time'}
+                      </span>
                     </td>
                     <td>
                       <span className={`mu-badge ${s.status === 'Active' ? 'mu-badge-ok' : 'mu-badge-off'}`}>

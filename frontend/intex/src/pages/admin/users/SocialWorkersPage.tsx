@@ -3,11 +3,28 @@ import { api } from '../../../services/apiService'
 import type { SocialWorker, Safehouse } from '../../../services/apiService'
 import '../ManageUsersPage.css'
 
+type SortKey = 'fullName' | 'email' | 'phone' | 'safehouse' | 'status' | 'createdAt'
+type Dir = 'asc' | 'desc'
+
+function SortTh({ label, col, sort, dir, onSort }: {
+  label: string; col: SortKey; sort: SortKey; dir: Dir; onSort: (c: SortKey) => void
+}) {
+  const active = sort === col
+  return (
+    <th className={`mu-th-sort${active ? ' mu-th-active' : ''}`} onClick={() => onSort(col)}>
+      {label}
+      <span className="mu-sort-icon">{active ? (dir === 'asc' ? ' ↑' : ' ↓') : ' ↕'}</span>
+    </th>
+  )
+}
+
 export default function SocialWorkersPage() {
   const [workers,    setWorkers]    = useState<SocialWorker[]>([])
   const [safehouses, setSafehouses] = useState<Safehouse[]>([])
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
+  const [sortCol,    setSortCol]    = useState<SortKey>('fullName')
+  const [sortDir,    setSortDir]    = useState<Dir>('asc')
 
   useEffect(() => {
     Promise.allSettled([
@@ -22,10 +39,27 @@ export default function SocialWorkersPage() {
     return sh ? (sh.safehouseCode ?? sh.name ?? `SH${id}`) : `SH${id}`
   }
 
-  const filtered = workers.filter(w =>
-    !search || w.fullName.toLowerCase().includes(search.toLowerCase()) ||
-    (w.email ?? '').toLowerCase().includes(search.toLowerCase())
-  )
+  function toggleSort(col: SortKey) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+
+  const filtered = workers
+    .filter(w =>
+      !search || w.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      (w.email ?? '').toLowerCase().includes(search.toLowerCase())
+    )
+    .sort((a, b) => {
+      let va = '', vb = ''
+      if (sortCol === 'fullName')  { va = a.fullName; vb = b.fullName }
+      else if (sortCol === 'email')  { va = a.email ?? ''; vb = b.email ?? '' }
+      else if (sortCol === 'phone')  { va = a.phone ?? ''; vb = b.phone ?? '' }
+      else if (sortCol === 'safehouse') { va = shName(a.safehouseId ?? null); vb = shName(b.safehouseId ?? null) }
+      else if (sortCol === 'status') { va = a.status; vb = b.status }
+      else if (sortCol === 'createdAt') { va = a.createdAt; vb = b.createdAt }
+      const cmp = va.localeCompare(vb)
+      return sortDir === 'asc' ? cmp : -cmp
+    })
 
   const active   = workers.filter(w => w.status === 'Active').length
   const inactive = workers.filter(w => w.status !== 'Active').length
@@ -69,30 +103,30 @@ export default function SocialWorkersPage() {
           <table className="mu-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Safehouse</th>
-                <th>Status</th>
-                <th>Since</th>
+                <SortTh label="Name"       col="fullName"  sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Email"      col="email"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Phone"      col="phone"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Safehouse"  col="safehouse" sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Status"     col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <SortTh label="Since"      col="createdAt" sort={sortCol} dir={sortDir} onSort={toggleSort} />
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
                 <tr><td colSpan={6} className="mu-empty-cell">No social workers found.</td></tr>
               )}
-              {filtered.map(w => (
-                <tr key={w.socialWorkerId}>
+              {filtered.map((w, i) => (
+                <tr key={w.socialWorkerId || i}>
                   <td className="mu-td-name">{w.fullName}</td>
                   <td>{w.email ?? '—'}</td>
                   <td>{w.phone ?? '—'}</td>
-                  <td>{shName(w.safehouseId)}</td>
+                  <td>{shName(w.safehouseId ?? null)}</td>
                   <td>
                     <span className={`mu-badge ${w.status === 'Active' ? 'mu-badge-ok' : 'mu-badge-off'}`}>
                       {w.status}
                     </span>
                   </td>
-                  <td>{new Date(w.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</td>
+                  <td>{w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</td>
                 </tr>
               ))}
             </tbody>
