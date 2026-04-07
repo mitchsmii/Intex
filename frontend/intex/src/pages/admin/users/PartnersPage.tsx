@@ -103,7 +103,7 @@ export default function PartnersPage() {
               {filtered.map(p => (
                 <tr key={p.supporterId}>
                   <td className="mu-td-name">
-                    {p.organizationName ?? p.displayName ?? `${p.firstName ?? ''} ${p.lastName ?? ''}`.trim()}
+                    {p.organizationName ?? p.displayName ?? (`${p.firstName ?? ''} ${p.lastName ?? ''}`.trim() || '—')}
                   </td>
                   <td>
                     <span className="mu-badge mu-badge-type">{p.supporterType ?? '—'}</span>

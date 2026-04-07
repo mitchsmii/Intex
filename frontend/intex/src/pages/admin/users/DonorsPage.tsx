@@ -116,7 +116,7 @@ export default function DonorsPage() {
                 return (
                   <tr key={s.supporterId}>
                     <td className="mu-td-name">
-                      {s.displayName ?? `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || '—'}
+                      {s.displayName ?? (`${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || '—')}
                     </td>
                     <td>{s.email ?? '—'}</td>
                     <td>{s.phone ?? '—'}</td>
