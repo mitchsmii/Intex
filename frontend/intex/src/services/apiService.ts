@@ -8,6 +8,15 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function authGet<T>(path: string): Promise<T> {
+  const token = localStorage.getItem('cove_token')
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface Safehouse {
@@ -192,6 +201,20 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function authPost<T>(path: string, body: unknown): Promise<T> {
+  const token = localStorage.getItem('cove_token')
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
 // ── API calls ──────────────────────────────────────────────────────────────
 
 export const api = {
@@ -200,6 +223,10 @@ export const api = {
   getSupporters:              () => get<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
+  lookupSupporterByEmail:     (email: string) =>
+    authGet<Supporter>(`/api/supporters/lookup-by-email?email=${encodeURIComponent(email)}`),
+  chatWithVanessa:            (messages: { role: 'vanessa' | 'user'; content: string }[]) =>
+    authPost<{ reply: string }>('/api/vanessa/chat', { messages }),
   getDonations:               () => get<Donation[]>('/api/donations'),
   getDonationsBySupporter:    (id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
   getDonationsMonthlySummary: () => get<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),

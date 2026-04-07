@@ -46,6 +46,10 @@ export default function ImpactPage() {
   const [totalServed,     setTotalServed]       = useState(0)
 
   useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
+  useEffect(() => {
     Promise.allSettled([
       api.getSafehouses().then(setSafehouses),
       api.getResidents().then(r => {

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -64,6 +65,24 @@ public class SupportersController : ControllerBase
 
         if (match == null)
             return NotFound(new { message = "No supporter found with those details." });
+
+        return Ok(match);
+    }
+
+    // Email-only lookup for authenticated donors viewing their own history
+    [HttpGet("lookup-by-email")]
+    [Authorize]
+    public async Task<IActionResult> LookupByEmail([FromQuery] string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest(new { message = "Email is required." });
+
+        var match = await _context.Supporters
+            .Where(s => s.Email!.ToLower() == email.ToLower())
+            .FirstOrDefaultAsync();
+
+        if (match == null)
+            return NotFound(new { message = "No donation history found for this account." });
 
         return Ok(match);
     }

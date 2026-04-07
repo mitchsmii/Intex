@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
   fetchResidents,
   fetchUpcomingEvents,
@@ -28,6 +28,8 @@ import './SocialWorkerHomePage.css'
 
 function SocialWorkerHomePage() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const base = pathname.startsWith('/admin') ? '/admin/sw' : '/socialworker/dashboard'
   const [residents, setResidents] = useState<Resident[]>([])
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [actions, setActions] = useState<ActionItem[]>([])
@@ -65,9 +67,9 @@ function SocialWorkerHomePage() {
   if (error) return <p className="sw-home-error">Error: {error}</p>
 
   const goToResident = (r: Resident) =>
-    navigate(`/socialworker/dashboard/residents/${r.residentId}`)
+    navigate(`${base}/residents/${r.residentId}`)
   const goToResidentById = (id: number) =>
-    navigate(`/socialworker/dashboard/residents/${id}`)
+    navigate(`${base}/residents/${id}`)
 
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
@@ -85,7 +87,7 @@ function SocialWorkerHomePage() {
         <button
           type="button"
           className="sw-dash-add-btn"
-          onClick={() => navigate('/socialworker/dashboard/residents')}
+          onClick={() => navigate(`${base}/residents`)}
         >
           + Add Resident
         </button>
