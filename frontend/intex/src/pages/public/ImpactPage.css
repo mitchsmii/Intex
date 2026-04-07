@@ -1,0 +1,436 @@
+@import '../../styles/variables.css';
+
+.ip-page {
+  background: var(--bg-page);
+}
+
+/* ── Hero ── */
+.ip-hero {
+  background: linear-gradient(135deg, var(--cove-deep) 0%, #1a3540 60%, #0f2530 100%);
+  padding: clamp(80px, 12vw, 140px) var(--space-lg);
+  text-align: center;
+}
+
+.ip-hero-inner {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.ip-hero-eyebrow {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--cove-seaglass);
+  margin: 0 0 var(--space-md);
+}
+
+.ip-hero-title {
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 var(--space-md);
+  line-height: 1.1;
+}
+
+.ip-hero-sub {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.75;
+  max-width: 560px;
+  margin: 0 auto var(--space-xl);
+}
+
+.ip-hero-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ip-btn-ghost {
+  display: inline-block;
+  border: 2px solid rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.9);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 12px 36px;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.ip-btn-ghost:hover {
+  border-color: var(--cove-seaglass);
+  color: var(--cove-seaglass);
+}
+
+.ip-btn-ghost-dark {
+  border-color: rgba(44, 74, 82, 0.35);
+  color: var(--cove-deep);
+}
+
+.ip-btn-ghost-dark:hover {
+  border-color: var(--cove-tidal);
+  color: var(--cove-tidal);
+}
+
+/* ── Shared section helpers ── */
+.ip-section-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.ip-section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cove-tidal);
+  margin-bottom: var(--space-sm);
+}
+
+.ip-label-light { color: var(--cove-seaglass); }
+
+.ip-section-title {
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  font-weight: 700;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-sm);
+}
+
+.ip-title-light { color: #fff; }
+
+.ip-section-sub {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 560px;
+  line-height: 1.7;
+  margin: 0 0 var(--space-2xl);
+}
+
+.ip-sub-light { color: rgba(255,255,255,0.7); }
+
+/* ── Stats grid ── */
+.ip-stats-section {
+  padding: var(--space-2xl) var(--space-lg);
+  background: var(--bg-page);
+}
+
+.ip-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+.ip-stat-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ip-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.ip-stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-md);
+  background: var(--cove-seafoam);
+  color: var(--cove-tidal);
+  margin-bottom: var(--space-md);
+}
+
+.ip-stat-number {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--cove-deep);
+  line-height: 1;
+  margin-bottom: var(--space-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.ip-stat-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  margin-bottom: var(--space-xs);
+}
+
+.ip-stat-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ── Outcomes ── */
+.ip-outcomes-section {
+  padding: var(--space-2xl) var(--space-lg);
+  background: var(--cove-sand);
+}
+
+.ip-outcomes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+}
+
+.ip-outcome-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+.ip-outcome-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  color: var(--cove-tidal);
+}
+
+.ip-outcome-header h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.ip-outcome-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--cove-deep);
+  line-height: 1;
+  margin-bottom: var(--space-md);
+}
+
+.ip-outcome-unit {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ip-outcome-bar-track {
+  height: 8px;
+  background: var(--border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--space-md);
+}
+
+.ip-outcome-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--cove-tidal);
+  transition: width 1s ease;
+}
+
+.ip-bar-health { background: var(--color-success); }
+.ip-bar-edu    { background: var(--cove-seaglass); }
+
+.ip-outcome-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Fundraising ── */
+.ip-fund-section {
+  padding: var(--space-2xl) var(--space-lg);
+  background: linear-gradient(135deg, var(--cove-deep) 0%, #1a3540 100%);
+}
+
+.ip-fund-card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-2xl);
+  backdrop-filter: blur(4px);
+}
+
+.ip-fund-numbers {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.ip-fund-raised {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+
+.ip-fund-goal-num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  line-height: 1;
+  text-align: right;
+}
+
+.ip-fund-label {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.ip-fund-track {
+  height: 12px;
+  background: rgba(255,255,255,0.15);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+
+.ip-fund-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, var(--cove-tidal), var(--cove-seaglass));
+  transition: width 1.2s ease;
+}
+
+.ip-fund-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.ip-fund-pct {
+  font-size: 0.85rem;
+  color: var(--cove-seaglass);
+  font-weight: 700;
+}
+
+.ip-fund-chart-label {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ip-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── Impact tiers ── */
+.ip-tiers-section {
+  padding: var(--space-2xl) var(--space-lg);
+  background: var(--bg-page);
+}
+
+.ip-tiers-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-md);
+}
+
+.ip-tier-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-top: 4px solid var(--cove-tidal);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg) var(--space-md);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.ip-tier-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.ip-tier-amount {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--cove-tidal);
+  margin-bottom: var(--space-sm);
+}
+
+.ip-tier-label {
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ── CTA ── */
+.ip-cta-section {
+  padding: var(--space-2xl) var(--space-lg);
+  background: var(--cove-seafoam);
+}
+
+.ip-cta-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ip-cta-inner h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 700;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-md);
+}
+
+.ip-cta-inner > p {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+  margin: 0 0 var(--space-xl);
+}
+
+.ip-cta-actions {
+  display: flex;
+  gap: var(--space-md);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-xl);
+}
+
+.ip-cta-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1000px) {
+  .ip-stats-grid  { grid-template-columns: repeat(2, 1fr); }
+  .ip-tiers-grid  { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 700px) {
+  .ip-outcomes-grid { grid-template-columns: 1fr; }
+  .ip-tiers-grid    { grid-template-columns: repeat(2, 1fr); }
+  .ip-fund-card     { padding: var(--space-lg); }
+}
+
+@media (max-width: 500px) {
+  .ip-stats-grid { grid-template-columns: 1fr; }
+  .ip-tiers-grid { grid-template-columns: 1fr; }
+}

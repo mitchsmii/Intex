@@ -320,6 +320,51 @@
   color: var(--text-muted);
 }
 
+/* ─────── Impact Banner ─────── */
+.hp-impact-banner {
+  background: var(--cove-seafoam);
+  padding: var(--space-2xl) var(--space-lg);
+}
+
+.hp-impact-inner {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.hp-impact-text {
+  flex: 1;
+  min-width: 260px;
+}
+
+.hp-impact-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cove-tidal);
+  margin: 0 0 var(--space-sm);
+}
+
+.hp-impact-inner h2 {
+  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  font-weight: 700;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-sm);
+}
+
+.hp-impact-inner p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 480px;
+}
+
 /* ─────── Responsive ─────── */
 @media (max-width: 960px) {
   .hp-pillars-grid {

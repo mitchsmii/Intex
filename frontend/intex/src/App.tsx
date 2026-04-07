@@ -16,6 +16,7 @@ import DonorHomePage from './pages/donor/DonorHomePage'
 import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
 import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage'
+import ImpactPage from './pages/public/ImpactPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import SafehouseLocationsPage from './pages/admin/SafehouseLocationsPage'
 import ReportsPage from './pages/admin/ReportsPage'
@@ -37,6 +38,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/donate" element={<DonateNowPage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/impact" element={<ImpactPage />} />
           </Route>
 
           {/* Social Worker pages */}
