@@ -128,6 +128,21 @@ function HomePage() {
           <Link to="/donate" className="hp-btn-secondary">Support This Campaign</Link>
         </div>
       </section>
+
+      {/* ── Impact Banner ── */}
+      <section className="hp-impact-banner">
+        <div className="hp-impact-inner">
+          <div className="hp-impact-text">
+            <p className="hp-impact-eyebrow">Transparency &amp; Trust</p>
+            <h2>See the Real Impact</h2>
+            <p>
+              Curious where your donation goes? View our live impact dashboard —
+              real numbers, real outcomes, updated from our case management system.
+            </p>
+          </div>
+          <Link to="/impact" className="hp-btn-secondary">View Our Impact</Link>
+        </div>
+      </section>
     </>
   )
 }

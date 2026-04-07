@@ -12,18 +12,16 @@
 
 .sidebar-logo {
   padding: var(--space-lg);
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--cove-seaglass);
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  justify-content: center;
   text-decoration: none;
 }
 
-.sidebar-logo-icon {
-  font-size: 1.5rem;
-  line-height: 1;
+.sidebar-logo-img {
+  height: 48px;
+  width: auto;
+  display: block;
 }
 
 .sidebar-nav {

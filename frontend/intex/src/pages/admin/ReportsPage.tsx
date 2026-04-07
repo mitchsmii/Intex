@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { api } from '../../services/apiService'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
@@ -487,12 +488,17 @@ function AnnualTab({
   const ytdTotal = ytdDonations.reduce((s, d) => s + (d.amount ?? 0), 0)
   const currency = donations[0]?.currencyCode ?? 'PHP'
 
-  const pillars = [
+  const pillars: { title: string; subtitle: string; color: string; icon: ReactNode; stats: { label: string; value: string }[] }[] = [
     {
       title: 'CARING',
       subtitle: 'Safe Shelter & Basic Needs',
       color: 'var(--cove-tidal)',
-      icon: '🏠',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      ),
       stats: [
         { label: 'Children Currently in Care', value: String(activeNow.length) },
         { label: 'New Admissions This Year', value: String(admittedThisYear.length) },
@@ -504,7 +510,11 @@ function AnnualTab({
       title: 'HEALING',
       subtitle: 'Psychosocial & Health Services',
       color: 'var(--cove-seaglass)',
-      icon: '💚',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+      ),
       stats: [
         { label: 'Process Recordings Completed', value: String(totalProc) },
         { label: 'Home / Family Visitations', value: String(totalVisits) },
@@ -516,7 +526,12 @@ function AnnualTab({
       title: 'TEACHING',
       subtitle: 'Education & Skills Development',
       color: 'var(--cove-seafoam)',
-      icon: '📚',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+      ),
       stats: [
         { label: 'Avg. Education Progress', value: metrics.length ? `${Math.round(metrics.reduce((s, m) => s + (m.avgEducationProgress ?? 0), 0) / metrics.filter(m => m.avgEducationProgress != null).length)}%` : '—' },
         { label: 'Residents in Education Programs', value: String(activeNow.length) },
@@ -528,7 +543,14 @@ function AnnualTab({
       title: 'BENEFICIARIES',
       subtitle: 'Reintegration & Outcomes',
       color: 'var(--cove-sand)',
-      icon: '✨',
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      ),
       stats: [
         { label: 'Reintegrated Survivors', value: String(reintegratedThisYear.length) },
         { label: 'Donors / Supporters', value: '—' },
