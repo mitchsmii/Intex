@@ -48,6 +48,22 @@ export async function fetchProcessRecordings(params?: {
   return res.json();
 }
 
+export async function createProcessRecording(
+  payload: Omit<ProcessRecording, "recordingId">
+): Promise<ProcessRecording> {
+  const token = localStorage.getItem("cove_token");
+  const res = await fetch(`${API_URL}/api/processrecordings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create process recording: ${res.status}`);
+  return res.json();
+}
+
 export async function fetchHomeVisitations(params?: {
   residentId?: number;
   limit?: number;
@@ -57,6 +73,22 @@ export async function fetchHomeVisitations(params?: {
   if (params?.limit) qs.set("limit", String(params.limit));
   const res = await authedFetch(`/api/homevisitations?${qs}`);
   if (!res.ok) throw new Error(`Failed to fetch home visitations: ${res.status}`);
+  return res.json();
+}
+
+export async function createHomeVisitation(
+  payload: Omit<HomeVisitation, "visitationId">
+): Promise<HomeVisitation> {
+  const token = localStorage.getItem("cove_token");
+  const res = await fetch(`${API_URL}/api/homevisitations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create home visitation: ${res.status}`);
   return res.json();
 }
 
