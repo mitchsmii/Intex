@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
-import type { SocialWorker, Safehouse } from '../../../services/apiService'
+import type { SocialWorker, Safehouse, Resident } from '../../../services/apiService'
 import '../ManageUsersPage.css'
 
 type SortKey = 'fullName' | 'email' | 'phone' | 'safehouse' | 'status' | 'createdAt'
@@ -27,36 +27,43 @@ export default function SocialWorkersPage() {
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
 
   useEffect(() => {
+    // Load residents (always available) + safehouses in parallel,
+    // then optionally enrich with the social_workers table if it has data.
     Promise.allSettled([
-      api.getSocialWorkers().then(sw => {
-        if (sw.length > 0) {
-          setWorkers(sw)
-        } else {
-          // Fallback: derive distinct social worker codes from residents
-          api.getResidents().then(residents => {
-            const names = [...new Set(
-              residents
-                .map(r => r.assignedSocialWorker)
-                .filter((n): n is string => !!n && n.trim() !== '')
-            )].sort()
-            const derived: SocialWorker[] = names.map((name, i) => ({
-              socialWorkerId: -(i + 1),
-              fullName: name,
-              firstName: null,
-              lastName: null,
-              email: null,
-              phone: null,
-              safehouseId: null,
-              status: 'Active',
-              createdAt: '',
-              updatedAt: '',
-            }))
-            setWorkers(derived)
-          })
-        }
-      }),
-      api.getSafehouses().then(setSafehouses),
-    ]).finally(() => setLoading(false))
+      api.getResidents(),
+      api.getSafehouses(),
+      api.getSocialWorkers(),
+    ]).then(([resResult, shResult, swResult]) => {
+      const residents  = resResult.status  === 'fulfilled' ? resResult.value  as Resident[]    : []
+      const shList     = shResult.status   === 'fulfilled' ? shResult.value   as Safehouse[]   : []
+      const swTable    = swResult.status   === 'fulfilled' ? swResult.value   as SocialWorker[] : []
+
+      setSafehouses(shList)
+
+      if (swTable.length > 0) {
+        setWorkers(swTable)
+      } else {
+        // Derive from residents' assigned_social_worker field
+        const names = [...new Set(
+          residents
+            .map((r: Resident) => r.assignedSocialWorker)
+            .filter((n): n is string => !!n && n.trim() !== '')
+        )].sort()
+        const derived: SocialWorker[] = names.map((name, i) => ({
+          socialWorkerId: -(i + 1),
+          fullName: name,
+          firstName: null,
+          lastName: null,
+          email: null,
+          phone: null,
+          safehouseId: null,
+          status: 'Active',
+          createdAt: '',
+          updatedAt: '',
+        }))
+        setWorkers(derived)
+      }
+    }).finally(() => setLoading(false))
   }, [])
 
   const shName = (id: number | null) => {
