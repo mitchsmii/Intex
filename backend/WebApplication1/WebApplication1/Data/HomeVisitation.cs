@@ -48,4 +48,7 @@ public class HomeVisitation
 
     [Column("visit_outcome")]
     public string? VisitOutcome { get; set; }
+
+    [Column("social_worker_id")]
+    public int? SocialWorkerId { get; set; }
 }

@@ -53,4 +53,7 @@ public class ProcessRecording
     [JsonIgnore]
     [Column("notes_restricted")]
     public string? NotesRestricted { get; set; }
+
+    [Column("social_worker_id")]
+    public int? SocialWorkerId { get; set; }
 }

@@ -16,7 +16,7 @@ public class ProcessRecordingsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProcessRecording>>> GetProcessRecordings(
+    public async Task<ActionResult<IEnumerable<object>>> GetProcessRecordings(
         [FromQuery] int? residentId,
         [FromQuery] int? limit)
     {
@@ -24,14 +24,102 @@ public class ProcessRecordingsController : ControllerBase
         if (residentId.HasValue) query = query.Where(p => p.ResidentId == residentId);
         query = query.OrderByDescending(p => p.SessionDate);
         if (limit.HasValue) query = query.Take(limit.Value);
-        return await query.ToListAsync();
+
+        var recordings = await query
+            .GroupJoin(
+                _context.SocialWorkers,
+                pr => pr.SocialWorkerId,
+                sw => sw.SocialWorkerId,
+                (pr, sws) => new { pr, sws })
+            .SelectMany(
+                x => x.sws.DefaultIfEmpty(),
+                (x, sw) => new
+                {
+                    x.pr.RecordingId,
+                    x.pr.ResidentId,
+                    x.pr.SessionDate,
+                    SocialWorkerName = sw != null ? sw.FullName : x.pr.SocialWorker,
+                    x.pr.SocialWorker,
+                    x.pr.SocialWorkerId,
+                    x.pr.SessionType,
+                    x.pr.SessionDurationMinutes,
+                    x.pr.EmotionalStateObserved,
+                    x.pr.EmotionalStateEnd,
+                    x.pr.SessionNarrative,
+                    x.pr.InterventionsApplied,
+                    x.pr.FollowUpActions,
+                    x.pr.ProgressNoted,
+                    x.pr.ConcernsFlagged,
+                    x.pr.ReferralMade
+                })
+            .ToListAsync();
+
+        return Ok(recordings);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<ProcessRecording>> GetProcessRecording(int id)
+    public async Task<ActionResult<object>> GetProcessRecording(int id)
     {
-        var pr = await _context.ProcessRecordings.FindAsync(id);
-        if (pr == null) return NotFound();
-        return pr;
+        var result = await _context.ProcessRecordings
+            .Where(pr => pr.RecordingId == id)
+            .GroupJoin(
+                _context.SocialWorkers,
+                pr => pr.SocialWorkerId,
+                sw => sw.SocialWorkerId,
+                (pr, sws) => new { pr, sws })
+            .SelectMany(
+                x => x.sws.DefaultIfEmpty(),
+                (x, sw) => new
+                {
+                    x.pr.RecordingId,
+                    x.pr.ResidentId,
+                    x.pr.SessionDate,
+                    SocialWorkerName = sw != null ? sw.FullName : x.pr.SocialWorker,
+                    x.pr.SocialWorker,
+                    x.pr.SocialWorkerId,
+                    x.pr.SessionType,
+                    x.pr.SessionDurationMinutes,
+                    x.pr.EmotionalStateObserved,
+                    x.pr.EmotionalStateEnd,
+                    x.pr.SessionNarrative,
+                    x.pr.InterventionsApplied,
+                    x.pr.FollowUpActions,
+                    x.pr.ProgressNoted,
+                    x.pr.ConcernsFlagged,
+                    x.pr.ReferralMade
+                })
+            .FirstOrDefaultAsync();
+
+        if (result == null) return NotFound();
+        return Ok(result);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<ProcessRecording>> CreateProcessRecording(ProcessRecording recording)
+    {
+        _context.ProcessRecordings.Add(recording);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetProcessRecording), new { id = recording.RecordingId }, recording);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateProcessRecording(int id, ProcessRecording recording)
+    {
+        if (id != recording.RecordingId) return BadRequest();
+
+        _context.Entry(recording).State = EntityState.Modified;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!await _context.ProcessRecordings.AnyAsync(p => p.RecordingId == id))
+                return NotFound();
+            throw;
+        }
+
+        return NoContent();
     }
 }
