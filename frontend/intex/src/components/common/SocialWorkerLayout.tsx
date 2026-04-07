@@ -7,8 +7,6 @@ const socialWorkerNav = [
   { to: '/socialworker/dashboard/residents', label: 'Residents', icon: '\u{1F465}' },
   { to: '/socialworker/dashboard/analytics', label: 'Analytics', icon: '\u{1F4CA}' },
   { to: '/socialworker/dashboard/messages', label: 'Messages', icon: '\u{1F4AC}' },
-  { to: '/donor/donate', label: 'Donate Now', icon: '\u{1F49A}' },
-  { to: '/admin/donation-report', label: 'Donation Report', icon: '\u{1F4B0}' },
 ]
 
 function SocialWorkerLayout() {

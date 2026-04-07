@@ -3,12 +3,16 @@ import Sidebar from './Sidebar'
 import './AdminLayout.css'
 
 const adminNav = [
-  { to: '/admin', label: 'Dashboard', icon: '\u{1F4CA}' },
+  // Admin pages
+  { to: '/admin', label: 'Admin Dashboard', icon: '\u{1F4CA}' },
   { to: '/admin/users', label: 'Manage Users', icon: '\u{1F465}' },
   { to: '/admin/roles', label: 'Roles', icon: '\u{1F511}' },
   { to: '/admin/reports', label: 'Reports', icon: '\u{1F4C8}' },
   { to: '/admin/donation-report', label: 'Donation Report', icon: '\u{1F4B0}' },
-  { to: '/donor/donate', label: 'Donate Now', icon: '\u{1F49A}' },
+  // Social Worker pages
+  { to: '/socialworker/dashboard', label: 'SW Dashboard', icon: '\u{1F3E0}' },
+  { to: '/socialworker/dashboard/residents', label: 'Residents', icon: '\u{1F9D1}' },
+  { to: '/socialworker/dashboard/analytics', label: 'Analytics', icon: '\u{1F4C9}' },
 ]
 
 function AdminLayout() {
