@@ -95,24 +95,6 @@ function InterventionPlansPage() {
     [residents, selectedId],
   )
 
-  const todayMs = new Date().setHours(0, 0, 0, 0)
-
-  const upcomingConferences = useMemo(
-    () =>
-      plans
-        .filter((p) => p.caseConferenceDate && new Date(p.caseConferenceDate).getTime() >= todayMs)
-        .sort((a, b) => new Date(a.caseConferenceDate!).getTime() - new Date(b.caseConferenceDate!).getTime()),
-    [plans, todayMs],
-  )
-
-  const pastConferences = useMemo(
-    () =>
-      plans
-        .filter((p) => p.caseConferenceDate && new Date(p.caseConferenceDate).getTime() < todayMs)
-        .sort((a, b) => new Date(b.caseConferenceDate!).getTime() - new Date(a.caseConferenceDate!).getTime()),
-    [plans, todayMs],
-  )
-
   const filteredPlans = useMemo(() => {
     const list = filter === 'All' ? plans : plans.filter((p) => p.status === filter)
     return [...list].sort((a, b) => {
@@ -237,43 +219,6 @@ function InterventionPlansPage() {
                 <LoadingSpinner size="md" />
               ) : (
                 <>
-                  {/* Case Conferences embedded at the top */}
-                  <section className="ip-conferences">
-                    <h3>Case Conferences</h3>
-                    <div className="ip-conf-grid">
-                      <div>
-                        <div className="ip-conf-label">Upcoming</div>
-                        {upcomingConferences.length === 0 ? (
-                          <p className="ip-empty-sm">None scheduled.</p>
-                        ) : (
-                          <ul className="ip-conf-list">
-                            {upcomingConferences.map((p) => (
-                              <li key={`up-${p.planId}`} className="ip-conf-item ip-conf-item--upcoming">
-                                <div className="ip-conf-date">{formatDate(p.caseConferenceDate)}</div>
-                                <div className="ip-conf-cat">{p.planCategory ?? 'Conference'}</div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                      <div>
-                        <div className="ip-conf-label">Past</div>
-                        {pastConferences.length === 0 ? (
-                          <p className="ip-empty-sm">No past conferences.</p>
-                        ) : (
-                          <ul className="ip-conf-list">
-                            {pastConferences.slice(0, 5).map((p) => (
-                              <li key={`past-${p.planId}`} className="ip-conf-item">
-                                <div className="ip-conf-date">{formatDate(p.caseConferenceDate)}</div>
-                                <div className="ip-conf-cat">{p.planCategory ?? 'Conference'}</div>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  </section>
-
                   {/* New plan form */}
                   {showForm && (
                     <form className="ip-form" onSubmit={handleSubmit}>
