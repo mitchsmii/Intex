@@ -9,15 +9,29 @@ namespace WebApplication1.Controllers;
 public class IncidentReportsController : ControllerBase
 {
     private readonly AppDbContext _context;
-    public IncidentReportsController(AppDbContext context) => _context = context;
+
+    public IncidentReportsController(AppDbContext context)
+    {
+        _context = context;
+    }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? residentId,
+        [FromQuery] bool? unresolvedOnly)
     {
-        var incidents = await _context.IncidentReports
-            .OrderByDescending(i => i.IncidentDate)
-            .ToListAsync();
-
+        var query = _context.IncidentReports.AsQueryable();
+        if (residentId.HasValue)    query = query.Where(i => i.ResidentId == residentId);
+        if (unresolvedOnly == true) query = query.Where(i => i.Resolved != true);
+        var incidents = await query.OrderByDescending(i => i.IncidentDate).ToListAsync();
         return Ok(incidents);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var ir = await _context.IncidentReports.FindAsync(id);
+        if (ir == null) return NotFound();
+        return Ok(ir);
     }
 }

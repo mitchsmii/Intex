@@ -9,13 +9,30 @@ namespace WebApplication1.Controllers;
 public class InterventionPlansController : ControllerBase
 {
     private readonly AppDbContext _context;
-    public InterventionPlansController(AppDbContext context) => _context = context;
+
+    public InterventionPlansController(AppDbContext context)
+    {
+        _context = context;
+    }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? residentId,
+        [FromQuery] string? status)
     {
-        var plans = await _context.InterventionPlans.ToListAsync();
+        var query = _context.InterventionPlans.AsQueryable();
+        if (residentId.HasValue)           query = query.Where(p => p.ResidentId == residentId);
+        if (!string.IsNullOrEmpty(status)) query = query.Where(p => p.Status == status);
+        var plans = await query.OrderByDescending(p => p.UpdatedAt).ToListAsync();
         return Ok(plans);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var plan = await _context.InterventionPlans.FindAsync(id);
+        if (plan == null) return NotFound();
+        return Ok(plan);
     }
 
     [HttpGet("upcoming")]
@@ -51,9 +68,9 @@ public class InterventionPlansController : ControllerBase
             {
                 p.PlanId,
                 p.ResidentId,
-                ResidentCode           = r?.InternalCode,
-                SafehouseId            = r?.SafehouseId,
-                AssignedSocialWorker   = r?.AssignedSocialWorker,
+                ResidentCode         = r?.InternalCode,
+                SafehouseId          = r?.SafehouseId,
+                AssignedSocialWorker = r?.AssignedSocialWorker,
                 p.PlanCategory,
                 p.PlanDescription,
                 p.CaseConferenceDate,
