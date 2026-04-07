@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import './DonateNowPage.css'
 
 // Goal is stored in USD; all display converts from USD
@@ -233,7 +234,16 @@ export default function DonateNowPage() {
 
             {/* Frequency toggle */}
             <div className="field-group">
-              <h3>Donation Frequency</h3>
+              <div className="freq-header">
+                <h3>Donation Frequency</h3>
+                <Link to="/donor/history" className="history-link">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  View your history
+                </Link>
+              </div>
               <div className="freq-toggle" role="group" aria-label="Donation frequency">
                 <button
                   type="button"
