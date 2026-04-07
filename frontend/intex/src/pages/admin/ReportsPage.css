@@ -1,0 +1,456 @@
+@import '../../styles/variables.css';
+
+.rp-page {
+  padding: var(--space-xl);
+  max-width: 1200px;
+}
+
+.rp-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+}
+
+.rp-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-xs);
+}
+
+.rp-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.rp-loading-badge {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-full);
+}
+
+/* ── Tabs ── */
+.rp-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  border-bottom: 2px solid var(--border-light);
+  margin-bottom: var(--space-xl);
+}
+
+.rp-tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+
+.rp-tab-btn:hover {
+  color: var(--cove-tidal);
+}
+
+.rp-tab-active {
+  color: var(--cove-deep) !important;
+  border-bottom-color: var(--cove-tidal) !important;
+}
+
+/* ── Tab content ── */
+.rp-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/* ── KPI grid ── */
+.rp-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+}
+
+.rp-kpi {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.rp-kpi-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.rp-kpi-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  line-height: 1;
+  margin-bottom: var(--space-xs);
+}
+
+.rp-kpi-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ── Section ── */
+.rp-section {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.rp-section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-lg);
+}
+
+/* ── Two-col layout ── */
+.rp-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.rp-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.rp-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-md);
+}
+
+/* ── Chart ── */
+.rp-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── Bar list ── */
+.rp-bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.rp-bar-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 56px;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.rp-bar-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rp-bar-track {
+  height: 8px;
+  background: var(--border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.rp-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+.rp-bar-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cove-deep);
+  text-align: right;
+}
+
+/* ── Mini track (inline in tables) ── */
+.rp-mini-track {
+  height: 6px;
+  background: var(--border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  min-width: 60px;
+  margin-bottom: 2px;
+}
+
+.rp-mini-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+/* ── Tables ── */
+.rp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.rp-table-wide {
+  min-width: 700px;
+  overflow-x: auto;
+  display: block;
+}
+
+.rp-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--border-light);
+  white-space: nowrap;
+}
+
+.rp-table td {
+  padding: var(--space-sm);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+}
+
+.rp-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rp-table tbody tr:hover {
+  background: var(--bg-subtle);
+}
+
+.rp-td-name {
+  font-weight: 600;
+  color: var(--cove-deep);
+}
+
+.rp-td-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Badge ── */
+.rp-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.rp-badge-ok {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+}
+
+.rp-badge-off {
+  background: var(--border-light);
+  color: var(--text-muted);
+}
+
+/* ── Allocation ── */
+.rp-alloc-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.rp-alloc-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 48px 90px;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.rp-alloc-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.rp-alloc-pct {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.rp-alloc-amt {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cove-deep);
+  text-align: right;
+}
+
+/* ── Funding thresholds ── */
+.rp-threshold-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.rp-threshold-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.rp-threshold-meta {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.rp-threshold-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cove-deep);
+}
+
+.rp-threshold-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.rp-threshold-pct {
+  font-size: 0.8rem;
+  color: var(--cove-tidal);
+  margin-left: auto;
+}
+
+/* ── Annual report ── */
+.rp-annual-header {
+  text-align: center;
+  margin-bottom: var(--space-md);
+}
+
+.rp-annual-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-xs);
+}
+
+.rp-annual-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.rp-pillars {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+}
+
+.rp-pillar {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-top: 4px solid var(--pillar-color, var(--cove-tidal));
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.rp-pillar-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.rp-pillar-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.rp-pillar-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--cove-deep);
+}
+
+.rp-pillar-sub {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.rp-pillar-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.rp-pillar-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-sm);
+}
+
+.rp-pillar-stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.rp-pillar-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  white-space: nowrap;
+}
+
+.rp-annual-note {
+  background: var(--cove-seafoam);
+  border: 1px solid var(--cove-seaglass);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  font-size: 0.875rem;
+  color: var(--cove-deep);
+}
+
+/* ── Empty state ── */
+.rp-empty {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: var(--space-md) 0;
+}
+
+@media (max-width: 900px) {
+  .rp-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .rp-two-col  { grid-template-columns: 1fr; }
+  .rp-pillars  { grid-template-columns: 1fr; }
+}
