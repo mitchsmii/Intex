@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useOutletContext } from 'react-router-dom'
 import { fetchResidents, fetchSafehouses } from '../../services/socialWorkerService'
+import { api } from '../../services/apiService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import type { Resident } from '../../types/Resident'
 import type { Safehouse } from '../../types/Safehouse'
@@ -10,6 +11,7 @@ function ResidentsPage() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const base = pathname.startsWith('/admin') ? '/admin/sw' : '/socialworker/dashboard'
+  const ctx = useOutletContext<{ clearNotifications?: () => void } | null>()
   const [residents, setResidents] = useState<Resident[]>([])
   const [safehouses, setSafehouses] = useState<Safehouse[]>([])
   const [loading, setLoading] = useState(true)
@@ -27,6 +29,14 @@ function ResidentsPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
+
+  // Clear notification badge when SW views this page
+  useEffect(() => {
+    if (pathname.startsWith('/socialworker')) {
+      api.markAllNotificationsRead().catch(() => {})
+      ctx?.clearNotifications?.()
+    }
+  }, [pathname, ctx])
 
   const safehouseMap = useMemo(() => {
     const map = new Map<number, string>()

@@ -123,6 +123,16 @@ using (var scope = app.Services.CreateScope())
         CREATE INDEX IF NOT EXISTS "IX_AspNetUserRoles_RoleId" ON "AspNetUserRoles" ("RoleId");
         CREATE INDEX IF NOT EXISTS "EmailIndex" ON "AspNetUsers" ("NormalizedEmail");
         CREATE UNIQUE INDEX IF NOT EXISTS "UserNameIndex" ON "AspNetUsers" ("NormalizedUserName");
+
+        CREATE TABLE IF NOT EXISTS sw_notifications (
+            notification_id SERIAL PRIMARY KEY,
+            recipient_email VARCHAR(256) NOT NULL,
+            message TEXT NOT NULL,
+            related_resident_code VARCHAR(50),
+            is_read BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS ix_sw_notifications_recipient ON sw_notifications (recipient_email) WHERE is_read = FALSE;
         """;
     await cmd.ExecuteNonQueryAsync();
 

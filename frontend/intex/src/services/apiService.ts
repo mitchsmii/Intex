@@ -215,6 +215,14 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function authPatch(path: string): Promise<void> {
+  const token = localStorage.getItem('cove_token')
+  await fetch(`${BASE_URL}${path}`, {
+    method: 'PATCH',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+}
+
 // ── API calls ──────────────────────────────────────────────────────────────
 
 export const api = {
@@ -242,4 +250,9 @@ export const api = {
   getUpcomingPlans:           () => get<UpcomingPlan[]>('/api/interventionplans/upcoming'),
   getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
   getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
+  getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
+  createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string }) =>
+    authPost<Resident>('/api/residents', body),
+  getUnreadNotificationCount: () => authGet<number>('/api/notifications/unread-count'),
+  markAllNotificationsRead:   () => authPatch('/api/notifications/mark-all-read'),
 }

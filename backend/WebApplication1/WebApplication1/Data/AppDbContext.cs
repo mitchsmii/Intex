@@ -26,6 +26,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<IncidentReport> IncidentReports { get; set; }
     public DbSet<EducationRecord> EducationRecords { get; set; }
     public DbSet<HealthWellbeingRecord> HealthWellbeingRecords { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
