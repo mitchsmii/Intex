@@ -309,6 +309,21 @@
   margin-top: var(--space-xs);
 }
 
+.sl-deselect {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.sl-deselect:hover { opacity: 1; }
+
 .sl-info-unserved {
   font-size: 0.78rem;
   color: var(--text-muted);

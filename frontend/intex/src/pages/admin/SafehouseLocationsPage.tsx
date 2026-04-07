@@ -133,6 +133,7 @@ function scoreRegion(r: RegionInfo): number {
 export default function SafehouseLocationsPage() {
   const [geo, setGeo]             = useState<GeoJSON | null>(null)
   const [hovered, setHovered]     = useState<RegionInfo | null>(null)
+  const [selected, setSelected]   = useState<RegionInfo | null>(null)
   const [tipPos, setTipPos]       = useState({ x: 0, y: 0 })
   const mapRef                    = useRef<HTMLDivElement>(null)
 
@@ -146,10 +147,14 @@ export default function SafehouseLocationsPage() {
   function handleMouseMove(e: React.MouseEvent) {
     const rect = mapRef.current?.getBoundingClientRect()
     if (!rect) return
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    setTipPos({ x: x + 14, y: y - 8 })
+    setTipPos({ x: e.clientX - rect.left + 14, y: e.clientY - rect.top - 8 })
   }
+
+  function handleClick(info: RegionInfo) {
+    setSelected(prev => prev?.geoName === info.geoName ? null : info)
+  }
+
+  const activeRegion = selected ?? hovered
 
   const topCandidates = [...REGIONS]
     .filter(r => !r.existingSafehouse)
@@ -202,24 +207,27 @@ export default function SafehouseLocationsPage() {
 
               {/* Region paths */}
               {geo.features.map(feature => {
-                const geoName = feature.properties.REGION
-                const info    = REGIONS.find(r => r.geoName === geoName)
+                const geoName    = feature.properties.REGION
+                const info       = REGIONS.find(r => r.geoName === geoName)
                 if (!info) return null
-                const d         = geometryToD(feature.geometry)
-                const isHovered = hovered?.geoName === geoName
-                const fill      = densityColor(info.density)
+                const d          = geometryToD(feature.geometry)
+                const isSelected = selected?.geoName === geoName
+                const isHovered  = hovered?.geoName === geoName
+                const fill       = densityColor(info.density)
+                const dimmed     = (selected || hovered) && !isSelected && !isHovered
 
                 return (
                   <path
                     key={geoName}
                     d={d}
                     fill={fill}
-                    stroke={isHovered ? '#ffffff' : 'rgba(255,255,255,0.55)'}
-                    strokeWidth={isHovered ? 1.8 : 0.6}
-                    opacity={hovered && !isHovered ? 0.65 : 1}
-                    style={{ cursor: 'pointer' }}
+                    stroke={isSelected ? '#ffffff' : isHovered ? '#ffffff' : 'rgba(255,255,255,0.55)'}
+                    strokeWidth={isSelected ? 2.5 : isHovered ? 1.8 : 0.6}
+                    opacity={dimmed ? 0.55 : 1}
+                    style={{ cursor: 'pointer', transition: 'opacity 0.15s' }}
                     onMouseEnter={() => setHovered(info)}
                     onMouseLeave={() => setHovered(null)}
+                    onClick={() => handleClick(info)}
                   />
                 )
               })}
@@ -311,51 +319,56 @@ export default function SafehouseLocationsPage() {
 
           {/* Region info */}
           <div className="sl-info-card">
-            {!hovered && (
+            {!activeRegion && (
               <div className="sl-info-empty">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}>
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                <span>Hover a region to see details</span>
+                <span>Hover or click a region to see details</span>
               </div>
             )}
-            {hovered && (
+            {activeRegion && (
               <>
-                <div className="sl-info-header" style={{ background: densityColor(hovered.density) }}>
-                  <span className="sl-info-name" style={{ color: textOnColor(hovered.density) }}>{hovered.name}</span>
-                  <span className="sl-info-code" style={{ color: textOnColor(hovered.density), opacity: 0.75 }}>{hovered.code} · {hovered.group}</span>
+                <div className="sl-info-header" style={{ background: densityColor(activeRegion.density) }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span className="sl-info-name" style={{ color: textOnColor(activeRegion.density) }}>{activeRegion.name}</span>
+                    {selected && (
+                      <button className="sl-deselect" onClick={() => setSelected(null)} title="Clear selection">✕</button>
+                    )}
+                  </div>
+                  <span className="sl-info-code" style={{ color: textOnColor(activeRegion.density), opacity: 0.75 }}>{activeRegion.code} · {activeRegion.group}</span>
                 </div>
                 <div className="sl-info-metrics">
                   <div className="sl-metric">
                     <span className="sl-metric-label">Population</span>
-                    <span className="sl-metric-value">{fmtPop(hovered.population)}</span>
+                    <span className="sl-metric-value">{fmtPop(activeRegion.population)}</span>
                   </div>
                   <div className="sl-metric">
                     <span className="sl-metric-label">Density / km²</span>
-                    <span className="sl-metric-value">{hovered.density.toLocaleString()}</span>
+                    <span className="sl-metric-value">{activeRegion.density.toLocaleString()}</span>
                   </div>
                   <div className="sl-metric">
                     <span className="sl-metric-label">Land Area</span>
-                    <span className="sl-metric-value">{hovered.area.toLocaleString()} km²</span>
+                    <span className="sl-metric-value">{activeRegion.area.toLocaleString()} km²</span>
                   </div>
                   <div className="sl-metric">
                     <span className="sl-metric-label">Avg. Family Income</span>
-                    <span className="sl-metric-value">₱{(hovered.avgIncome / 1000).toFixed(0)}k/yr</span>
+                    <span className="sl-metric-value">₱{(activeRegion.avgIncome / 1000).toFixed(0)}k/yr</span>
                   </div>
                   <div className="sl-metric">
-                    <span className="sl-metric-label">VAWC Rate (est.)</span>
-                    <span className="sl-metric-value">{hovered.vawcPer100k} / 100k</span>
+                    <span className="sl-metric-label">VAWC Rate †</span>
+                    <span className="sl-metric-value">{activeRegion.vawcPer100k} / 100k</span>
                   </div>
                 </div>
-                {hovered.existingSafehouse ? (
+                {activeRegion.existingSafehouse ? (
                   <div className="sl-info-served">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                       <polyline points="9 22 9 12 15 12 15 22"/>
                     </svg>
-                    {hovered.existingSafehouse}
+                    {activeRegion.existingSafehouse}
                   </div>
                 ) : (
                   <div className="sl-info-unserved">No safehouse in this region</div>
@@ -391,9 +404,12 @@ export default function SafehouseLocationsPage() {
 
           {/* Data sources note */}
           <p className="sl-data-note">
-            VAWC rate: Violence Against Women &amp; Children cases filed, PNP est. 2022.
-            Income: PSA FIES 2021 average family income. Future metrics: poverty index,
-            trafficking hotspot data, NGO coverage gaps.
+            Population &amp; density: PSA 2020 Census (verified accurate).
+            Income: PSA FIES 2021 average family income (verified accurate).
+            † VAWC rate: estimated placeholder — actual PNP regional case data
+            should be sourced from <strong>pnp.gov.ph</strong> or the
+            PSA OpenSTAT database before relying on these figures.
+            Future metrics: poverty index, trafficking hotspot data, NGO coverage gaps.
           </p>
 
         </div>
