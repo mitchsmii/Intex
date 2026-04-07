@@ -28,7 +28,33 @@ export default function SocialWorkersPage() {
 
   useEffect(() => {
     Promise.allSettled([
-      api.getSocialWorkers().then(setWorkers),
+      api.getSocialWorkers().then(sw => {
+        if (sw.length > 0) {
+          setWorkers(sw)
+        } else {
+          // Fallback: derive distinct social worker codes from residents
+          api.getResidents().then(residents => {
+            const names = [...new Set(
+              residents
+                .map(r => r.assignedSocialWorker)
+                .filter((n): n is string => !!n && n.trim() !== '')
+            )].sort()
+            const derived: SocialWorker[] = names.map((name, i) => ({
+              socialWorkerId: -(i + 1),
+              fullName: name,
+              firstName: null,
+              lastName: null,
+              email: null,
+              phone: null,
+              safehouseId: null,
+              status: 'Active',
+              createdAt: '',
+              updatedAt: '',
+            }))
+            setWorkers(derived)
+          })
+        }
+      }),
       api.getSafehouses().then(setSafehouses),
     ]).finally(() => setLoading(false))
   }, [])
