@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import shelterImg from '../../assets/shelter.png'
+import shelterImg from '../../assets/shelter.webp'
 import handsImg from '../../assets/hands.png'
 import './HomePage.css'
 
