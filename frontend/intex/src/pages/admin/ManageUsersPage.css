@@ -1,0 +1,252 @@
+@import '../../styles/variables.css';
+
+.mu-page {
+  padding: var(--space-xl);
+  max-width: 1200px;
+}
+
+.mu-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.mu-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-xs);
+}
+
+.mu-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.mu-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.mu-search {
+  height: 36px;
+  padding: 0 var(--space-md);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: white;
+  min-width: 220px;
+  outline: none;
+}
+
+.mu-search:focus {
+  border-color: var(--cove-tidal);
+  box-shadow: 0 0 0 2px rgba(94, 158, 160, 0.15);
+}
+
+.mu-select {
+  height: 36px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+
+.mu-select:focus {
+  border-color: var(--cove-tidal);
+}
+
+/* ── KPI row ── */
+.mu-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.mu-kpi {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.mu-kpi-warn {
+  border-color: var(--color-warning);
+  background: #fffdf0;
+}
+
+.mu-kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  line-height: 1;
+  margin-bottom: var(--space-xs);
+}
+
+.mu-kpi-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Card / table ── */
+.mu-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+}
+
+.mu-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 600px;
+}
+
+.mu-table th {
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-subtle);
+  white-space: nowrap;
+}
+
+.mu-table td {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.mu-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.mu-table tbody tr:hover {
+  background: #f8fdfd;
+}
+
+.mu-td-name {
+  font-weight: 600;
+  color: var(--cove-deep);
+  white-space: nowrap;
+}
+
+.mu-td-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--cove-deep);
+}
+
+.mu-muted {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.mu-contact-line {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+/* ── Badges ── */
+.mu-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mu-badge-ok {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+}
+
+.mu-badge-off {
+  background: var(--border-light);
+  color: var(--text-muted);
+}
+
+.mu-badge-warn {
+  background: #fff0cc;
+  color: #7a4f00;
+}
+
+.mu-badge-med {
+  background: #e8f4fd;
+  color: #1a5276;
+}
+
+.mu-badge-type {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+}
+
+/* ── Sortable column headers ── */
+.mu-th-sort {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.mu-th-sort:hover {
+  color: var(--cove-tidal);
+}
+
+.mu-th-active {
+  color: var(--cove-deep) !important;
+}
+
+.mu-sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.5;
+  margin-left: 2px;
+}
+
+.mu-th-active .mu-sort-icon {
+  opacity: 1;
+  color: var(--cove-tidal);
+}
+
+/* ── Empty states ── */
+.mu-empty {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  padding: var(--space-md) 0;
+}
+
+.mu-empty-cell {
+  text-align: center;
+  color: var(--text-muted);
+  padding: var(--space-xl) !important;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 900px) {
+  .mu-kpi-row { grid-template-columns: repeat(2, 1fr); }
+}

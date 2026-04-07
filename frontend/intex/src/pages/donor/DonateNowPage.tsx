@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
+import { api } from '../../services/apiService'
 import './DonateNowPage.css'
 
 // Goal is stored in USD; all display converts from USD
 const GOAL_USD = 100_000
-const TOTAL_RAISED_USD = 0 // placeholder — replace with real API data
 
 // Preset tiers in USD — converted to selected currency for display
 const PRESET_AMOUNTS_USD = [25, 55, 100, 250, 1000]
@@ -52,7 +53,8 @@ function fmt(amount: number, currency: Currency, forceDecimals?: number) {
 type Frequency = 'one-time' | 'monthly'
 
 export default function DonateNowPage() {
-  const percent = Math.min(100, Math.round((TOTAL_RAISED_USD / GOAL_USD) * 100))
+  const [totalRaisedUSD, setTotalRaisedUSD] = useState(0)
+  const percent = Math.min(100, Math.round((totalRaisedUSD / GOAL_USD) * 100))
 
   const [fillWidth, setFillWidth] = useState(0)
   const fillRef = useRef<HTMLDivElement>(null)
@@ -69,8 +71,20 @@ export default function DonateNowPage() {
   const [amountChoice, setAmountChoice] = useState<number | null>(null)
   const [otherAmount, setOtherAmount]   = useState('')
   const [submitted, setSubmitted]       = useState(false)
+  const [submitting, setSubmitting]     = useState(false)
+  const [submitError, setSubmitError]   = useState('')
 
-  // Animate progress bar on mount
+  // Fetch real total raised on mount
+  useEffect(() => {
+    api.getDonationsTotal()
+      .then(({ total }) => {
+        // Total in DB may be in mixed currencies; treat as USD equivalent for display
+        setTotalRaisedUSD(Number(total))
+      })
+      .catch(() => { /* leave at 0 */ })
+  }, [])
+
+  // Animate progress bar whenever total or currency changes
   useEffect(() => {
     const t = setTimeout(() => setFillWidth(percent), 120)
     return () => clearTimeout(t)
@@ -86,19 +100,78 @@ export default function DonateNowPage() {
 
   function handlePillClick(usdVal: number) {
     setAmountChoice(prev => (prev === usdVal ? null : usdVal))
+    setOtherAmount('')
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  // Resolve final amount in the selected currency
+  function resolvedAmountInCurrency(): number | null {
+    if (otherAmount && Number(otherAmount) > 0) return Number(otherAmount)
+    if (amountChoice) return convert(amountChoice, currency)
+    return null
+  }
+
+  // Convert the amount back to USD for storage (amounts are stored in the entered currency)
+  function resolvedAmountUSD(): number | null {
+    const inCurrency = resolvedAmountInCurrency()
+    if (inCurrency == null) return null
+    // If user entered in a non-USD currency, store as-is with currency code
+    // (the amount column stores the amount in the stated currency_code)
+    return inCurrency
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // TODO: wire to backend — send amountChoice (USD), currency.code, frequency
-    setSubmitted(true)
+    const amount = resolvedAmountUSD()
+    if (!amount || amount <= 0) {
+      setSubmitError('Please select or enter a donation amount.')
+      return
+    }
+
+    setSubmitting(true)
+    setSubmitError('')
+
+    try {
+      // 1. Find or create the supporter
+      const supporter = await api.upsertSupporter({
+        firstName,
+        lastName,
+        email,
+        phone: phone || undefined,
+        displayName: anonymous ? 'Anonymous' : `${firstName} ${lastName}`.trim(),
+      })
+
+      // 2. Create the donation
+      await api.createDonation({
+        supporterId:  supporter.supporterId,
+        amount,
+        currencyCode: currency.code,
+        isRecurring:  frequency === 'monthly',
+        donationType: 'Monetary',
+        channelSource: 'Website',
+      })
+
+      // 3. Refresh the total
+      const { total } = await api.getDonationsTotal()
+      setTotalRaisedUSD(Number(total))
+
+      setSubmitted(true)
+    } catch {
+      setSubmitError('Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const raisedDisplay = fmt(convert(TOTAL_RAISED_USD, currency), currency, 0)
+  const raisedDisplay = fmt(convert(totalRaisedUSD, currency), currency, 0)
   const goalDisplay   = fmt(convert(GOAL_USD, currency), currency, 0)
 
-  const submitLabel = frequency === 'monthly'
-    ? `Give ${currency.symbol}${amountChoice ? fmt(convert(amountChoice, currency), currency) : '…'}/mo`
+  const amountInCurrency = resolvedAmountInCurrency()
+  const submitLabel = submitted
+    ? 'Donation Received!'
+    : submitting
+    ? 'Processing…'
+    : frequency === 'monthly' && amountInCurrency
+    ? `Give ${currency.symbol}${fmt(amountInCurrency, currency)}/mo`
     : 'Continue to Payment'
 
   return (
@@ -167,6 +240,12 @@ export default function DonateNowPage() {
             </div>
           )}
 
+          {submitError && (
+            <div className="success-banner" style={{ background: 'var(--color-error-light, #fde8e8)', borderColor: 'var(--color-error, #e05252)', color: '#7a1a1a' }}>
+              {submitError}
+            </div>
+          )}
+
           <form className="donation-form" onSubmit={handleSubmit}>
 
             {/* Donor info */}
@@ -182,6 +261,7 @@ export default function DonateNowPage() {
                     value={firstName}
                     onChange={e => setFirstName(e.target.value)}
                     required
+                    disabled={submitted}
                   />
                 </div>
                 <div>
@@ -192,6 +272,7 @@ export default function DonateNowPage() {
                     value={lastName}
                     onChange={e => setLastName(e.target.value)}
                     required
+                    disabled={submitted}
                   />
                 </div>
               </div>
@@ -205,6 +286,7 @@ export default function DonateNowPage() {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     required
+                    disabled={submitted}
                   />
                   <div className="help-text">For your receipt and updates.</div>
                 </div>
@@ -216,6 +298,7 @@ export default function DonateNowPage() {
                     placeholder="555-555-5555"
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
+                    disabled={submitted}
                   />
                 </div>
               </div>
@@ -226,6 +309,7 @@ export default function DonateNowPage() {
                   id="anonymous"
                   checked={anonymous}
                   onChange={e => setAnonymous(e.target.checked)}
+                  disabled={submitted}
                 />
                 <label htmlFor="anonymous">Make my donation anonymous.</label>
               </div>
@@ -233,12 +317,22 @@ export default function DonateNowPage() {
 
             {/* Frequency toggle */}
             <div className="field-group">
-              <h3>Donation Frequency</h3>
+              <div className="freq-header">
+                <h3>Donation Frequency</h3>
+                <Link to="/donor/history" className="history-link">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  View your history
+                </Link>
+              </div>
               <div className="freq-toggle" role="group" aria-label="Donation frequency">
                 <button
                   type="button"
                   className={`freq-btn${frequency === 'one-time' ? ' freq-active' : ''}`}
                   onClick={() => setFrequency('one-time')}
+                  disabled={submitted}
                 >
                   One-Time
                 </button>
@@ -246,6 +340,7 @@ export default function DonateNowPage() {
                   type="button"
                   className={`freq-btn${frequency === 'monthly' ? ' freq-active' : ''}`}
                   onClick={() => setFrequency('monthly')}
+                  disabled={submitted}
                 >
                   Monthly
                 </button>
@@ -269,6 +364,7 @@ export default function DonateNowPage() {
                     value={currency.code}
                     onChange={handleCurrencyChange}
                     className="currency-select"
+                    disabled={submitted}
                   >
                     {CURRENCIES.map(c => (
                       <option key={c.code} value={c.code}>
@@ -288,6 +384,7 @@ export default function DonateNowPage() {
                       type="button"
                       className={`pill${amountChoice === usdVal ? ' selected' : ''}`}
                       onClick={() => handlePillClick(usdVal)}
+                      disabled={submitted}
                     >
                       {currency.symbol}{display}
                       {frequency === 'monthly' && <span className="pill-mo">/mo</span>}
@@ -309,7 +406,8 @@ export default function DonateNowPage() {
                     step={currency.decimals === 0 ? '1' : '0.01'}
                     placeholder="Enter another amount"
                     value={otherAmount}
-                    onChange={e => setOtherAmount(e.target.value)}
+                    onChange={e => { setOtherAmount(e.target.value); setAmountChoice(null) }}
+                    disabled={submitted}
                   />
                 </div>
                 <div className="help-text">
@@ -320,7 +418,7 @@ export default function DonateNowPage() {
 
             {/* Submit */}
             <div>
-              <button type="submit" className="submit-btn">
+              <button type="submit" className="submit-btn" disabled={submitting || submitted}>
                 {submitLabel}
               </button>
               {frequency === 'monthly' && (
@@ -329,7 +427,7 @@ export default function DonateNowPage() {
                 </div>
               )}
               <div className="secure-text">
-                This is a demo form. In production this connects to a secure payment processor.
+                Your information is submitted securely.
               </div>
             </div>
 

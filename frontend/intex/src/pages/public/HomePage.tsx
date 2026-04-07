@@ -43,7 +43,8 @@ function HomePage() {
         <div className="hp-hero-overlay">
           <div className="hp-hero-content">
             <p className="hp-hero-eyebrow">Safety · Healing · Justice · Empowerment</p>
-            <h1 className="hp-hero-title">A Sanctuary for Survivors</h1>
+            <h1 className="hp-hero-title">Cove</h1>
+            <p className="hp-hero-tagline">A Sanctuary for Survivors</p>
             <p className="hp-hero-sub">
               We provide a safe haven where individuals can rebuild their lives
               and transform trauma into leadership — seen, heard, and loved like family.
