@@ -1,59 +1,61 @@
-import { createContext, useState, useEffect, type ReactNode } from 'react'
-import { authService, type AuthUser } from '../services/authService'
-
-export type { AuthUser }
+import { createContext, useEffect, useState, useCallback } from 'react'
+import type { ReactNode } from 'react'
+import { authService } from '../services/authService'
+import type { AuthUser } from '../services/authService'
 
 export interface AuthContextType {
   user: AuthUser | null
   token: string | null
+  // isLoading is ONLY true during the initial mount session-restore.
+  // The login form manages its own submitting state independently.
+  isLoading: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => void
-  isLoading: boolean
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext<AuthContextType | null>(null)
-
-const TOKEN_KEY = 'cove_token'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [token, setToken] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(
-    () => !!localStorage.getItem(TOKEN_KEY)
-  )
+  const [isLoading, setIsLoading] = useState(true)
 
+  // On mount: restore session from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem(TOKEN_KEY)
-    if (!stored) return
-
+    const stored = localStorage.getItem('cove_token')
+    if (!stored) {
+      setIsLoading(false)
+      return
+    }
     authService
       .getMe(stored)
-      .then((authUser) => {
+      .then((u) => {
         setToken(stored)
-        setUser(authUser)
+        setUser(u)
       })
       .catch(() => {
-        localStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem('cove_token')
       })
       .finally(() => setIsLoading(false))
+  }, []) // runs once on mount only — no dependencies that could re-trigger
+
+  const login = useCallback(async (username: string, password: string) => {
+    const { token: t, user: u } = await authService.login(username, password)
+    localStorage.setItem('cove_token', t)
+    setToken(t)
+    setUser(u)
+    // Resolves on success, throws on failure.
+    // The calling component (LoginPage) handles redirect after this resolves.
   }, [])
 
-  const login = async (username: string, password: string) => {
-    const result = await authService.login(username, password)
-    localStorage.setItem(TOKEN_KEY, result.token)
-    setToken(result.token)
-    setUser(result.user)
-  }
-
-  const logout = () => {
-    localStorage.removeItem(TOKEN_KEY)
+  const logout = useCallback(() => {
+    localStorage.removeItem('cove_token')
     setToken(null)
     setUser(null)
-  }
+  }, [])
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
