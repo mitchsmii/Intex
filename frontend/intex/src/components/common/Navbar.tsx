@@ -8,7 +8,6 @@ function Navbar() {
       <div className="navbar-inner">
         <Link to="/" className="navbar-logo">
           <img src={logoImg} alt="Cove" className="navbar-logo-img" />
-          Cove
         </Link>
         <div className="navbar-links">
           <Link to="/donate" className="navbar-donate">Donate</Link>
