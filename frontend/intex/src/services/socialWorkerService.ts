@@ -9,20 +9,29 @@ import type { IncidentReport } from "../types/IncidentReport";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5280";
 
+function authHeaders(): HeadersInit {
+  const token = localStorage.getItem("cove_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function authedFetch(path: string): Promise<Response> {
+  return fetch(`${API_URL}${path}`, { headers: authHeaders() });
+}
+
 export async function fetchResidents(): Promise<Resident[]> {
-  const res = await fetch(`${API_URL}/api/residents`);
+  const res = await authedFetch("/api/residents");
   if (!res.ok) throw new Error(`Failed to fetch residents: ${res.status}`);
   return res.json();
 }
 
 export async function fetchResident(id: number): Promise<Resident> {
-  const res = await fetch(`${API_URL}/api/residents/${id}`);
+  const res = await authedFetch(`/api/residents/${id}`);
   if (!res.ok) throw new Error(`Failed to fetch resident: ${res.status}`);
   return res.json();
 }
 
 export async function fetchSafehouses(): Promise<Safehouse[]> {
-  const res = await fetch(`${API_URL}/api/safehouses`);
+  const res = await authedFetch("/api/safehouses");
   if (!res.ok) throw new Error(`Failed to fetch safehouses: ${res.status}`);
   return res.json();
 }
@@ -34,7 +43,7 @@ export async function fetchProcessRecordings(params?: {
   const qs = new URLSearchParams();
   if (params?.residentId) qs.set("residentId", String(params.residentId));
   if (params?.limit) qs.set("limit", String(params.limit));
-  const res = await fetch(`${API_URL}/api/processrecordings?${qs}`);
+  const res = await authedFetch(`/api/processrecordings?${qs}`);
   if (!res.ok) throw new Error(`Failed to fetch process recordings: ${res.status}`);
   return res.json();
 }
@@ -46,7 +55,7 @@ export async function fetchHomeVisitations(params?: {
   const qs = new URLSearchParams();
   if (params?.residentId) qs.set("residentId", String(params.residentId));
   if (params?.limit) qs.set("limit", String(params.limit));
-  const res = await fetch(`${API_URL}/api/homevisitations?${qs}`);
+  const res = await authedFetch(`/api/homevisitations?${qs}`);
   if (!res.ok) throw new Error(`Failed to fetch home visitations: ${res.status}`);
   return res.json();
 }
@@ -58,7 +67,7 @@ export async function fetchInterventionPlans(params?: {
   const qs = new URLSearchParams();
   if (params?.residentId) qs.set("residentId", String(params.residentId));
   if (params?.status) qs.set("status", params.status);
-  const res = await fetch(`${API_URL}/api/interventionplans?${qs}`);
+  const res = await authedFetch(`/api/interventionplans?${qs}`);
   if (!res.ok) throw new Error(`Failed to fetch intervention plans: ${res.status}`);
   return res.json();
 }
@@ -70,7 +79,7 @@ export async function fetchIncidentReports(params?: {
   const qs = new URLSearchParams();
   if (params?.residentId) qs.set("residentId", String(params.residentId));
   if (params?.unresolvedOnly) qs.set("unresolvedOnly", "true");
-  const res = await fetch(`${API_URL}/api/incidentreports?${qs}`);
+  const res = await authedFetch(`/api/incidentreports?${qs}`);
   if (!res.ok) throw new Error(`Failed to fetch incident reports: ${res.status}`);
   return res.json();
 }

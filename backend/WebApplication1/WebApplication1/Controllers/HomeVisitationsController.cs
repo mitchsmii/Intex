@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -5,6 +6,7 @@ using WebApplication1.Data;
 namespace WebApplication1.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class HomeVisitationsController : ControllerBase
 {
@@ -21,6 +23,15 @@ public class HomeVisitationsController : ControllerBase
         [FromQuery] int? limit)
     {
         var query = _context.HomeVisitations.AsQueryable();
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return Forbid();
+            var allowedIds = _context.Residents
+                .Where(r => r.AssignedSocialWorker == username)
+                .Select(r => (int?)r.ResidentId);
+            query = query.Where(h => h.ResidentId != null && allowedIds.Contains(h.ResidentId));
+        }
         if (residentId.HasValue) query = query.Where(h => h.ResidentId == residentId);
         query = query.OrderByDescending(h => h.VisitDate);
         if (limit.HasValue) query = query.Take(limit.Value);

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -5,6 +6,7 @@ using WebApplication1.Data;
 namespace WebApplication1.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class ResidentsController : ControllerBase
 {
@@ -18,7 +20,17 @@ public class ResidentsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Resident>>> GetResidents()
     {
-        return await _context.Residents.ToListAsync();
+        var query = _context.Residents.AsQueryable();
+
+        // Admins see everything; social workers see only residents assigned to them.
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return Forbid();
+            query = query.Where(r => r.AssignedSocialWorker == username);
+        }
+
+        return await query.ToListAsync();
     }
 
     [HttpGet("{id}")]
@@ -26,6 +38,13 @@ public class ResidentsController : ControllerBase
     {
         var resident = await _context.Residents.FindAsync(id);
         if (resident == null) return NotFound();
+
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (resident.AssignedSocialWorker != username) return Forbid();
+        }
+
         return resident;
     }
 }
