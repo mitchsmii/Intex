@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { api } from '../../services/apiService'
+import { useAuth } from '../../hooks/useAuth'
 import './DonateNowPage.css'
 
 // Goal is stored in USD; all display converts from USD
@@ -53,6 +54,8 @@ function fmt(amount: number, currency: Currency, forceDecimals?: number) {
 type Frequency = 'one-time' | 'monthly'
 
 export default function DonateNowPage() {
+  const { user } = useAuth()
+  const location = useLocation()
   const [totalRaisedUSD, setTotalRaisedUSD] = useState(0)
   const percent = Math.min(100, Math.round((totalRaisedUSD / GOAL_USD) * 100))
 
@@ -73,6 +76,11 @@ export default function DonateNowPage() {
   const [submitted, setSubmitted]       = useState(false)
   const [submitting, setSubmitting]     = useState(false)
   const [submitError, setSubmitError]   = useState('')
+
+  // Pre-fill email when logged in
+  useEffect(() => {
+    if (user?.email && !email) setEmail(user.email)
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch real total raised on mount
   useEffect(() => {
@@ -313,6 +321,40 @@ export default function DonateNowPage() {
                 />
                 <label htmlFor="anonymous">Make my donation anonymous.</label>
               </div>
+
+              {/* Account prompt — only when not anonymous */}
+              {!anonymous && !submitted && (
+                user ? (
+                  <div className="account-linked-banner">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    Signed in as <strong>{user.email}</strong> — this donation will appear in your history.
+                  </div>
+                ) : (
+                  <div className="account-prompt-banner">
+                    <div className="account-prompt-text">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                      </svg>
+                      <span>Sign in or create an account to track your donation history.</span>
+                    </div>
+                    <div className="account-prompt-actions">
+                      <Link
+                        to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
+                        className="account-prompt-signin"
+                      >
+                        Sign In
+                      </Link>
+                      <Link to="/login?tab=register" className="account-prompt-register">
+                        Create Account
+                      </Link>
+                    </div>
+                  </div>
+                )
+              )}
             </div>
 
             {/* Frequency toggle */}

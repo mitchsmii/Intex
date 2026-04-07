@@ -465,3 +465,83 @@ label {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ── Account prompt / linked banners ── */
+.account-linked-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--cove-seafoam);
+  border: 1px solid var(--cove-seaglass);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--cove-deep);
+}
+
+.account-linked-banner svg {
+  flex-shrink: 0;
+  color: var(--cove-tidal);
+}
+
+.account-prompt-banner {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8f4ee;
+  border: 1px solid var(--cove-sand);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+}
+
+.account-prompt-text {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+}
+
+.account-prompt-text svg {
+  flex-shrink: 0;
+  color: var(--cove-tidal);
+}
+
+.account-prompt-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.account-prompt-signin {
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  background: var(--cove-tidal);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.account-prompt-signin:hover {
+  background: var(--cove-deep);
+}
+
+.account-prompt-register {
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: 1.5px solid var(--cove-tidal);
+  color: var(--cove-tidal);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.account-prompt-register:hover {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+}

@@ -15,6 +15,7 @@ import AnalyticsPage from './pages/socialworker/AnalyticsPage'
 import ProcessRecordingsPage from './pages/socialworker/ProcessRecordingsPage'
 import VisitsConferencesPage from './pages/socialworker/VisitsConferencesPage'
 import InterventionPlansPage from './pages/socialworker/InterventionPlansPage'
+import CaseConferencesPage from './pages/socialworker/CaseConferencesPage'
 import DonorHomePage from './pages/donor/DonorHomePage'
 import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
@@ -23,6 +24,7 @@ import ImpactPage from './pages/public/ImpactPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import SafehouseLocationsPage from './pages/admin/SafehouseLocationsPage'
 import ReportsPage from './pages/admin/ReportsPage'
+import SocialMediaPage from './pages/admin/SocialMediaPage'
 import SocialWorkersPage from './pages/admin/users/SocialWorkersPage'
 import PartnersPage from './pages/admin/users/PartnersPage'
 import ResidentsManagePage from './pages/admin/users/ResidentsManagePage'
@@ -53,6 +55,7 @@ function App() {
               <Route path="process-recordings" element={<ProcessRecordingsPage />} />
               <Route path="visits-conferences" element={<VisitsConferencesPage />} />
               <Route path="intervention-plans" element={<InterventionPlansPage />} />
+              <Route path="case-conferences" element={<CaseConferencesPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
           </Route>
@@ -73,6 +76,14 @@ function App() {
               <Route path="donation-report" element={<DonationReportPage />} />
               <Route path="safehouse-locations" element={<SafehouseLocationsPage />} />
               <Route path="reports" element={<ReportsPage />} />
+              <Route path="social-media" element={<SocialMediaPage />} />
+              <Route path="sw" element={<SocialWorkerHomePage />} />
+              <Route path="sw/residents" element={<ResidentsPage />} />
+              <Route path="sw/residents/:id" element={<ResidentDetailPage />} />
+              <Route path="sw/process-recordings" element={<ProcessRecordingsPage />} />
+              <Route path="sw/visits-conferences" element={<VisitsConferencesPage />} />
+              <Route path="sw/intervention-plans" element={<InterventionPlansPage />} />
+              <Route path="sw/analytics" element={<AnalyticsPage />} />
               <Route path="users/social-workers" element={<SocialWorkersPage />} />
               <Route path="users/partners" element={<PartnersPage />} />
               <Route path="users/residents" element={<ResidentsManagePage />} />

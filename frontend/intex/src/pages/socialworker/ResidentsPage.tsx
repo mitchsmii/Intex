@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { fetchResidents, fetchSafehouses } from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import type { Resident } from '../../types/Resident'
@@ -8,6 +8,8 @@ import './ResidentsPage.css'
 
 function ResidentsPage() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const base = pathname.startsWith('/admin') ? '/admin/sw' : '/socialworker/dashboard'
   const [residents, setResidents] = useState<Resident[]>([])
   const [safehouses, setSafehouses] = useState<Safehouse[]>([])
   const [loading, setLoading] = useState(true)
@@ -92,7 +94,7 @@ function ResidentsPage() {
 
       <div className="residents-grid">
         {filtered.map((r) => (
-          <div key={r.residentId} className="resident-card" onClick={() => navigate(`/socialworker/dashboard/residents/${r.residentId}`)}>
+          <div key={r.residentId} className="resident-card" onClick={() => navigate(`${base}/residents/${r.residentId}`)}>
             <div className="resident-card-header">
               <div className="resident-avatar">
                 {r.internalCode?.substring(0, 2) || '??'}
