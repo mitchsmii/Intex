@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import {
   fetchResidents,
@@ -50,6 +51,8 @@ function formatDate(iso: string | null): string {
 
 function ProcessRecordingsPage() {
   const { user } = useAuth()
+  const location = useLocation()
+  const preSelectedResidentId = (location.state as { preSelectedResidentId?: number } | null)?.preSelectedResidentId
   const [residents, setResidents] = useState<Resident[]>([])
   const [recordings, setRecordings] = useState<ProcessRecording[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -70,11 +73,15 @@ function ProcessRecordingsPage() {
     fetchResidents()
       .then((rs) => {
         setResidents(rs)
-        if (rs.length > 0) setSelectedId(rs[0].residentId)
+        if (rs.length === 0) return
+        const preselect = preSelectedResidentId && rs.some((r) => r.residentId === preSelectedResidentId)
+          ? preSelectedResidentId
+          : rs[0].residentId
+        setSelectedId(preselect)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
-  }, [])
+  }, [preSelectedResidentId])
 
   // Load recordings whenever the selected resident changes
   useEffect(() => {

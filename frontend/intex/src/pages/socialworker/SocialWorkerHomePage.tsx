@@ -14,7 +14,7 @@ import StatStrip from '../../components/socialworker/dashboard/StatStrip'
 import UpcomingSchedule from '../../components/socialworker/dashboard/UpcomingSchedule'
 import ReadinessPipeline from '../../components/socialworker/dashboard/ReadinessPipeline'
 import ActionItems from '../../components/socialworker/dashboard/ActionItems'
-import CriticalAlerts from '../../components/socialworker/dashboard/CriticalAlerts'
+import CriticalAlerts, { type Alert } from '../../components/socialworker/dashboard/CriticalAlerts'
 import ResidentCard from '../../components/socialworker/dashboard/ResidentCard'
 import type { Resident } from '../../types/Resident'
 import type { ScheduleEvent } from '../../types/ScheduleEvent'
@@ -98,7 +98,11 @@ function SocialWorkerHomePage() {
         incidents={incidents}
         visitations={visitations}
         recordings={recordings}
-        onResidentClick={goToResidentById}
+        onAlertClick={(alert: Alert) =>
+          navigate(`/socialworker/dashboard/residents/${alert.residentId}`, {
+            state: { alert },
+          })
+        }
       />
 
       <ReadinessPipeline

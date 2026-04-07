@@ -46,6 +46,56 @@ public class InterventionPlansController : ControllerBase
         return Ok(plan);
     }
 
+    [HttpPost]
+    public async Task<ActionResult<InterventionPlan>> CreatePlan(InterventionPlan plan)
+    {
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return Forbid();
+            var allowed = await _context.Residents
+                .AnyAsync(r => r.ResidentId == plan.ResidentId && r.AssignedSocialWorker == username);
+            if (!allowed) return Forbid();
+        }
+        plan.CreatedAt = DateTime.UtcNow;
+        plan.UpdatedAt = DateTime.UtcNow;
+        _context.InterventionPlans.Add(plan);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetById), new { id = plan.PlanId }, plan);
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdatePlan(int id, InterventionPlan plan)
+    {
+        if (id != plan.PlanId) return BadRequest();
+
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return Forbid();
+            var existing = await _context.InterventionPlans.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PlanId == id);
+            if (existing == null) return NotFound();
+            var allowed = await _context.Residents
+                .AnyAsync(r => r.ResidentId == existing.ResidentId && r.AssignedSocialWorker == username);
+            if (!allowed) return Forbid();
+        }
+
+        plan.UpdatedAt = DateTime.UtcNow;
+        _context.Entry(plan).State = EntityState.Modified;
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!await _context.InterventionPlans.AnyAsync(p => p.PlanId == id))
+                return NotFound();
+            throw;
+        }
+        return NoContent();
+    }
+
     [HttpGet("upcoming")]
     public async Task<IActionResult> Upcoming([FromQuery] int days = 14)
     {
