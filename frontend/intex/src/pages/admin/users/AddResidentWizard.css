@@ -400,3 +400,42 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+/* SW email notification field */
+.wizard-sw-email {
+  margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.wizard-sw-email-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.wizard-sw-email-optional {
+  font-weight: 400;
+  text-transform: none;
+  color: var(--text-tertiary);
+}
+
+.wizard-sw-email-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1.5px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--bg-card);
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.wizard-sw-email-input:focus {
+  outline: none;
+  border-color: var(--cove-tidal);
+}

@@ -52,10 +52,10 @@ export default function ImpactPage() {
   useEffect(() => {
     Promise.allSettled([
       api.getSafehouses().then(setSafehouses),
-      api.getResidents().then(r => {
-        setActiveResidents(r.filter(x => !x.dateClosed).length)
-        setReintegrated(r.filter(x => x.reintegrationStatus === 'Reintegrated' || x.reintegrationStatus === 'Completed').length)
-        setTotalServed(r.length)
+      api.getResidentPublicCounts().then(counts => {
+        setActiveResidents(counts.activeResidents)
+        setReintegrated(counts.reintegrated)
+        setTotalServed(counts.totalServed)
       }),
       api.getLatestMetrics().then(setMetrics),
       api.getDonationsTotal().then(({ total }) => setTotalRaised(Number(total))),

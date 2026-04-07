@@ -174,6 +174,15 @@ export interface InterventionPlan {
   updatedAt: string | null
 }
 
+export interface SwNotification {
+  notificationId: number
+  recipientEmail: string
+  message: string
+  relatedResidentCode: string | null
+  isRead: boolean
+  createdAt: string
+}
+
 export interface MonthlyDonationSummary {
   year: number
   month: number
@@ -227,7 +236,7 @@ async function authPatch(path: string): Promise<void> {
 
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
-  getResidents:               () => get<Resident[]>('/api/residents'),
+  getResidents:               () => authGet<Resident[]>('/api/residents'),
   getSupporters:              () => get<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
@@ -246,13 +255,15 @@ export const api = {
     post<DonationRaw>('/api/donations', body),
   getAllocationSummary:       () => get<AllocationSummary>('/api/donationallocations/summary'),
   getLatestMetrics:           () => get<SafehouseMonthlyMetric[]>('/api/safehousemonthlymetrics/latest'),
-  getIncidentReports:         () => get<IncidentReport[]>('/api/incidentreports'),
-  getUpcomingPlans:           () => get<UpcomingPlan[]>('/api/interventionplans/upcoming'),
+  getIncidentReports:         () => authGet<IncidentReport[]>('/api/incidentreports'),
+  getUpcomingPlans:           () => authGet<UpcomingPlan[]>('/api/interventionplans/upcoming'),
+  getResidentPublicCounts:    () => get<{ totalServed: number; activeResidents: number; reintegrated: number }>('/api/residents/public-counts'),
   getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
   getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
   getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
   createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string }) =>
     authPost<Resident>('/api/residents', body),
   getUnreadNotificationCount: () => authGet<number>('/api/notifications/unread-count'),
+  getNotifications:           () => authGet<SwNotification[]>('/api/notifications'),
   markAllNotificationsRead:   () => authPatch('/api/notifications/mark-all-read'),
 }

@@ -32,6 +32,16 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     {
         base.OnModelCreating(modelBuilder);
 
+        // residents.resident_id uses a PostgreSQL sequence — don't send a value in INSERT
+        modelBuilder.Entity<Resident>()
+            .Property(r => r.ResidentId)
+            .ValueGeneratedOnAdd();
+
+        // sw_notifications.notification_id uses SERIAL
+        modelBuilder.Entity<Notification>()
+            .Property(n => n.NotificationId)
+            .ValueGeneratedOnAdd();
+
         modelBuilder.Entity<ProcessRecording>()
             .HasIndex(p => p.SocialWorkerId)
             .HasDatabaseName("IX_process_recordings_social_worker_id");

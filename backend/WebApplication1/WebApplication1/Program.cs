@@ -133,6 +133,13 @@ using (var scope = app.Services.CreateScope())
             created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         );
         CREATE INDEX IF NOT EXISTS ix_sw_notifications_recipient ON sw_notifications (recipient_email) WHERE is_read = FALSE;
+
+        -- Sync residents sequence so new INSERTs don't collide with existing rows
+        SELECT setval(
+            pg_get_serial_sequence('residents', 'resident_id'),
+            COALESCE((SELECT MAX(resident_id) FROM residents), 0),
+            true
+        );
         """;
     await cmd.ExecuteNonQueryAsync();
 

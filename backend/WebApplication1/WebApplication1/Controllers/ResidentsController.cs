@@ -49,6 +49,23 @@ public class ResidentsController : ControllerBase
         return resident;
     }
 
+    [HttpGet("public-counts")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicCounts()
+    {
+        var residents = await _context.Residents
+            .Select(r => new { r.DateClosed, r.ReintegrationStatus })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            totalServed = residents.Count,
+            activeResidents = residents.Count(r => r.DateClosed == null),
+            reintegrated = residents.Count(r =>
+                r.ReintegrationStatus == "Reintegrated" || r.ReintegrationStatus == "Completed")
+        });
+    }
+
     [HttpGet("next-code")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> GetNextCode()
