@@ -319,59 +319,122 @@
   border-color: var(--cove-tidal);
 }
 
-/* ---------- Plans list ---------- */
-.ip-plans {
+/* ---------- Plans list (compact table) ---------- */
+.ip-list {
+  background: var(--bg-card, white);
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.ip-list-head,
+.ip-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 180px 140px 130px;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.ip-list-head {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-light, #e5e7eb);
+}
+
+.ip-rows {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
 }
 
-.ip-plan {
-  background: white;
-  border: 1px solid var(--border-light, #e5e7eb);
+.ip-row-wrap {
   border-left: 3px solid var(--cove-tidal);
-  border-radius: var(--radius-md);
-  padding: var(--space-md) var(--space-lg);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
 }
 
-.ip-plan--overdue { border-left-color: var(--color-error); }
+.ip-row-wrap + .ip-row-wrap {
+  border-top: 1px solid var(--border-light, #e5e7eb);
+}
 
-.ip-plan-top {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  flex-wrap: wrap;
+.ip-row-wrap:hover { background: var(--cove-seafoam); }
+
+.ip-row-wrap--overdue {
+  border-left-color: var(--color-error);
+  background: #fef2f2;
+}
+
+.ip-row-wrap--overdue:hover { background: #fee2e2; }
+
+.ip-row {
+  font-size: 0.85rem;
+  color: var(--cove-deep);
 }
 
 .ip-plan-cat {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   padding: 2px var(--space-sm);
   border-radius: var(--radius-full);
   background: var(--cove-seaglass);
   color: var(--cove-deep);
+  display: inline-block;
 }
 
-.ip-plan-target {
+.ip-row-desc {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.ip-row-services {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ip-row-muted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.ip-row-target {
   font-size: 0.8rem;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.ip-plan-target--overdue {
+.ip-row-target--overdue {
   color: var(--color-error);
   font-weight: 700;
 }
 
+.ip-row-overdue-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  background: #fee2e2;
+  color: var(--color-error);
+}
+
+.ip-row-status {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .ip-plan-status {
-  margin-left: auto;
   font: inherit;
   font-size: 0.8rem;
   padding: 4px var(--space-sm);
@@ -381,20 +444,40 @@
   cursor: pointer;
 }
 
-.ip-plan-desc {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--cove-deep);
-  white-space: pre-wrap;
-}
-
-.ip-plan-services {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.ip-plan-conf {
-  font-size: 0.75rem;
+.ip-row-conf-line {
+  grid-column: 1 / -1;
+  padding: 0 var(--space-md) var(--space-xs);
+  font-size: 0.7rem;
   color: var(--text-muted);
   font-style: italic;
+}
+
+@media (max-width: 1100px) {
+  .ip-list-head,
+  .ip-row {
+    grid-template-columns: 120px 1fr 140px 120px;
+  }
+  .ip-list-head > div:nth-child(3),
+  .ip-row-services {
+    display: none;
+  }
+  .ip-list-head > div:nth-child(4) { display: block; }
+}
+
+@media (max-width: 800px) {
+  .ip-list-head {
+    display: none;
+  }
+  .ip-row {
+    grid-template-columns: 1fr auto;
+    gap: var(--space-xs) var(--space-sm);
+  }
+  .ip-row-services,
+  .ip-row-target {
+    display: none;
+  }
+  .ip-row-desc {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
 }

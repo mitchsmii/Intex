@@ -9,12 +9,6 @@ import type { Resident } from '../../types/Resident'
 import type { InterventionPlan } from '../../types/InterventionPlan'
 import './CaseConferencesPage.css'
 
-type Conference = {
-  plan: InterventionPlan
-  resident: Resident
-  date: Date
-}
-
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString(undefined, {
@@ -37,54 +31,58 @@ function CaseConferencesPage() {
   const navigate = useNavigate()
   const [residents, setResidents] = useState<Resident[]>([])
   const [plans, setPlans] = useState<InterventionPlan[]>([])
+  const [selectedId, setSelectedId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+  const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    setLoading(true)
     fetchResidents()
-      .then(async (rs) => {
+      .then((rs) => {
         setResidents(rs)
-        // Fetch plans per resident in parallel — /api/interventionplans without filter
-        // returns only current SW's plans, but we need one query for the SW-wide view
-        const all = await fetchInterventionPlans()
-        setPlans(all)
+        if (rs.length > 0) setSelectedId(rs[0].residentId)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
 
-  const residentMap = useMemo(() => {
-    const m = new Map<number, Resident>()
-    residents.forEach((r) => m.set(r.residentId, r))
-    return m
-  }, [residents])
+  useEffect(() => {
+    if (selectedId == null) {
+      setPlans([])
+      return
+    }
+    setDetailLoading(true)
+    fetchInterventionPlans({ residentId: selectedId })
+      .then(setPlans)
+      .catch((err) => setError(err.message))
+      .finally(() => setDetailLoading(false))
+  }, [selectedId])
 
-  const conferences: Conference[] = useMemo(() => {
-    return plans
-      .filter((p) => p.caseConferenceDate && p.residentId != null)
-      .map((p) => {
-        const resident = residentMap.get(p.residentId!)
-        return resident ? { plan: p, resident, date: new Date(p.caseConferenceDate!) } : null
-      })
-      .filter((c): c is Conference => c !== null)
-  }, [plans, residentMap])
+  const selectedResident = useMemo(
+    () => residents.find((r) => r.residentId === selectedId) ?? null,
+    [residents, selectedId],
+  )
+
+  const conferences = useMemo(
+    () => plans.filter((p) => p.caseConferenceDate),
+    [plans],
+  )
 
   const todayMs = new Date().setHours(0, 0, 0, 0)
 
   const upcoming = useMemo(
     () =>
       conferences
-        .filter((c) => c.date.getTime() >= todayMs)
-        .sort((a, b) => a.date.getTime() - b.date.getTime()),
+        .filter((p) => new Date(p.caseConferenceDate!).getTime() >= todayMs)
+        .sort((a, b) => new Date(a.caseConferenceDate!).getTime() - new Date(b.caseConferenceDate!).getTime()),
     [conferences, todayMs],
   )
 
   const past = useMemo(
     () =>
       conferences
-        .filter((c) => c.date.getTime() < todayMs)
-        .sort((a, b) => b.date.getTime() - a.date.getTime()),
+        .filter((p) => new Date(p.caseConferenceDate!).getTime() < todayMs)
+        .sort((a, b) => new Date(b.caseConferenceDate!).getTime() - new Date(a.caseConferenceDate!).getTime()),
     [conferences, todayMs],
   )
 
@@ -100,92 +98,153 @@ function CaseConferencesPage() {
             Multidisciplinary reviews that create or revise intervention plans.
           </p>
         </div>
-        <button
-          type="button"
-          className="cc-schedule-btn"
-          onClick={() => navigate('/socialworker/dashboard/intervention-plans')}
-        >
-          + Schedule Conference
-        </button>
       </header>
 
-      <section className="cc-section">
-        <div className="cc-section-header">
-          <h2>Upcoming</h2>
-          <span className="cc-count">{upcoming.length}</span>
-        </div>
-        {upcoming.length === 0 ? (
-          <p className="cc-empty">No upcoming conferences. Schedule one from the Intervention Plans page.</p>
-        ) : (
-          <ul className="cc-list">
-            {upcoming.map(({ plan, resident, date }) => {
-              const days = daysFromToday(date)
-              return (
-                <li key={`up-${plan.planId}`} className="cc-card cc-card--upcoming">
-                  <div className="cc-card-date">
-                    <div className="cc-card-date-main">{formatDate(plan.caseConferenceDate)}</div>
-                    <div className="cc-card-date-rel">
-                      {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`}
-                    </div>
-                  </div>
-                  <div className="cc-card-body">
+      <div className="cc-layout">
+        {/* Left rail: residents */}
+        <aside className="cc-rail">
+          <div className="cc-rail-header">My Residents</div>
+          {residents.length === 0 ? (
+            <p className="cc-empty">No residents assigned yet.</p>
+          ) : (
+            <ul className="cc-rail-list">
+              {residents.map((r) => {
+                const active = r.residentId === selectedId
+                return (
+                  <li key={r.residentId}>
                     <button
                       type="button"
-                      className="cc-card-resident"
-                      onClick={() =>
-                        navigate(`/socialworker/dashboard/residents/${resident.residentId}`)
-                      }
+                      className={`cc-rail-item${active ? ' cc-rail-item--active' : ''}`}
+                      onClick={() => setSelectedId(r.residentId)}
                     >
-                      {resident.internalCode ?? `#${resident.residentId}`} · Age {resident.presentAge ?? '—'}
+                      <span className="cc-rail-code">{r.internalCode ?? `#${r.residentId}`}</span>
+                      <span className="cc-rail-meta">Age {r.presentAge ?? '—'}</span>
                     </button>
-                    <div className="cc-card-cat">{plan.planCategory ?? 'Case Conference'}</div>
-                    {plan.planDescription && <p className="cc-card-desc">{plan.planDescription}</p>}
-                    {plan.status && (
-                      <span className="cc-card-status">{plan.status}</span>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </section>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </aside>
 
-      <section className="cc-section">
-        <div className="cc-section-header">
-          <h2>Past</h2>
-          <span className="cc-count">{past.length}</span>
-        </div>
-        {past.length === 0 ? (
-          <p className="cc-empty">No past conferences on record.</p>
-        ) : (
-          <ul className="cc-list">
-            {past.map(({ plan, resident }) => (
-              <li key={`past-${plan.planId}`} className="cc-card">
-                <div className="cc-card-date">
-                  <div className="cc-card-date-main">{formatDate(plan.caseConferenceDate)}</div>
+        {/* Right pane */}
+        <section className="cc-main">
+          {selectedResident ? (
+            <>
+              <div className="cc-main-header">
+                <div>
+                  <h2>{selectedResident.internalCode ?? `#${selectedResident.residentId}`}</h2>
+                  <div className="cc-main-meta">
+                    Age {selectedResident.presentAge ?? '—'} ·{' '}
+                    <span className={`cc-risk cc-risk--${(selectedResident.currentRiskLevel ?? 'unknown').toLowerCase()}`}>
+                      {selectedResident.currentRiskLevel ?? 'Unknown'} risk
+                    </span>{' '}
+                    · {conferences.length} {conferences.length === 1 ? 'conference' : 'conferences'}
+                  </div>
                 </div>
-                <div className="cc-card-body">
-                  <button
-                    type="button"
-                    className="cc-card-resident"
-                    onClick={() =>
-                      navigate(`/socialworker/dashboard/residents/${resident.residentId}`)
-                    }
-                  >
-                    {resident.internalCode ?? `#${resident.residentId}`} · Age {resident.presentAge ?? '—'}
-                  </button>
-                  <div className="cc-card-cat">{plan.planCategory ?? 'Case Conference'}</div>
-                  {plan.planDescription && <p className="cc-card-desc">{plan.planDescription}</p>}
-                  {plan.status && (
-                    <span className="cc-card-status">{plan.status}</span>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+                <button
+                  type="button"
+                  className="cc-schedule-btn"
+                  onClick={() => navigate('/socialworker/dashboard/intervention-plans')}
+                >
+                  + Schedule Conference
+                </button>
+              </div>
+
+              {detailLoading ? (
+                <LoadingSpinner size="md" />
+              ) : conferences.length === 0 ? (
+                <p className="cc-empty">
+                  No case conferences yet for {selectedResident.internalCode ?? 'this resident'}. Schedule one from the Intervention Plans page.
+                </p>
+              ) : (
+                <>
+                  {/* Upcoming */}
+                  <section className="cc-section">
+                    <div className="cc-section-header">
+                      <h3>Upcoming</h3>
+                      <span className="cc-count">{upcoming.length}</span>
+                    </div>
+                    {upcoming.length === 0 ? (
+                      <p className="cc-empty-sm">None scheduled.</p>
+                    ) : (
+                      <div className="cc-list">
+                        <div className="cc-list-head">
+                          <div>Date</div>
+                          <div>When</div>
+                          <div>Category</div>
+                          <div>Description</div>
+                          <div>Status</div>
+                        </div>
+                        <ul className="cc-rows">
+                          {upcoming.map((p) => {
+                            const days = daysFromToday(new Date(p.caseConferenceDate!))
+                            return (
+                              <li key={`up-${p.planId}`} className="cc-row-wrap cc-row-wrap--upcoming">
+                                <div className="cc-row">
+                                  <div className="cc-row-date">{formatDate(p.caseConferenceDate)}</div>
+                                  <div className="cc-row-when">
+                                    {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`}
+                                  </div>
+                                  <div className="cc-row-cat">{p.planCategory ?? 'Conference'}</div>
+                                  <div className="cc-row-desc">
+                                    {p.planDescription ?? <span className="cc-row-muted">No description</span>}
+                                  </div>
+                                  <div className="cc-row-status">
+                                    {p.status && <span className="cc-status-pill">{p.status}</span>}
+                                  </div>
+                                </div>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* Past */}
+                  <section className="cc-section">
+                    <div className="cc-section-header">
+                      <h3>Past</h3>
+                      <span className="cc-count">{past.length}</span>
+                    </div>
+                    {past.length === 0 ? (
+                      <p className="cc-empty-sm">No past conferences on record.</p>
+                    ) : (
+                      <div className="cc-list">
+                        <div className="cc-list-head cc-list-head--past">
+                          <div>Date</div>
+                          <div>Category</div>
+                          <div>Description</div>
+                          <div>Status</div>
+                        </div>
+                        <ul className="cc-rows">
+                          {past.map((p) => (
+                            <li key={`past-${p.planId}`} className="cc-row-wrap">
+                              <div className="cc-row cc-row--past">
+                                <div className="cc-row-date">{formatDate(p.caseConferenceDate)}</div>
+                                <div className="cc-row-cat">{p.planCategory ?? 'Conference'}</div>
+                                <div className="cc-row-desc">
+                                  {p.planDescription ?? <span className="cc-row-muted">No description</span>}
+                                </div>
+                                <div className="cc-row-status">
+                                  {p.status && <span className="cc-status-pill">{p.status}</span>}
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </section>
+                </>
+              )}
+            </>
+          ) : (
+            <p className="cc-empty">Select a resident from the left to view their case conferences.</p>
+          )}
+        </section>
+      </div>
     </div>
   )
 }

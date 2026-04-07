@@ -53,7 +53,7 @@ function App() {
               <Route path="residents" element={<ResidentsPage />} />
               <Route path="residents/:id" element={<ResidentDetailPage />} />
               <Route path="process-recordings" element={<ProcessRecordingsPage />} />
-              <Route path="visits-conferences" element={<VisitsConferencesPage />} />
+              <Route path="home-visits" element={<VisitsConferencesPage />} />
               <Route path="intervention-plans" element={<InterventionPlansPage />} />
               <Route path="case-conferences" element={<CaseConferencesPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
@@ -81,7 +81,7 @@ function App() {
               <Route path="sw/residents" element={<ResidentsPage />} />
               <Route path="sw/residents/:id" element={<ResidentDetailPage />} />
               <Route path="sw/process-recordings" element={<ProcessRecordingsPage />} />
-              <Route path="sw/visits-conferences" element={<VisitsConferencesPage />} />
+              <Route path="sw/home-visits" element={<VisitsConferencesPage />} />
               <Route path="sw/intervention-plans" element={<InterventionPlansPage />} />
               <Route path="sw/analytics" element={<AnalyticsPage />} />
               <Route path="users/social-workers" element={<SocialWorkersPage />} />
