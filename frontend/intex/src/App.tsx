@@ -12,6 +12,8 @@ import SocialWorkerHomePage from './pages/socialworker/SocialWorkerHomePage'
 import ResidentsPage from './pages/socialworker/ResidentsPage'
 import ResidentDetailPage from './pages/socialworker/ResidentDetailPage'
 import AnalyticsPage from './pages/socialworker/AnalyticsPage'
+import ProcessRecordingsPage from './pages/socialworker/ProcessRecordingsPage'
+import VisitsConferencesPage from './pages/socialworker/VisitsConferencesPage'
 import DonorHomePage from './pages/donor/DonorHomePage'
 import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
@@ -47,6 +49,8 @@ function App() {
               <Route index element={<SocialWorkerHomePage />} />
               <Route path="residents" element={<ResidentsPage />} />
               <Route path="residents/:id" element={<ResidentDetailPage />} />
+              <Route path="process-recordings" element={<ProcessRecordingsPage />} />
+              <Route path="visits-conferences" element={<VisitsConferencesPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
           </Route>
