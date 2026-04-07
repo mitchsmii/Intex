@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
-import type { SafehouseMonthlyMetric, Safehouse, MonthlyDonationSummary } from '../../services/apiService'
+import type { SafehouseMonthlyMetric, Safehouse } from '../../services/apiService'
+import kidsJumping from '../../assets/kids-jumping.png'
+import kidsCircle  from '../../assets/kids-circle.png'
 import './ImpactPage.css'
 
 // ─── Animated counter ────────────────────────────────────────────────────────
@@ -33,53 +35,11 @@ function StatNumber({ value, suffix = '' }: { value: number; suffix?: string }) 
   return <span>{animated.toLocaleString()}{suffix}</span>
 }
 
-// ─── Inline SVG bar chart ─────────────────────────────────────────────────────
-
-const CW = 600, CH = 140
-const PAD = { top: 12, right: 12, bottom: 28, left: 48 }
-const iW = CW - PAD.left - PAD.right
-const iH = CH - PAD.top  - PAD.bottom
-
-function MiniChart({ data }: { data: MonthlyDonationSummary[] }) {
-  if (data.length < 2) return null
-  const pts = data.slice(-10)
-  const max = Math.max(...pts.map(p => p.total), 1)
-  const xp = (i: number) => PAD.left + (i / (pts.length - 1)) * iW
-  const yp = (v: number) => PAD.top + iH - (v / max) * iH
-  const poly = pts.map((p, i) => `${xp(i)},${yp(p.total)}`).join(' ')
-  const area = `M ${xp(0)} ${yp(pts[0].total)} ` +
-    pts.map((p, i) => `L ${xp(i)} ${yp(p.total)}`).join(' ') +
-    ` L ${xp(pts.length - 1)} ${PAD.top + iH} L ${PAD.left} ${PAD.top + iH} Z`
-  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-
-  return (
-    <svg viewBox={`0 0 ${CW} ${CH}`} className="ip-chart" aria-label="Monthly donation trend">
-      <defs>
-        <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="var(--cove-seaglass)" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="var(--cove-seaglass)" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#chartGrad)" />
-      <polyline points={poly} fill="none" stroke="var(--cove-seaglass)" strokeWidth="2.5" strokeLinejoin="round" />
-      {pts.map((p, i) => (
-        <g key={i}>
-          <circle cx={xp(i)} cy={yp(p.total)} r="4" fill="var(--cove-seaglass)" stroke="white" strokeWidth="1.5" />
-          <text x={xp(i)} y={CH - 4} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.6)">
-            {months[p.month - 1]}
-          </text>
-        </g>
-      ))}
-    </svg>
-  )
-}
-
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ImpactPage() {
   const [safehouses, setSafehouses] = useState<Safehouse[]>([])
   const [metrics,    setMetrics]    = useState<SafehouseMonthlyMetric[]>([])
-  const [monthly,    setMonthly]    = useState<MonthlyDonationSummary[]>([])
   const [totalRaised, setTotalRaised] = useState(0)
   const [activeResidents, setActiveResidents]  = useState(0)
   const [reintegrated,    setReintegrated]     = useState(0)
@@ -94,7 +54,6 @@ export default function ImpactPage() {
         setTotalServed(r.length)
       }),
       api.getLatestMetrics().then(setMetrics),
-      api.getDonationsMonthlySummary().then(setMonthly),
       api.getDonationsTotal().then(({ total }) => setTotalRaised(Number(total))),
     ])
   }, [])
@@ -303,9 +262,19 @@ export default function ImpactPage() {
             </div>
             <div className="ip-fund-meta">
               <span className="ip-fund-pct">{goalPct}% funded</span>
-              <span className="ip-fund-chart-label">Monthly donation trend</span>
+              <span className="ip-fund-quote">"Together, we go further."</span>
             </div>
-            <MiniChart data={monthly} />
+
+            <div className="ip-fund-photos">
+              <div className="ip-fund-photo-wrap ip-photo-wide">
+                <img src={kidsJumping} alt="Children jumping together in a field" className="ip-fund-photo" />
+                <div className="ip-photo-caption">Joy restored — children in our care</div>
+              </div>
+              <div className="ip-fund-photo-wrap ip-photo-narrow">
+                <img src={kidsCircle} alt="Children sitting together in a circle" className="ip-fund-photo" />
+                <div className="ip-photo-caption">Community &amp; belonging</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
