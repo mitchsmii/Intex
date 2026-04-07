@@ -13,24 +13,30 @@ public class SafehouseMonthlyMetric
     [Column("safehouse_id")]
     public int? SafehouseId { get; set; }
 
-    [Column("month")]
-    public int? Month { get; set; }
+    [Column("month_start")]
+    public DateOnly? MonthStart { get; set; }
 
-    [Column("year")]
-    public int? Year { get; set; }
+    [Column("month_end")]
+    public DateOnly? MonthEnd { get; set; }
 
-    [Column("total_expenses")]
-    public decimal? TotalExpenses { get; set; }
+    [Column("active_residents")]
+    public int? ActiveResidents { get; set; }
 
-    [Column("program_expenses")]
-    public decimal? ProgramExpenses { get; set; }
+    [Column("avg_education_progress")]
+    public decimal? AvgEducationProgress { get; set; }
 
-    [Column("admin_expenses")]
-    public decimal? AdminExpenses { get; set; }
+    [Column("avg_health_score")]
+    public decimal? AvgHealthScore { get; set; }
 
-    [Column("occupancy_rate")]
-    public decimal? OccupancyRate { get; set; }
+    [Column("process_recording_count")]
+    public int? ProcessRecordingCount { get; set; }
+
+    [Column("home_visitation_count")]
+    public int? HomeVisitationCount { get; set; }
 
     [Column("incident_count")]
     public int? IncidentCount { get; set; }
+
+    [Column("notes")]
+    public string? Notes { get; set; }
 }

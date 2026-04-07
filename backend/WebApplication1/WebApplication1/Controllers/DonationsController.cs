@@ -24,14 +24,15 @@ public class DonationsController : ControllerBase
                 d.DonationId,
                 d.SupporterId,
                 SupporterName = s == null ? "Anonymous"
-                    : (s.IsAnonymous == true ? "Anonymous"
-                        : (s.FirstName + " " + s.LastName).Trim()),
+                    : (s.DisplayName ?? (s.FirstName + " " + s.LastName).Trim()),
                 d.Amount,
+                d.EstimatedValue,
                 d.DonationDate,
                 d.IsRecurring,
-                d.Frequency,
-                d.Currency,
-                d.PaymentMethod,
+                d.DonationType,
+                d.ChannelSource,
+                d.CurrencyCode,
+                d.CampaignName,
                 d.Notes,
             }
         ).ToListAsync();
@@ -76,12 +77,12 @@ public class DonationsController : ControllerBase
             from d in _context.Donations
             join s in _context.Supporters on d.SupporterId equals s.SupporterId into sup
             from s in sup.DefaultIfEmpty()
-            group new { d, s } by new { d.SupporterId, s.FirstName, s.LastName, s.IsAnonymous, d.IsRecurring } into g
+            group new { d, s } by new { d.SupporterId, s.DisplayName, s.FirstName, s.LastName, d.IsRecurring } into g
             select new
             {
                 SupporterId = g.Key.SupporterId,
-                Name = g.Key.IsAnonymous == true ? "Anonymous"
-                    : (g.Key.FirstName + " " + g.Key.LastName).Trim(),
+                Name = g.Key.DisplayName
+                    ?? ((g.Key.FirstName + " " + g.Key.LastName).Trim()),
                 Total       = g.Sum(x => x.d.Amount ?? 0),
                 IsRecurring = g.Key.IsRecurring,
                 FirstDate   = g.Min(x => x.d.DonationDate),

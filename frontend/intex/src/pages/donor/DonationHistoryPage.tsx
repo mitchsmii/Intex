@@ -173,7 +173,7 @@ export default function DonationHistoryPage() {
   }
 
   const totalUSD  = donations.reduce((s, d) => s + (d.amount ?? 0), 0)
-  const currency  = donations[0]?.currency ?? 'PHP'
+  const currency  = donations[0]?.currencyCode ?? 'PHP'
   const tier      = donationTier(totalUSD)
   const streak    = givingStreak(donations)
   const since     = supporter ? memberSince(supporter.createdAt, donations) : '—'
@@ -368,13 +368,13 @@ export default function DonationHistoryPage() {
                 {sorted.map(d => (
                   <tr key={d.donationId}>
                     <td className="dh-td-date">{fmtDate(d.donationDate)}</td>
-                    <td className="dh-td-amount">{fmtAmount(d.amount, d.currency)}</td>
+                    <td className="dh-td-amount">{fmtAmount(d.amount, d.currencyCode)}</td>
                     <td>
                       <span className={`dh-tag ${d.isRecurring ? 'tag-monthly' : 'tag-onetime'}`}>
                         {d.isRecurring ? 'Monthly' : 'One-Time'}
                       </span>
                     </td>
-                    <td className="dh-td-source">{d.paymentMethod ?? '—'}</td>
+                    <td className="dh-td-source">{d.channelSource ?? '—'}</td>
                     <td>
                       <span className="dh-tag tag-complete">✓ Complete</span>
                     </td>

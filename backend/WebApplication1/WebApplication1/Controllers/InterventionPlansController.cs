@@ -21,21 +21,25 @@ public class InterventionPlansController : ControllerBase
     [HttpGet("upcoming")]
     public async Task<IActionResult> Upcoming([FromQuery] int days = 14)
     {
-        var today    = DateOnly.FromDateTime(DateTime.UtcNow);
-        var cutoff   = today.AddDays(days);
+        var today  = DateOnly.FromDateTime(DateTime.UtcNow);
+        var cutoff = today.AddDays(days);
 
         var plans = await _context.InterventionPlans
             .Where(p =>
-                p.StartDate.HasValue &&
-                p.StartDate.Value >= today &&
-                p.StartDate.Value <= cutoff &&
-                (p.Status == "Scheduled" || p.Status == "Active" || p.Status == "Pending"))
-            .OrderBy(p => p.StartDate)
+                p.CaseConferenceDate.HasValue &&
+                p.CaseConferenceDate.Value >= today &&
+                p.CaseConferenceDate.Value <= cutoff)
+            .OrderBy(p => p.CaseConferenceDate)
             .ToListAsync();
 
-        // Join with residents to get the internal code
-        var residentIds = plans.Select(p => p.ResidentId).Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
-        var residents   = await _context.Residents
+        var residentIds = plans
+            .Select(p => p.ResidentId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+
+        var residents = await _context.Residents
             .Where(r => residentIds.Contains(r.ResidentId))
             .Select(r => new { r.ResidentId, r.InternalCode, r.SafehouseId, r.AssignedSocialWorker })
             .ToListAsync();
@@ -47,14 +51,14 @@ public class InterventionPlansController : ControllerBase
             {
                 p.PlanId,
                 p.ResidentId,
-                ResidentCode       = r?.InternalCode,
-                SafehouseId        = r?.SafehouseId,
-                AssignedSocialWorker = r?.AssignedSocialWorker,
-                p.Goals,
-                p.StartDate,
-                p.EndDate,
+                ResidentCode           = r?.InternalCode,
+                SafehouseId            = r?.SafehouseId,
+                AssignedSocialWorker   = r?.AssignedSocialWorker,
+                p.PlanCategory,
+                p.PlanDescription,
+                p.CaseConferenceDate,
+                p.TargetDate,
                 p.Status,
-                p.CreatedBy,
             };
         });
 

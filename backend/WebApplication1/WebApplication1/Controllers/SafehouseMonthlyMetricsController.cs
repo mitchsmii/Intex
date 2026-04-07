@@ -24,7 +24,7 @@ public class SafehouseMonthlyMetricsController : ControllerBase
         // Return the most recent metric row for each safehouse
         var latest = await _context.SafehouseMonthlyMetrics
             .GroupBy(m => m.SafehouseId)
-            .Select(g => g.OrderByDescending(m => m.Year).ThenByDescending(m => m.Month).First())
+            .Select(g => g.OrderByDescending(m => m.MonthStart).First())
             .ToListAsync();
 
         return Ok(latest);

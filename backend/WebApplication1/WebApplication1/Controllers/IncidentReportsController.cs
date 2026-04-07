@@ -15,7 +15,7 @@ public class IncidentReportsController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var incidents = await _context.IncidentReports
-            .OrderByDescending(i => i.ReportDate)
+            .OrderByDescending(i => i.IncidentDate)
             .ToListAsync();
 
         return Ok(incidents);

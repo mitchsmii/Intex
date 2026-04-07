@@ -78,7 +78,7 @@ export default function DonationReportPage() {
   const [monthly,     setMonthly]     = useState<MonthlyDonationSummary[]>([])
   const [topDonors,   setTopDonors]   = useState<TopSupporter[]>([])
   const [allocation,  setAllocation]  = useState<AllocationSummary | null>(null)
-  const [metrics,     setMetrics]     = useState<SafehouseMonthlyMetric[]>([])
+  const [_metrics,    setMetrics]      = useState<SafehouseMonthlyMetric[]>([])
   const [safehouses,  setSafehouses]  = useState<Safehouse[]>([])
   const [loading,     setLoading]     = useState(true)
 
@@ -99,7 +99,7 @@ export default function DonationReportPage() {
 
   // KPI derivations
   const ytdTotal    = monthly.filter(m => m.year === curYear).reduce((s, m) => s + m.total, 0)
-  const lastMonth   = monthly.find(m => m.year === curYear && m.month === curMonth) ?? monthly[monthly.length - 1]
+  const lastMonth   = monthly.find(m => m.year === curYear && m.month === curMonth) ?? monthly.at(-1)
   const monthlyRecurring = donations.filter(d => {
     if (!d.donationDate) return false
     const dt = new Date(d.donationDate)
@@ -109,14 +109,9 @@ export default function DonationReportPage() {
   const avgDonation = totalCount > 0 ? donations.reduce((s, d) => s + (d.amount ?? 0), 0) / totalCount : 0
   const allDonationsTotal = donations.reduce((s, d) => s + (d.amount ?? 0), 0)
 
-  // Burn from metrics (all safehouses combined)
-  const burnByMonth: { month: number; year: number; burn: number }[] = metrics.map(m => ({
-    month: m.month ?? curMonth,
-    year:  m.year  ?? curYear,
-    burn:  Number(m.totalExpenses ?? 0),
-  }))
-
-  const totalMonthlyBurn = metrics.reduce((s, m) => s + (m.totalExpenses ? Number(m.totalExpenses) : 0), 0)
+  // Burn from metrics — real schema has no expenses; skip burn overlay
+  const burnByMonth: { month: number; year: number; burn: number }[] = []
+  const totalMonthlyBurn = 0
 
   const chart = buildChart(monthly, burnByMonth)
 
@@ -128,7 +123,7 @@ export default function DonationReportPage() {
   // Payment method breakdown for "Donor Sources"
   const methodCounts: Record<string, number> = {}
   for (const d of donations) {
-    const m = d.paymentMethod ?? 'Unknown'
+    const m = d.channelSource ?? 'Unknown'
     methodCounts[m] = (methodCounts[m] ?? 0) + 1
   }
   const totalMethodCount = Object.values(methodCounts).reduce((a, b) => a + b, 0)
@@ -145,7 +140,7 @@ export default function DonationReportPage() {
   const netThisMonth = (lastMonth?.total ?? 0) - totalMonthlyBurn
 
   const recentDonations = [...donations].slice(0, 6)
-  const mostCommonCurrency = donations[0]?.currency ?? 'PHP'
+  const mostCommonCurrency = donations[0]?.currencyCode ?? 'PHP'
 
   return (
     <div className="dr-page">
@@ -168,7 +163,7 @@ export default function DonationReportPage() {
           {
             label: 'Total Raised (YTD)',
             value: fmtAmount(ytdTotal, mostCommonCurrency),
-            sub: `${monthly.filter(m => m.year === curYear).reduce((s, m) => s + m.count, 0)} donations this year`,
+            sub: `${monthly.filter(m => m.year === curYear).reduce((s, m) => s + (m.count ?? 0), 0)} donations this year`,
             trend: 'up',
           },
           {
@@ -448,13 +443,13 @@ export default function DonationReportPage() {
                   <div>
                     <div className="dr-recent-name">{d.supporterName}</div>
                     <div className="dr-recent-meta">
-                      {d.paymentMethod ?? 'Unknown'} ·{' '}
+                      {d.channelSource ?? 'Unknown'} ·{' '}
                       {d.donationDate ? new Date(d.donationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
                     </div>
                   </div>
                 </div>
                 <div className="dr-recent-right">
-                  <div className="dr-recent-amount">{fmtAmount(d.amount, d.currency)}</div>
+                  <div className="dr-recent-amount">{fmtAmount(d.amount, d.currencyCode)}</div>
                   <span className={`dr-tag ${d.isRecurring ? 'tag-monthly' : 'tag-onetime'}`}>
                     {d.isRecurring ? 'Monthly' : 'One-Time'}
                   </span>

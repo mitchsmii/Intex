@@ -26,9 +26,9 @@ function occupancyClass(occ: number, cap: number) {
   return p >= 1 ? 'occ-full' : p >= 0.8 ? 'occ-warn' : 'occ-ok'
 }
 
-function fmtAmount(amount: number | null, currency: string | null) {
+function fmtAmount(amount: number | null, currencyCode: string | null) {
   if (amount == null) return '—'
-  const sym = currency === 'USD' ? '$' : currency === 'PHP' ? '₱' : (currency ?? '') + ' '
+  const sym = currencyCode === 'USD' ? '$' : currencyCode === 'PHP' ? '₱' : (currencyCode ?? '') + ' '
   return `${sym}${amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
@@ -75,7 +75,7 @@ export default function AdminDashboardPage() {
     return dt.getFullYear() === curYear && dt.getMonth() + 1 === curMonth
   })
   const totalThisMonth = donationsThisMonth.reduce((s, d) => s + (d.amount ?? 0), 0)
-  const mostCommonCurrency = donationsThisMonth[0]?.currency ?? 'PHP'
+  const mostCommonCurrency = donationsThisMonth[0]?.currencyCode ?? 'PHP'
 
   const totalOcc = safehouses.reduce((s, h) => s + (h.currentOccupancy ?? 0), 0)
   const totalCap = safehouses.reduce((s, h) => s + (h.capacityGirls ?? 0), 0)
@@ -227,12 +227,12 @@ export default function AdminDashboardPage() {
                 {metric && (
                   <div className="ad-sh-metrics">
                     <div className="ad-sh-metric">
-                      <span>Occupancy</span>
-                      <strong>{metric.occupancyRate != null ? `${Math.round(metric.occupancyRate * 100)}%` : '—'}</strong>
+                      <span>Health</span>
+                      <strong>{metric.avgHealthScore != null ? `${Number(metric.avgHealthScore).toFixed(1)}/5` : '—'}</strong>
                     </div>
                     <div className="ad-sh-metric">
-                      <span>Expenses</span>
-                      <strong>{fmtAmount(metric.totalExpenses, 'PHP')}</strong>
+                      <span>Education</span>
+                      <strong>{metric.avgEducationProgress != null ? `${Math.round(Number(metric.avgEducationProgress))}%` : '—'}</strong>
                     </div>
                     <div className="ad-sh-metric">
                       <span>Incidents</span>
@@ -259,12 +259,12 @@ export default function AdminDashboardPage() {
             {plans.map(c => (
               <div key={c.planId} className="ad-conf-row">
                 <div className="ad-conf-date">
-                  {c.startDate ? new Date(c.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
+                  {c.caseConferenceDate ? new Date(c.caseConferenceDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                 </div>
                 <div className="ad-conf-main">
                   <div className="ad-conf-resident">{c.residentCode ?? `R-${c.residentId}`}</div>
                   <div className="ad-conf-meta">
-                    {c.goals?.split('\n')[0] ?? 'Plan'}
+                    {c.planCategory ?? 'Plan'}
                     {c.safehouseId ? ` · SH${c.safehouseId}` : ''}
                     {c.assignedSocialWorker ? ` · ${c.assignedSocialWorker}` : ''}
                   </div>
@@ -290,7 +290,7 @@ export default function AdminDashboardPage() {
                   <span className={`ad-sev-dot ${SEV_CLASS[i.severity ?? ''] ?? 'sev-low'}`} />
                   <div>
                     <div className="ad-inc-title">{i.incidentType} — R-{i.residentId}</div>
-                    <div className="ad-inc-meta">{i.reportedBy ?? '—'} · {i.reportDate ?? '—'}</div>
+                    <div className="ad-inc-meta">{i.reportedBy ?? '—'} · {i.incidentDate ?? '—'}</div>
                   </div>
                 </div>
                 <div className="ad-inc-right">
@@ -329,8 +329,8 @@ export default function AdminDashboardPage() {
                       {d.isRecurring ? 'Monthly' : 'One-Time'}
                     </span>
                   </td>
-                  <td className="ad-td-amount">{fmtAmount(d.amount, d.currency)}</td>
-                  <td className="ad-td-program">{d.paymentMethod ?? '—'}</td>
+                  <td className="ad-td-amount">{fmtAmount(d.amount, d.currencyCode)}</td>
+                  <td className="ad-td-program">{d.donationType ?? d.channelSource ?? '—'}</td>
                   <td className="ad-td-date">{fmtDate(d.donationDate)}</td>
                 </tr>
               ))}

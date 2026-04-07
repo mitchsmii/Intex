@@ -43,36 +43,51 @@ export interface Resident {
 
 export interface Supporter {
   supporterId: number
+  supporterType: string | null
+  displayName: string | null
+  organizationName: string | null
   firstName: string | null
   lastName: string | null
+  relationshipType: string | null
+  region: string | null
+  country: string | null
   email: string | null
   phone: string | null
-  isAnonymous: boolean | null
+  status: string | null
+  firstDonationDate: string | null
+  acquisitionChannel: string | null
   createdAt: string | null
 }
 
+// Donation with supporter name joined in (from GET /api/donations)
 export interface Donation {
   donationId: number
   supporterId: number | null
   supporterName: string
   amount: number | null
+  estimatedValue: number | null
   donationDate: string | null
   isRecurring: boolean | null
-  frequency: string | null
-  currency: string | null
-  paymentMethod: string | null
+  donationType: string | null
+  channelSource: string | null
+  currencyCode: string | null
+  campaignName: string | null
   notes: string | null
 }
 
+// Raw donation row (from GET /api/donations/by-supporter/{id})
 export interface DonationRaw {
   donationId: number
   supporterId: number | null
-  amount: number | null
+  donationType: string | null
   donationDate: string | null
+  channelSource: string | null
+  currencyCode: string | null
+  amount: number | null
+  estimatedValue: number | null
+  impactUnit: string | null
   isRecurring: boolean | null
-  frequency: string | null
-  currency: string | null
-  paymentMethod: string | null
+  campaignName: string | null
   notes: string | null
 }
 
@@ -84,25 +99,30 @@ export interface AllocationSummary {
 export interface SafehouseMonthlyMetric {
   metricId: number
   safehouseId: number | null
-  month: number | null
-  year: number | null
-  totalExpenses: number | null
-  programExpenses: number | null
-  adminExpenses: number | null
-  occupancyRate: number | null
+  monthStart: string | null
+  monthEnd: string | null
+  activeResidents: number | null
+  avgEducationProgress: number | null
+  avgHealthScore: number | null
+  processRecordingCount: number | null
+  homeVisitationCount: number | null
   incidentCount: number | null
+  notes: string | null
 }
 
 export interface IncidentReport {
   incidentId: number
   residentId: number | null
-  reportedBy: string | null
-  reportDate: string | null
+  safehouseId: number | null
+  incidentDate: string | null
   incidentType: string | null
   severity: string | null
   description: string | null
+  responseTaken: string | null
   resolved: boolean | null
-  resolutionNotes: string | null
+  resolutionDate: string | null
+  reportedBy: string | null
+  followUpRequired: boolean | null
 }
 
 export interface UpcomingPlan {
@@ -111,11 +131,11 @@ export interface UpcomingPlan {
   residentCode: string | null
   safehouseId: number | null
   assignedSocialWorker: string | null
-  goals: string | null
-  startDate: string | null
-  endDate: string | null
+  planCategory: string | null
+  planDescription: string | null
+  caseConferenceDate: string | null
+  targetDate: string | null
   status: string | null
-  createdBy: string | null
 }
 
 export interface MonthlyDonationSummary {
@@ -136,17 +156,17 @@ export interface TopSupporter {
 // ── API calls ──────────────────────────────────────────────────────────────
 
 export const api = {
-  getSafehouses:          () => get<Safehouse[]>('/api/safehouses'),
-  getResidents:           () => get<Resident[]>('/api/residents'),
-  getSupporters:          () => get<Supporter[]>('/api/supporters'),
-  lookupSupporter:        (firstName: string, lastName: string, email: string) =>
+  getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
+  getResidents:               () => get<Resident[]>('/api/residents'),
+  getSupporters:              () => get<Supporter[]>('/api/supporters'),
+  lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
-  getDonations:           () => get<Donation[]>('/api/donations'),
-  getDonationsBySupporter:(id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
+  getDonations:               () => get<Donation[]>('/api/donations'),
+  getDonationsBySupporter:    (id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
   getDonationsMonthlySummary: () => get<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
-  getTopSupporters:       (top = 5) => get<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
-  getAllocationSummary:   () => get<AllocationSummary>('/api/donationallocations/summary'),
-  getLatestMetrics:       () => get<SafehouseMonthlyMetric[]>('/api/safehousemonthlymetrics/latest'),
-  getIncidentReports:     () => get<IncidentReport[]>('/api/incidentreports'),
-  getUpcomingPlans:       () => get<UpcomingPlan[]>('/api/interventionplans/upcoming'),
+  getTopSupporters:           (top = 5) => get<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
+  getAllocationSummary:       () => get<AllocationSummary>('/api/donationallocations/summary'),
+  getLatestMetrics:           () => get<SafehouseMonthlyMetric[]>('/api/safehousemonthlymetrics/latest'),
+  getIncidentReports:         () => get<IncidentReport[]>('/api/incidentreports'),
+  getUpcomingPlans:           () => get<UpcomingPlan[]>('/api/interventionplans/upcoming'),
 }
