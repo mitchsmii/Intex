@@ -392,8 +392,15 @@
 }
 
 .rp-pillar-icon {
-  font-size: 1.8rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--pillar-color, var(--cove-tidal));
+  color: white;
+  flex-shrink: 0;
 }
 
 .rp-pillar-title {
