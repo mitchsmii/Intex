@@ -1,20 +1,56 @@
 import { useState, useEffect } from 'react'
-import { fetchResidents, fetchSafehouses } from '../../services/socialWorkerService'
+import { useNavigate } from 'react-router-dom'
+import {
+  fetchResidents,
+  fetchUpcomingEvents,
+  fetchActionItems,
+  fetchIncidentReports,
+  fetchHomeVisitations,
+  fetchProcessRecordings,
+} from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
+import StatStrip from '../../components/socialworker/dashboard/StatStrip'
+import UpcomingSchedule from '../../components/socialworker/dashboard/UpcomingSchedule'
+import ReintegrationPipeline from '../../components/socialworker/dashboard/ReintegrationPipeline'
+import ActionItems from '../../components/socialworker/dashboard/ActionItems'
+import CriticalAlerts from '../../components/socialworker/dashboard/CriticalAlerts'
+import ResidentCard from '../../components/socialworker/dashboard/ResidentCard'
 import type { Resident } from '../../types/Resident'
+import type { ScheduleEvent } from '../../types/ScheduleEvent'
+import type { ActionItem } from '../../types/ActionItem'
+import type { IncidentReport } from '../../types/IncidentReport'
+import type { HomeVisitation } from '../../types/HomeVisitation'
+import type { ProcessRecording } from '../../types/ProcessRecording'
+import '../../components/socialworker/dashboard/dashboard.css'
 import './SocialWorkerHomePage.css'
 
 function SocialWorkerHomePage() {
+  const navigate = useNavigate()
   const [residents, setResidents] = useState<Resident[]>([])
-  const [safehouseCount, setSafehouseCount] = useState(0)
+  const [events, setEvents] = useState<ScheduleEvent[]>([])
+  const [actions, setActions] = useState<ActionItem[]>([])
+  const [incidents, setIncidents] = useState<IncidentReport[]>([])
+  const [visitations, setVisitations] = useState<HomeVisitation[]>([])
+  const [recordings, setRecordings] = useState<ProcessRecording[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    Promise.all([fetchResidents(), fetchSafehouses()])
-      .then(([r, s]) => {
+    fetchResidents()
+      .then(async (r) => {
         setResidents(r)
-        setSafehouseCount(s.length)
+        const [ev, ai, inc, vis, rec] = await Promise.all([
+          fetchUpcomingEvents(r),
+          fetchActionItems(r),
+          fetchIncidentReports({ unresolvedOnly: true }),
+          fetchHomeVisitations({ limit: 200 }),
+          fetchProcessRecordings({ limit: 200 }),
+        ])
+        setEvents(ev)
+        setActions(ai)
+        setIncidents(inc)
+        setVisitations(vis)
+        setRecordings(rec)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -23,52 +59,60 @@ function SocialWorkerHomePage() {
   if (loading) return <LoadingSpinner size="lg" />
   if (error) return <p className="sw-home-error">Error: {error}</p>
 
-  const active = residents.filter((r) => r.caseStatus === 'Active').length
-  const highRisk = residents.filter((r) => r.currentRiskLevel === 'High').length
+  const goToResident = (r: Resident) =>
+    navigate(`/socialworker/dashboard/residents/${r.residentId}`)
+  const goToResidentById = (id: number) =>
+    navigate(`/socialworker/dashboard/residents/${id}`)
+
+  const today = new Date().toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
 
   return (
-    <div className="sw-home">
-      <div className="sw-home-header">
-        <h1>Dashboard</h1>
+    <div className="sw-dash">
+      <div className="sw-dash-header">
+        <div>
+          <h1>Welcome back</h1>
+          <div className="sw-dash-header-meta">{today}</div>
+        </div>
+        <button
+          type="button"
+          className="sw-dash-add-btn"
+          onClick={() => navigate('/socialworker/dashboard/residents')}
+        >
+          + Add Resident
+        </button>
       </div>
 
-      <div className="sw-home-stats">
-        <div className="stat-card">
-          <span className="stat-value">{residents.length}</span>
-          <span className="stat-label">Total Residents</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{active}</span>
-          <span className="stat-label">Active Cases</span>
-        </div>
-        <div className="stat-card stat-card--warning">
-          <span className="stat-value">{highRisk}</span>
-          <span className="stat-label">High Risk</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{safehouseCount}</span>
-          <span className="stat-label">Safehouses</span>
-        </div>
-      </div>
+      <StatStrip residents={residents} actionItems={actions} />
 
-      <div className="sw-home-recent">
-        <h2>Recent Cases</h2>
-        <div className="sw-home-cases">
-          {residents.slice(0, 5).map((r) => (
-            <div key={r.residentId} className="case-card">
-              <div className="case-card-top">
-                <span className="case-card-id">{r.internalCode}</span>
-                <span className={`case-card-status case-card-status--${r.caseStatus?.toLowerCase()}`}>
-                  {r.caseStatus}
-                </span>
-              </div>
-              <p className="case-card-updated">
-                {r.caseCategory} &middot; {r.currentRiskLevel} risk
-              </p>
-            </div>
+      <CriticalAlerts
+        residents={residents}
+        incidents={incidents}
+        visitations={visitations}
+        recordings={recordings}
+        onResidentClick={goToResidentById}
+      />
+
+      <ReintegrationPipeline residents={residents} onResidentClick={goToResident} />
+
+      <UpcomingSchedule events={events} />
+
+      <ActionItems items={actions} onItemClick={goToResidentById} />
+
+      <section className="sw-dash-section">
+        <header className="sw-dash-section-header">
+          <h2>My Residents</h2>
+          <span className="sw-dash-mock">{residents.length} total</span>
+        </header>
+        <div className="sw-dash-grid">
+          {residents.map((r) => (
+            <ResidentCard key={r.residentId} resident={r} onClick={goToResident} />
           ))}
         </div>
-      </div>
+      </section>
     </div>
   )
 }
