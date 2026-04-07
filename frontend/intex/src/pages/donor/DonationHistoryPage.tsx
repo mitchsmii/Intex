@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import type { Supporter, DonationRaw } from '../../services/apiService'
+import { useAuth } from '../../hooks/useAuth'
 import './DonationHistoryPage.css'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -134,43 +136,26 @@ const TIER_COLORS: Record<string, string> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function DonationHistoryPage() {
-  const [firstName, setFirstName] = useState('')
-  const [lastName,  setLastName]  = useState('')
-  const [email,     setEmail]     = useState('')
+  const { user } = useAuth()
   const [supporter, setSupporter] = useState<Supporter | null>(null)
   const [donations, setDonations] = useState<DonationRaw[]>([])
-  const [error,     setError]     = useState('')
-  const [loading,   setLoading]   = useState(false)
-  const [searched,  setSearched]  = useState(false)
+  const [loading,   setLoading]   = useState(true)
+  const [notFound,  setNotFound]  = useState(false)
 
-  async function handleLookup(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    setSearched(true)
-    try {
-      const found = await api.lookupSupporter(firstName.trim(), lastName.trim(), email.trim())
-      const donationList = await api.getDonationsBySupporter(found.supporterId)
-      setSupporter(found)
-      setDonations(donationList)
-    } catch {
-      setSupporter(null)
-      setDonations([])
-      setError('No donation record found for that name and email. Please check your details and try again.')
-    } finally {
+  useEffect(() => {
+    if (!user?.email) {
       setLoading(false)
+      return
     }
-  }
-
-  function handleReset() {
-    setSupporter(null)
-    setDonations([])
-    setFirstName('')
-    setLastName('')
-    setEmail('')
-    setError('')
-    setSearched(false)
-  }
+    setLoading(true)
+    api.lookupSupporterByEmail(user.email)
+      .then(found => api.getDonationsBySupporter(found.supporterId).then(list => {
+        setSupporter(found)
+        setDonations(list)
+      }))
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false))
+  }, [user])
 
   const totalUSD  = donations.reduce((s, d) => s + (d.amount ?? 0), 0)
   const currency  = donations[0]?.currencyCode ?? 'PHP'
@@ -184,11 +169,23 @@ export default function DonationHistoryPage() {
     return new Date(b.donationDate).getTime() - new Date(a.donationDate).getTime()
   })
 
-  return (
-    <div className="dh-page">
+  // ── Loading ──
+  if (loading) {
+    return (
+      <div className="dh-page">
+        <div className="dh-lookup-wrap">
+          <div className="dh-lookup-card" style={{ textAlign: 'center', padding: 'var(--space-2xl)' }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>Loading your donation history…</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-      {/* ── Lookup form ── */}
-      {!supporter && (
+  // ── No history found ──
+  if (notFound || !supporter) {
+    return (
+      <div className="dh-page">
         <div className="dh-lookup-wrap">
           <div className="dh-lookup-card">
             <div className="dh-lookup-icon">
@@ -199,204 +196,161 @@ export default function DonationHistoryPage() {
                 <line x1="9" y1="16" x2="13" y2="16"/>
               </svg>
             </div>
-            <h1 className="dh-lookup-title">View Your Donation History</h1>
+            <h1 className="dh-lookup-title">No Donation History Yet</h1>
             <p className="dh-lookup-sub">
-              Enter the name and email you used when donating to see your giving history
-              and the impact you've made.
+              We couldn't find any donations linked to <strong>{user?.email}</strong>.
+              Make your first donation to start building your giving history.
             </p>
-
-            <form className="dh-lookup-form" onSubmit={handleLookup}>
-              <div className="dh-lookup-fields">
-                <div>
-                  <label htmlFor="dh-first">First Name</label>
-                  <input
-                    id="dh-first"
-                    type="text"
-                    placeholder="e.g. Byron"
-                    value={firstName}
-                    onChange={e => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label htmlFor="dh-last">Last Name</label>
-                  <input
-                    id="dh-last"
-                    type="text"
-                    placeholder="e.g. Jones"
-                    value={lastName}
-                    onChange={e => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="dh-email">Email Address</label>
-                <input
-                  id="dh-email"
-                  type="email"
-                  placeholder="e.g. you@example.com"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  style={{ width: '100%', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              {searched && error && (
-                <div className="dh-error">{error}</div>
-              )}
-
-              <button type="submit" className="dh-lookup-btn" disabled={loading}>
-                {loading ? 'Looking up…' : 'Find My Donations'}
-              </button>
-            </form>
+            <Link to="/donate" className="dh-lookup-btn" style={{ display: 'inline-block', textDecoration: 'none', textAlign: 'center' }}>
+              Make a Donation
+            </Link>
           </div>
         </div>
-      )}
+      </div>
+    )
+  }
 
-      {/* ── Donor results ── */}
-      {supporter && (
+  // ── Donor results ──
+  return (
+    <div className="dh-page">
+
+      {/* Hero card */}
+      <div className="dh-hero">
+        <div className="dh-hero-left">
+          <div className="dh-avatar">
+            {(supporter.firstName?.[0] ?? '?')}{(supporter.lastName?.[0] ?? '')}
+          </div>
+          <div>
+            <div className="dh-hero-name">{supporter.firstName} {supporter.lastName}</div>
+            <div className="dh-hero-email">{supporter.email}</div>
+            <div className="dh-hero-meta">
+              <span>Member since {since}</span>
+              {streak > 0 && (
+                <>
+                  <span className="dh-dot">·</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    {streak}-month giving streak
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="dh-hero-right">
+          <div className={`dh-tier ${TIER_COLORS[tier] ?? ''}`}>{tier} Donor</div>
+          <div className="dh-total-label">Total Contributed</div>
+          <div className="dh-total-value">{fmtAmount(totalUSD, currency)}</div>
+        </div>
+      </div>
+
+      {/* Impact section */}
+      {totalUSD > 0 && (
         <>
-          {/* Hero card */}
-          <div className="dh-hero">
-            <div className="dh-hero-left">
-              <div className="dh-avatar">
-                {(supporter.firstName?.[0] ?? '?')}{(supporter.lastName?.[0] ?? '')}
-              </div>
-              <div>
-                <div className="dh-hero-name">{supporter.firstName} {supporter.lastName}</div>
-                <div className="dh-hero-email">{supporter.email}</div>
-                <div className="dh-hero-meta">
-                  <span>Member since {since}</span>
-                  {streak > 0 && (
-                    <>
-                      <span className="dh-dot">·</span>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                        {streak}-month giving streak
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                          <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                        </svg>
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="dh-hero-right">
-              <div className={`dh-tier ${TIER_COLORS[tier] ?? ''}`}>{tier} Donor</div>
-              <div className="dh-total-label">Total Contributed</div>
-              <div className="dh-total-value">{fmtAmount(totalUSD, currency)}</div>
-              <button className="dh-back-btn" onClick={handleReset}>← Look up another donor</button>
-            </div>
-          </div>
-
-          {/* Impact section */}
-          {totalUSD > 0 && (
-            <>
-              <div className="dh-section-title">
-                <h2>Your Impact</h2>
-                <p>Here's what your {fmtAmount(totalUSD, currency)} in donations has made possible</p>
-              </div>
-              <div className="dh-impact-grid">
-                {impact.map(item => (
-                  <div key={item.label} className={`dh-impact-card ${item.color}`}>
-                    <div className="dh-impact-icon">{item.icon}</div>
-                    <div className="dh-impact-value">{item.value}</div>
-                    <div className="dh-impact-unit">{item.unit}</div>
-                    <div className="dh-impact-label">{item.label}</div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Lives changed callout */}
-          <div className="dh-lives-card">
-            <div className="dh-lives-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--cove-tidal)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            </div>
-            <div className="dh-lives-content">
-              <div className="dh-lives-title">Lives Changed</div>
-              <p className="dh-lives-text">
-                Your generous giving since {since} has helped Lighthouse Sanctuary
-                provide refuge, rehabilitation, and reintegration services to survivors of abuse
-                and trafficking. Because of donors like you, children have a safe place to heal
-                and a future full of hope.
-              </p>
-              <div className="dh-lives-stats">
-                <div className="dh-lives-stat">
-                  <strong>{donations.filter(d => d.isRecurring).length}</strong>
-                  <span>recurring payments made</span>
-                </div>
-                <div className="dh-lives-stat">
-                  <strong>{donations.filter(d => !d.isRecurring).length}</strong>
-                  <span>one-time gifts</span>
-                </div>
-                <div className="dh-lives-stat">
-                  <strong>
-                    {donations.length > 0
-                      ? fmtAmount(Math.max(...donations.map(d => d.amount ?? 0)), currency)
-                      : '—'}
-                  </strong>
-                  <span>largest single gift</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Donation history table */}
           <div className="dh-section-title">
-            <h2>Donation History</h2>
-            <p>{donations.length} total donation{donations.length !== 1 ? 's' : ''} — most recent first</p>
+            <h2>Your Impact</h2>
+            <p>Here's what your {fmtAmount(totalUSD, currency)} in donations has made possible</p>
           </div>
-
-          <div className="dh-card">
-            <table className="dh-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Amount</th>
-                  <th>Type</th>
-                  <th>Method</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sorted.map(d => (
-                  <tr key={d.donationId}>
-                    <td className="dh-td-date">{fmtDate(d.donationDate)}</td>
-                    <td className="dh-td-amount">{fmtAmount(d.amount, d.currencyCode)}</td>
-                    <td>
-                      <span className={`dh-tag ${d.isRecurring ? 'tag-monthly' : 'tag-onetime'}`}>
-                        {d.isRecurring ? 'Monthly' : 'One-Time'}
-                      </span>
-                    </td>
-                    <td className="dh-td-source">{d.channelSource ?? '—'}</td>
-                    <td>
-                      <span className="dh-tag tag-complete">✓ Complete</span>
-                    </td>
-                  </tr>
-                ))}
-                {sorted.length === 0 && (
-                  <tr>
-                    <td colSpan={5} style={{ color: 'var(--text-muted)', padding: '0.75rem' }}>
-                      No donations found for this supporter.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+          <div className="dh-impact-grid">
+            {impact.map(item => (
+              <div key={item.label} className={`dh-impact-card ${item.color}`}>
+                <div className="dh-impact-icon">{item.icon}</div>
+                <div className="dh-impact-value">{item.value}</div>
+                <div className="dh-impact-unit">{item.unit}</div>
+                <div className="dh-impact-label">{item.label}</div>
+              </div>
+            ))}
           </div>
-
-          <p className="dh-tax-note">
-            Lighthouse Sanctuary is a registered 501(c)(3) nonprofit · EIN: 81-3220618 ·
-            All donations are tax-deductible. For official tax receipts contact Info@LighthouseSanctuary.org.
-          </p>
         </>
       )}
+
+      {/* Lives changed callout */}
+      <div className="dh-lives-card">
+        <div className="dh-lives-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--cove-tidal)" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </div>
+        <div className="dh-lives-content">
+          <div className="dh-lives-title">Lives Changed</div>
+          <p className="dh-lives-text">
+            Your generous giving since {since} has helped Lighthouse Sanctuary
+            provide refuge, rehabilitation, and reintegration services to survivors of abuse
+            and trafficking. Because of donors like you, children have a safe place to heal
+            and a future full of hope.
+          </p>
+          <div className="dh-lives-stats">
+            <div className="dh-lives-stat">
+              <strong>{donations.filter(d => d.isRecurring).length}</strong>
+              <span>recurring payments made</span>
+            </div>
+            <div className="dh-lives-stat">
+              <strong>{donations.filter(d => !d.isRecurring).length}</strong>
+              <span>one-time gifts</span>
+            </div>
+            <div className="dh-lives-stat">
+              <strong>
+                {donations.length > 0
+                  ? fmtAmount(Math.max(...donations.map(d => d.amount ?? 0)), currency)
+                  : '—'}
+              </strong>
+              <span>largest single gift</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Donation history table */}
+      <div className="dh-section-title">
+        <h2>Donation History</h2>
+        <p>{donations.length} total donation{donations.length !== 1 ? 's' : ''} — most recent first</p>
+      </div>
+
+      <div className="dh-card">
+        <table className="dh-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Type</th>
+              <th>Method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map(d => (
+              <tr key={d.donationId}>
+                <td className="dh-td-date">{fmtDate(d.donationDate)}</td>
+                <td className="dh-td-amount">{fmtAmount(d.amount, d.currencyCode)}</td>
+                <td>
+                  <span className={`dh-tag ${d.isRecurring ? 'tag-monthly' : 'tag-onetime'}`}>
+                    {d.isRecurring ? 'Monthly' : 'One-Time'}
+                  </span>
+                </td>
+                <td className="dh-td-source">{d.channelSource ?? '—'}</td>
+                <td>
+                  <span className="dh-tag tag-complete">✓ Complete</span>
+                </td>
+              </tr>
+            ))}
+            {sorted.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ color: 'var(--text-muted)', padding: '0.75rem' }}>
+                  No donations found for this account.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="dh-tax-note">
+        Lighthouse Sanctuary is a registered 501(c)(3) nonprofit · EIN: 81-3220618 ·
+        All donations are tax-deductible. For official tax receipts contact Info@LighthouseSanctuary.org.
+      </p>
+
     </div>
   )
 }
