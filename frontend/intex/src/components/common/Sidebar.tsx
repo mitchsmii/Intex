@@ -23,10 +23,10 @@ function Sidebar({ items }: SidebarProps) {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo">
+      <NavLink to="/" className="sidebar-logo">
         <span className="sidebar-logo-icon">~</span>
         Cove
-      </div>
+      </NavLink>
 
       <nav className="sidebar-nav">
         {items.map((item) => (
