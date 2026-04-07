@@ -1,4 +1,5 @@
 using System.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -13,11 +14,81 @@ public class AdminController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ILogger<AdminController> _logger;
+    private readonly UserManager<IdentityUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
 
-    public AdminController(AppDbContext context, ILogger<AdminController> logger)
+    public AdminController(
+        AppDbContext context,
+        ILogger<AdminController> logger,
+        UserManager<IdentityUser> userManager,
+        RoleManager<IdentityRole> roleManager)
     {
         _context = context;
         _logger = logger;
+        _userManager = userManager;
+        _roleManager = roleManager;
+    }
+
+    // POST /api/admin/seed-social-worker-users
+    // Creates one AspNet user per row in social_workers, username = full_name (e.g. "SW-01"),
+    // password = "Password123!", role = "SocialWorker". Idempotent — skips existing usernames.
+    [HttpPost("seed-social-worker-users")]
+    public async Task<IActionResult> SeedSocialWorkerUsers()
+    {
+        const string defaultPassword = "Password123!";
+        const string roleName = "SocialWorker";
+
+        if (!await _roleManager.RoleExistsAsync(roleName))
+            await _roleManager.CreateAsync(new IdentityRole(roleName));
+
+        var workers = await _context.SocialWorkers
+            .Where(s => s.Status == "Active" && s.FullName != null)
+            .ToListAsync();
+
+        var created = new List<string>();
+        var skipped = new List<string>();
+        var failed = new List<object>();
+
+        foreach (var sw in workers)
+        {
+            var username = sw.FullName.Trim();
+            if (string.IsNullOrEmpty(username)) continue;
+
+            var existing = await _userManager.FindByNameAsync(username);
+            if (existing != null)
+            {
+                if (!await _userManager.IsInRoleAsync(existing, roleName))
+                    await _userManager.AddToRoleAsync(existing, roleName);
+                skipped.Add(username);
+                continue;
+            }
+
+            var user = new IdentityUser
+            {
+                UserName = username,
+                Email = $"{username.ToLower()}@cove.local",
+                EmailConfirmed = true,
+            };
+
+            var result = await _userManager.CreateAsync(user, defaultPassword);
+            if (!result.Succeeded)
+            {
+                failed.Add(new { username, errors = result.Errors.Select(e => e.Description) });
+                continue;
+            }
+
+            await _userManager.AddToRoleAsync(user, roleName);
+            created.Add(username);
+        }
+
+        return Ok(new
+        {
+            created,
+            skipped,
+            failed,
+            defaultPassword,
+            note = "Login with username=SW-XX (matching social_workers.full_name)."
+        });
     }
 
     [HttpPost("backfill-social-workers")]

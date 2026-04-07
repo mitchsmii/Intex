@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -5,6 +6,7 @@ using WebApplication1.Data;
 namespace WebApplication1.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class IncidentReportsController : ControllerBase
 {
@@ -21,6 +23,15 @@ public class IncidentReportsController : ControllerBase
         [FromQuery] bool? unresolvedOnly)
     {
         var query = _context.IncidentReports.AsQueryable();
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return Forbid();
+            var allowedIds = _context.Residents
+                .Where(r => r.AssignedSocialWorker == username)
+                .Select(r => (int?)r.ResidentId);
+            query = query.Where(i => i.ResidentId != null && allowedIds.Contains(i.ResidentId));
+        }
         if (residentId.HasValue) query = query.Where(i => i.ResidentId == residentId);
         if (unresolvedOnly == true) query = query.Where(i => i.Resolved != true);
         return await query.OrderByDescending(i => i.IncidentDate).ToListAsync();

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -5,6 +6,7 @@ using WebApplication1.Data;
 namespace WebApplication1.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class InterventionPlansController : ControllerBase
 {
@@ -21,6 +23,15 @@ public class InterventionPlansController : ControllerBase
         [FromQuery] string? status)
     {
         var query = _context.InterventionPlans.AsQueryable();
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return Forbid();
+            var allowedIds = _context.Residents
+                .Where(r => r.AssignedSocialWorker == username)
+                .Select(r => (int?)r.ResidentId);
+            query = query.Where(p => p.ResidentId != null && allowedIds.Contains(p.ResidentId));
+        }
         if (residentId.HasValue) query = query.Where(p => p.ResidentId == residentId);
         if (!string.IsNullOrEmpty(status)) query = query.Where(p => p.Status == status);
         return await query.OrderByDescending(p => p.UpdatedAt).ToListAsync();
