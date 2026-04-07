@@ -16,9 +16,16 @@ public class HomeVisitationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<object>>> GetHomeVisitations()
+    public async Task<ActionResult<IEnumerable<object>>> GetHomeVisitations(
+        [FromQuery] int? residentId,
+        [FromQuery] int? limit)
     {
-        var visitations = await _context.HomeVisitations
+        var query = _context.HomeVisitations.AsQueryable();
+        if (residentId.HasValue) query = query.Where(h => h.ResidentId == residentId);
+        query = query.OrderByDescending(h => h.VisitDate);
+        if (limit.HasValue) query = query.Take(limit.Value);
+
+        var visitations = await query
             .GroupJoin(
                 _context.SocialWorkers,
                 hv => hv.SocialWorkerId,

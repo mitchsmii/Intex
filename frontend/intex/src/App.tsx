@@ -15,6 +15,9 @@ import AnalyticsPage from './pages/socialworker/AnalyticsPage'
 import DonorHomePage from './pages/donor/DonorHomePage'
 import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
+import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage'
+import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+import SafehouseLocationsPage from './pages/admin/SafehouseLocationsPage'
 import CookieConsent from './components/common/CookieConsent'
 
 function App() {
@@ -28,6 +31,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/donate" element={<DonateNowPage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
           </Route>
 
           {/* Social Worker pages */}
@@ -52,7 +56,9 @@ function App() {
           {/* Admin pages */}
           <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
             <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboardPage />} />
               <Route path="donation-report" element={<DonationReportPage />} />
+              <Route path="safehouse-locations" element={<SafehouseLocationsPage />} />
             </Route>
           </Route>
         </Routes>

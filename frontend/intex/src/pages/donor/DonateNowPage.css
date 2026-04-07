@@ -200,6 +200,35 @@ label {
   flex-shrink: 0;
 }
 
+/* Frequency header row */
+.freq-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.freq-header h3 {
+  margin: 0;
+}
+
+.history-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--cove-tidal);
+  text-decoration: none;
+  font-weight: 500;
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+
+.history-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
 /* Frequency toggle */
 .freq-toggle {
   display: flex;

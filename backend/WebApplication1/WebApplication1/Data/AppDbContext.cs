@@ -14,6 +14,8 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<SocialWorker> SocialWorkers { get; set; }
     public DbSet<ProcessRecording> ProcessRecordings { get; set; }
     public DbSet<HomeVisitation> HomeVisitations { get; set; }
+    public DbSet<InterventionPlan> InterventionPlans { get; set; }
+    public DbSet<IncidentReport> IncidentReports { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

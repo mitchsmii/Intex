@@ -16,9 +16,16 @@ public class ProcessRecordingsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<object>>> GetProcessRecordings()
+    public async Task<ActionResult<IEnumerable<object>>> GetProcessRecordings(
+        [FromQuery] int? residentId,
+        [FromQuery] int? limit)
     {
-        var recordings = await _context.ProcessRecordings
+        var query = _context.ProcessRecordings.AsQueryable();
+        if (residentId.HasValue) query = query.Where(p => p.ResidentId == residentId);
+        query = query.OrderByDescending(p => p.SessionDate);
+        if (limit.HasValue) query = query.Take(limit.Value);
+
+        var recordings = await query
             .GroupJoin(
                 _context.SocialWorkers,
                 pr => pr.SocialWorkerId,

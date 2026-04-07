@@ -44,6 +44,14 @@
   line-height: 1.1;
 }
 
+.hp-hero-tagline {
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 500;
+  color: var(--cove-seaglass);
+  margin: 0 0 var(--space-md);
+  letter-spacing: 0.04em;
+}
+
 .hp-hero-sub {
   font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.88);
