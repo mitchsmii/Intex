@@ -72,6 +72,25 @@
   margin-bottom: var(--space-md);
 }
 
+.ad-add-location-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--cove-deep);
+  color: white;
+  border-radius: var(--radius-full);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.ad-add-location-btn:hover {
+  background: var(--cove-tidal);
+}
+
 .ad-card-title {
   font-size: 1.05rem;
   color: var(--text-primary);

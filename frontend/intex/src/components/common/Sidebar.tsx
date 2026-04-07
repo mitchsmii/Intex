@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import './Sidebar.css'
@@ -5,7 +6,7 @@ import './Sidebar.css'
 interface NavItem {
   to: string
   label: string
-  icon: string
+  icon: ReactNode
 }
 
 interface SidebarProps {

@@ -16,6 +16,7 @@ import DonorHomePage from './pages/donor/DonorHomePage'
 import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
+import SafehouseLocationsPage from './pages/admin/SafehouseLocationsPage'
 import CookieConsent from './components/common/CookieConsent'
 
 function App() {
@@ -55,6 +56,7 @@ function App() {
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboardPage />} />
               <Route path="donation-report" element={<DonationReportPage />} />
+              <Route path="safehouse-locations" element={<SafehouseLocationsPage />} />
             </Route>
           </Route>
         </Routes>
