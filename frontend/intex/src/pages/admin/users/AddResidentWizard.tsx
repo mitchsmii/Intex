@@ -186,7 +186,7 @@ export default function AddResidentWizard({ safehouses, residents, onClose, onCr
                     <button
                       key={name}
                       className={`wizard-option${form.swFullName === name ? ' wizard-option-selected' : ''}${busy ? ' wizard-option-busy' : ''}`}
-                      onClick={() => setForm(f => ({ ...f, swFullName: name, swEmail: '' }))}
+                      onClick={() => setForm(f => ({ ...f, swFullName: name }))}
                     >
                       <div className="wizard-option-title">{name}</div>
                       <div className="wizard-option-meta">
@@ -198,6 +198,21 @@ export default function AddResidentWizard({ safehouses, residents, onClose, onCr
                   )
                 })}
               </div>
+              {form.swFullName && (
+                <div className="wizard-sw-email">
+                  <label className="wizard-sw-email-label" htmlFor="sw-email-input">
+                    Notify by email <span className="wizard-sw-email-optional">(optional)</span>
+                  </label>
+                  <input
+                    id="sw-email-input"
+                    type="email"
+                    className="wizard-sw-email-input"
+                    placeholder="social.worker@example.com"
+                    value={form.swEmail}
+                    onChange={e => setForm(f => ({ ...f, swEmail: e.target.value }))}
+                  />
+                </div>
+              )}
             </div>
           )}
 

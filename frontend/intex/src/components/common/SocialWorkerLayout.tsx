@@ -1,20 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { api } from '../../services/apiService'
+import type { SwNotification } from '../../services/apiService'
 import './SocialWorkerLayout.css'
+
+interface Toast extends SwNotification {
+  visible: boolean
+}
 
 function SocialWorkerLayout() {
   const [unreadCount, setUnreadCount] = useState(0)
+  const [toasts, setToasts] = useState<Toast[]>([])
+  const seenIds = useRef<Set<number>>(new Set())
+
+  function dismissToast(id: number) {
+    setToasts(prev => prev.filter(t => t.notificationId !== id))
+  }
 
   useEffect(() => {
-    const fetchCount = () => {
-      api.getUnreadNotificationCount()
-        .then(setUnreadCount)
-        .catch(() => {})
+    const fetchNotifications = async () => {
+      try {
+        const notes = await api.getNotifications()
+        const newNotes = notes.filter(n => !seenIds.current.has(n.notificationId))
+        if (newNotes.length === 0) return
+
+        newNotes.forEach(n => seenIds.current.add(n.notificationId))
+        setUnreadCount(prev => prev + newNotes.length)
+        setToasts(prev => [...prev, ...newNotes.map(n => ({ ...n, visible: true }))])
+
+        // Auto-dismiss each toast after 7s
+        newNotes.forEach(n => {
+          setTimeout(() => dismissToast(n.notificationId), 7000)
+        })
+      } catch {
+        // ignore
+      }
     }
-    fetchCount()
-    const interval = setInterval(fetchCount, 30000)
+
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, 30000)
     return () => clearInterval(interval)
   }, [])
 
@@ -94,6 +119,27 @@ function SocialWorkerLayout() {
       <main className="sw-content">
         <Outlet context={{ clearNotifications: () => setUnreadCount(0) }} />
       </main>
+
+      {/* Toast stack */}
+      <div className="sw-toast-stack">
+        {toasts.map(toast => (
+          <div key={toast.notificationId} className="sw-toast">
+            <div className="sw-toast-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div className="sw-toast-body">
+              <span className="sw-toast-title">New Resident Assigned</span>
+              <span className="sw-toast-msg">{toast.message}</span>
+            </div>
+            <button className="sw-toast-close" onClick={() => dismissToast(toast.notificationId)}>✕</button>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

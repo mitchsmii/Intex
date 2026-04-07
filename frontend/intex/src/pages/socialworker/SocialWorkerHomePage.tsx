@@ -84,13 +84,6 @@ function SocialWorkerHomePage() {
           <h1>Welcome back</h1>
           <div className="sw-dash-header-meta">{today}</div>
         </div>
-        <button
-          type="button"
-          className="sw-dash-add-btn"
-          onClick={() => navigate(`${base}/residents`)}
-        >
-          + Add Resident
-        </button>
       </div>
 
       <StatStrip residents={residents} actionItems={actions} />
