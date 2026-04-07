@@ -9,6 +9,7 @@ export interface NavItem {
   to?: string
   label: string
   icon: ReactNode
+  badge?: number
   children?: NavItem[]
 }
 
@@ -90,6 +91,9 @@ function Sidebar({ items }: SidebarProps) {
             >
               <span className="sidebar-link-icon">{item.icon}</span>
               {item.label}
+              {item.badge != null && item.badge > 0 && (
+                <span className="sidebar-badge">{item.badge}</span>
+              )}
             </NavLink>
           ) : null
         )}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
 import type { Resident, Safehouse } from '../../../services/apiService'
+import AddResidentWizard from './AddResidentWizard'
 import '../ManageUsersPage.css'
 
 type SortKey = 'code' | 'caseNo' | 'age' | 'safehouse' | 'worker' | 'risk' | 'reint' | 'status' | 'admitted'
@@ -27,6 +28,7 @@ export default function ResidentsManagePage() {
   const [statusFilter, setStatusFilter] = useState('active')
   const [sortCol,      setSortCol]      = useState<SortKey>('code')
   const [sortDir,      setSortDir]      = useState<Dir>('asc')
+  const [showWizard,   setShowWizard]   = useState(false)
 
   useEffect(() => {
     Promise.allSettled([
@@ -119,7 +121,23 @@ export default function ResidentsManagePage() {
             <div className="mu-kpi-label">{k.label}</div>
           </div>
         ))}
+        <div className="mu-kpi mu-kpi-add-card" onClick={() => setShowWizard(true)}>
+          <div className="mu-kpi-add-icon">+</div>
+          <div className="mu-kpi-label">Add Resident</div>
+        </div>
       </div>
+
+      {showWizard && (
+        <AddResidentWizard
+          safehouses={safehouses}
+          residents={residents}
+          onClose={() => setShowWizard(false)}
+          onCreated={(r) => {
+            setResidents(prev => [r, ...prev])
+            setShowWizard(false)
+          }}
+        />
+      )}
 
       {loading ? <p className="mu-empty">Loading…</p> : (
         <div className="mu-card">
