@@ -85,6 +85,10 @@ def build_donor_features(
         if col in model_df.columns:
             model_df[col] = model_df[col].fillna(value)
 
+    model_df["days_since_last_donation"] = model_df["days_since_last_donation"].clip(
+        upper=1000
+    )
+
     model_df["is_recurring_donor"] = model_df.get("is_recurring_donor", False).fillna(False)
     model_df["is_lapsed"] = model_df.get("is_lapsed", True).fillna(True)
 
