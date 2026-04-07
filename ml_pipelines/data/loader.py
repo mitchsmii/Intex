@@ -1,15 +1,16 @@
 """Utilities for loading raw data from Supabase Postgres tables."""
 
 from __future__ import annotations
-
 from typing import Optional
+import os
 
 import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from dotenv import load_dotenv
 
-# Supabase pooled Postgres connection string.
-CONNECTION_STRING = "postgresql+psycopg2://postgres.yrfrqkdmpctsnmkvptnt:7yElkqHzICZWlwrx@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+load_dotenv()
+CONNECTION_STRING = os.getenv("DATABASE_URL")
 
 _ENGINE: Optional[Engine] = None
 

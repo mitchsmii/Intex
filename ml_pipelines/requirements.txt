@@ -7,3 +7,4 @@ seaborn
 jupyter
 numpy
 joblib
+python-dotenv
