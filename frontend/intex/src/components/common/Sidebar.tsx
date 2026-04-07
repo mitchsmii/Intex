@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import logoImg from '../../assets/intex_logo.png'
 import './Sidebar.css'
 
 export interface NavItem {
@@ -71,8 +72,7 @@ function Sidebar({ items }: SidebarProps) {
   return (
     <aside className="sidebar">
       <NavLink to="/" className="sidebar-logo">
-        <span className="sidebar-logo-icon">~</span>
-        Cove
+        <img src={logoImg} alt="Cove" className="sidebar-logo-img" />
       </NavLink>
 
       <nav className="sidebar-nav">
