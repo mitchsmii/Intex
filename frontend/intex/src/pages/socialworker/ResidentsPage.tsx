@@ -92,7 +92,7 @@ function ResidentsPage() {
 
       <div className="residents-grid">
         {filtered.map((r) => (
-          <div key={r.residentId} className="resident-card" onClick={() => navigate(`/dashboard/residents/${r.residentId}`)}>
+          <div key={r.residentId} className="resident-card" onClick={() => navigate(`/socialworker/dashboard/residents/${r.residentId}`)}>
             <div className="resident-card-header">
               <div className="resident-avatar">
                 {r.internalCode?.substring(0, 2) || '??'}

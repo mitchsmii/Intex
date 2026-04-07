@@ -4,17 +4,9 @@ import type { IncidentReport } from '../../../types/IncidentReport'
 import type { HomeVisitation } from '../../../types/HomeVisitation'
 import type { ProcessRecording } from '../../../types/ProcessRecording'
 
-interface Props {
-  residents: Resident[]
-  incidents: IncidentReport[]
-  visitations: HomeVisitation[]
-  recordings: ProcessRecording[]
-  onResidentClick?: (residentId: number) => void
-}
+export type AlertSource = 'incident' | 'safety' | 'session' | 'risk'
 
-type AlertSource = 'incident' | 'safety' | 'session' | 'risk'
-
-interface Alert {
+export interface Alert {
   key: string
   source: AlertSource
   severity: 'high' | 'medium'
@@ -23,6 +15,14 @@ interface Alert {
   title: string
   detail: string
   date: string | null
+}
+
+interface Props {
+  residents: Resident[]
+  incidents: IncidentReport[]
+  visitations: HomeVisitation[]
+  recordings: ProcessRecording[]
+  onAlertClick?: (alert: Alert) => void
 }
 
 const DAYS = (n: number) => n * 24 * 60 * 60 * 1000
@@ -36,7 +36,7 @@ function CriticalAlerts({
   incidents,
   visitations,
   recordings,
-  onResidentClick,
+  onAlertClick,
 }: Props) {
   const codeOf = useMemo(() => {
     const m = new Map<number, string>()
@@ -150,7 +150,7 @@ function CriticalAlerts({
               <button
                 type="button"
                 className={`alert-row alert-row--${a.severity}`}
-                onClick={() => onResidentClick?.(a.residentId)}
+                onClick={() => onAlertClick?.(a)}
               >
                 <span className={`alert-tag alert-tag--${a.source}`}>
                   {sourceLabel[a.source]}

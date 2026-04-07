@@ -3,13 +3,11 @@ import { useAuth } from '../../hooks/useAuth'
 import {
   fetchResidents,
   fetchHomeVisitations,
-  fetchInterventionPlans,
   createHomeVisitation,
 } from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import type { Resident } from '../../types/Resident'
 import type { HomeVisitation } from '../../types/HomeVisitation'
-import type { InterventionPlan } from '../../types/InterventionPlan'
 import './VisitsConferencesPage.css'
 
 const VISIT_TYPES = [
@@ -19,8 +17,6 @@ const VISIT_TYPES = [
   'Post-Placement Monitoring',
   'Emergency',
 ] as const
-
-type Tab = 'visits' | 'conferences'
 
 type VisitForm = {
   visitDate: string
@@ -63,9 +59,7 @@ function VisitsConferencesPage() {
   const { user } = useAuth()
   const [residents, setResidents] = useState<Resident[]>([])
   const [visits, setVisits] = useState<HomeVisitation[]>([])
-  const [plans, setPlans] = useState<InterventionPlan[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [tab, setTab] = useState<Tab>('visits')
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -89,30 +83,23 @@ function VisitsConferencesPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Per-resident: load visits + plans together
+  // Per-resident: load visits
   useEffect(() => {
     if (selectedId == null) {
       setVisits([])
-      setPlans([])
       return
     }
     setDetailLoading(true)
-    Promise.all([
-      fetchHomeVisitations({ residentId: selectedId }),
-      fetchInterventionPlans({ residentId: selectedId }),
-    ])
-      .then(([v, p]) => {
-        setVisits(v)
-        setPlans(p)
-      })
+    fetchHomeVisitations({ residentId: selectedId })
+      .then(setVisits)
       .catch((err) => setError(err.message))
       .finally(() => setDetailLoading(false))
   }, [selectedId])
 
-  // Reset page when resident or tab changes
+  // Reset page when resident changes
   useEffect(() => {
     setPage(1)
-  }, [selectedId, tab])
+  }, [selectedId])
 
   const selectedResident = useMemo(
     () => residents.find((r) => r.residentId === selectedId) ?? null,
@@ -126,27 +113,6 @@ function VisitsConferencesPage() {
       return bd - ad
     })
   }, [visits])
-
-  const todayMs = new Date().setHours(0, 0, 0, 0)
-  const conferences = useMemo(() => {
-    return plans.filter((p) => p.caseConferenceDate)
-  }, [plans])
-
-  const upcomingConferences = useMemo(
-    () =>
-      [...conferences]
-        .filter((c) => c.caseConferenceDate && new Date(c.caseConferenceDate).getTime() >= todayMs)
-        .sort((a, b) => new Date(a.caseConferenceDate!).getTime() - new Date(b.caseConferenceDate!).getTime()),
-    [conferences, todayMs],
-  )
-
-  const pastConferences = useMemo(
-    () =>
-      [...conferences]
-        .filter((c) => c.caseConferenceDate && new Date(c.caseConferenceDate).getTime() < todayMs)
-        .sort((a, b) => new Date(b.caseConferenceDate!).getTime() - new Date(a.caseConferenceDate!).getTime()),
-    [conferences, todayMs],
-  )
 
   const totalPages = Math.max(1, Math.ceil(sortedVisits.length / pageSize))
   const safePage = Math.min(page, totalPages)
@@ -200,9 +166,9 @@ function VisitsConferencesPage() {
     <div className="vc-page">
       <header className="vc-header">
         <div>
-          <h1>Home Visits & Case Conferences</h1>
+          <h1>Home Visits</h1>
           <p className="vc-sub">
-            Log home and field visits, track family cooperation, and review case conferences.
+            Log home and field visits and track family cooperation.
           </p>
         </div>
       </header>
@@ -248,33 +214,16 @@ function VisitsConferencesPage() {
                     </span>
                   </div>
                 </div>
-                {tab === 'visits' && !showForm && (
+                {!showForm && (
                   <button type="button" className="vc-add-btn" onClick={openForm}>
                     + New Visit
                   </button>
                 )}
               </div>
 
-              <div className="vc-tabs">
-                <button
-                  type="button"
-                  className={`vc-tab${tab === 'visits' ? ' vc-tab--active' : ''}`}
-                  onClick={() => setTab('visits')}
-                >
-                  Home Visits ({visits.length})
-                </button>
-                <button
-                  type="button"
-                  className={`vc-tab${tab === 'conferences' ? ' vc-tab--active' : ''}`}
-                  onClick={() => setTab('conferences')}
-                >
-                  Case Conferences ({conferences.length})
-                </button>
-              </div>
-
               {detailLoading ? (
                 <LoadingSpinner size="md" />
-              ) : tab === 'visits' ? (
+              ) : (
                 <>
                   {showForm && (
                     <form className="vc-form" onSubmit={handleSubmit}>
@@ -529,52 +478,10 @@ function VisitsConferencesPage() {
                     </>
                   )}
                 </>
-              ) : (
-                <div className="vc-conferences">
-                  <div className="vc-conf-section">
-                    <h3>Upcoming Conferences</h3>
-                    {upcomingConferences.length === 0 ? (
-                      <p className="vc-empty">No upcoming case conferences.</p>
-                    ) : (
-                      <ul className="vc-conf-list">
-                        {upcomingConferences.map((p) => (
-                          <li key={p.planId} className="vc-conf-card vc-conf-card--upcoming">
-                            <div className="vc-conf-date">{formatDate(p.caseConferenceDate)}</div>
-                            <div className="vc-conf-body">
-                              <div className="vc-conf-cat">{p.planCategory ?? 'Case Conference'}</div>
-                              {p.planDescription && <p>{p.planDescription}</p>}
-                              {p.status && <span className="vc-conf-status">{p.status}</span>}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  <div className="vc-conf-section">
-                    <h3>Past Conferences</h3>
-                    {pastConferences.length === 0 ? (
-                      <p className="vc-empty">No past case conferences on record.</p>
-                    ) : (
-                      <ul className="vc-conf-list">
-                        {pastConferences.map((p) => (
-                          <li key={p.planId} className="vc-conf-card">
-                            <div className="vc-conf-date">{formatDate(p.caseConferenceDate)}</div>
-                            <div className="vc-conf-body">
-                              <div className="vc-conf-cat">{p.planCategory ?? 'Case Conference'}</div>
-                              {p.planDescription && <p>{p.planDescription}</p>}
-                              {p.status && <span className="vc-conf-status">{p.status}</span>}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
               )}
             </>
           ) : (
-            <p className="vc-empty">Select a resident from the left to view their visits and conferences.</p>
+            <p className="vc-empty">Select a resident from the left to view their visits.</p>
           )}
         </section>
       </div>
