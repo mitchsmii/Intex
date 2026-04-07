@@ -322,46 +322,64 @@ function InterventionPlansPage() {
                       No plans {filter === 'All' ? 'yet for this resident' : `in "${filter}" status`}.
                     </p>
                   ) : (
-                    <ul className="ip-plans">
-                      {filteredPlans.map((p) => {
-                        const overdue = isOverdue(p.targetDate, p.status)
-                        return (
-                          <li key={p.planId} className={`ip-plan${overdue ? ' ip-plan--overdue' : ''}`}>
-                            <div className="ip-plan-top">
-                              <span className="ip-plan-cat">{p.planCategory ?? 'Plan'}</span>
-                              {p.targetDate && (
-                                <span className={`ip-plan-target${overdue ? ' ip-plan-target--overdue' : ''}`}>
-                                  {overdue ? 'Overdue: ' : 'Target: '}
-                                  {formatDate(p.targetDate)}
-                                </span>
+                    <div className="ip-list">
+                      <div className="ip-list-head">
+                        <div>Category</div>
+                        <div>Description</div>
+                        <div>Services</div>
+                        <div>Target</div>
+                        <div>Status</div>
+                      </div>
+                      <ul className="ip-rows">
+                        {filteredPlans.map((p) => {
+                          const overdue = isOverdue(p.targetDate, p.status)
+                          return (
+                            <li
+                              key={p.planId}
+                              className={`ip-row-wrap${overdue ? ' ip-row-wrap--overdue' : ''}`}
+                            >
+                              <div className="ip-row">
+                                <div className="ip-row-cat">
+                                  <span className="ip-plan-cat">{p.planCategory ?? 'Plan'}</span>
+                                </div>
+                                <div className="ip-row-desc">
+                                  {p.planDescription ?? <span className="ip-row-muted">No description</span>}
+                                </div>
+                                <div className="ip-row-services">
+                                  {p.servicesProvided ?? <span className="ip-row-muted">—</span>}
+                                </div>
+                                <div className={`ip-row-target${overdue ? ' ip-row-target--overdue' : ''}`}>
+                                  {p.targetDate ? (
+                                    <>
+                                      {overdue && <span className="ip-row-overdue-tag">Overdue</span>}
+                                      {formatDate(p.targetDate)}
+                                    </>
+                                  ) : (
+                                    <span className="ip-row-muted">—</span>
+                                  )}
+                                </div>
+                                <div className="ip-row-status">
+                                  <select
+                                    className="ip-plan-status"
+                                    value={p.status ?? ''}
+                                    onChange={(e) => handleStatusChange(p, e.target.value)}
+                                  >
+                                    {STATUSES.map((s) => (
+                                      <option key={s} value={s}>{s}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </div>
+                              {p.caseConferenceDate && (
+                                <div className="ip-row-conf-line">
+                                  Linked to conference: {formatDate(p.caseConferenceDate)}
+                                </div>
                               )}
-                              <select
-                                className="ip-plan-status"
-                                value={p.status ?? ''}
-                                onChange={(e) => handleStatusChange(p, e.target.value)}
-                              >
-                                {STATUSES.map((s) => (
-                                  <option key={s} value={s}>{s}</option>
-                                ))}
-                              </select>
-                            </div>
-                            {p.planDescription && (
-                              <p className="ip-plan-desc">{p.planDescription}</p>
-                            )}
-                            {p.servicesProvided && (
-                              <div className="ip-plan-services">
-                                <strong>Services:</strong> {p.servicesProvided}
-                              </div>
-                            )}
-                            {p.caseConferenceDate && (
-                              <div className="ip-plan-conf">
-                                Linked to conference: {formatDate(p.caseConferenceDate)}
-                              </div>
-                            )}
-                          </li>
-                        )
-                      })}
-                    </ul>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
                   )}
                 </>
               )}

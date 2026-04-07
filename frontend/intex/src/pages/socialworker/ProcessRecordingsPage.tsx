@@ -49,6 +49,35 @@ function formatDate(iso: string | null): string {
   })
 }
 
+type TrendBucket = 'good' | 'warn' | 'bad' | 'unknown'
+
+function emotionalStateColor(state: string | null): TrendBucket {
+  if (!state) return 'unknown'
+  const s = state.toLowerCase()
+  if (['happy', 'hopeful', 'calm'].includes(s)) return 'good'
+  if (['anxious', 'sad', 'withdrawn'].includes(s)) return 'warn'
+  if (['angry', 'distressed'].includes(s)) return 'bad'
+  return 'unknown'
+}
+
+const DRAFT_PREFIX = 'pr-draft-'
+
+function draftKey(residentId: number): string {
+  return `${DRAFT_PREFIX}${residentId}`
+}
+
+function loadDraft(residentId: number): FormState | null {
+  try {
+    const raw = localStorage.getItem(draftKey(residentId))
+    if (!raw) return null
+    return JSON.parse(raw) as FormState
+  } catch {
+    return null
+  }
+}
+
+type RecordingFilter = 'all' | 'concerns'
+
 function ProcessRecordingsPage() {
   const { user } = useAuth()
   const location = useLocation()
@@ -64,7 +93,10 @@ function ProcessRecordingsPage() {
   const [form, setForm] = useState<FormState>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [draftRestored, setDraftRestored] = useState(false)
 
+  const [filter, setFilter] = useState<RecordingFilter>('all')
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -109,27 +141,75 @@ function ProcessRecordingsPage() {
     })
   }, [recordings])
 
-  // Reset to first page whenever the resident or page size changes
+  const concernsCount = useMemo(
+    () => sortedRecordings.filter((r) => r.concernsFlagged === true).length,
+    [sortedRecordings],
+  )
+
+  const filteredRecordings = useMemo(() => {
+    if (filter === 'concerns') {
+      return sortedRecordings.filter((r) => r.concernsFlagged === true)
+    }
+    return sortedRecordings
+  }, [sortedRecordings, filter])
+
+  // Trend dots — 5 most recent, oldest on the left for a temporal read
+  const trendSessions = useMemo(
+    () => sortedRecordings.slice(0, 5).reverse(),
+    [sortedRecordings],
+  )
+
+  // Reset to first page whenever the resident, filter, or page size changes
   useEffect(() => {
     setPage(1)
-  }, [selectedId, pageSize])
+  }, [selectedId, pageSize, filter])
 
-  const totalPages = Math.max(1, Math.ceil(sortedRecordings.length / pageSize))
+  const totalPages = Math.max(1, Math.ceil(filteredRecordings.length / pageSize))
   const safePage = Math.min(page, totalPages)
-  const pagedRecordings = sortedRecordings.slice(
+  const pagedRecordings = filteredRecordings.slice(
     (safePage - 1) * pageSize,
     safePage * pageSize,
   )
 
   function openForm() {
-    setForm(emptyForm())
+    if (selectedId != null) {
+      const draft = loadDraft(selectedId)
+      if (draft) {
+        setForm(draft)
+        setDraftRestored(true)
+      } else {
+        setForm(emptyForm())
+        setDraftRestored(false)
+      }
+    } else {
+      setForm(emptyForm())
+      setDraftRestored(false)
+    }
     setSubmitError(null)
     setShowForm(true)
+  }
+
+  function closeFormDiscardDraft() {
+    if (selectedId != null) {
+      localStorage.removeItem(draftKey(selectedId))
+    }
+    setDraftRestored(false)
+    setShowForm(false)
   }
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
+
+  // Autosave the form to localStorage on every change, scoped per resident
+  useEffect(() => {
+    if (!showForm || selectedId == null) return
+    try {
+      localStorage.setItem(draftKey(selectedId), JSON.stringify(form))
+    } catch {
+      // ignore quota errors
+    }
+  }, [form, showForm, selectedId])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -156,6 +236,10 @@ function ProcessRecordingsPage() {
       }
       const created = await createProcessRecording(payload)
       setRecordings((prev) => [created, ...prev])
+      if (selectedId != null) {
+        localStorage.removeItem(draftKey(selectedId))
+      }
+      setDraftRestored(false)
       setShowForm(false)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to save recording')
@@ -221,16 +305,62 @@ function ProcessRecordingsPage() {
                     </span>{' '}
                     · {recordings.length} {recordings.length === 1 ? 'recording' : 'recordings'}
                   </div>
+                  {trendSessions.length > 0 && (
+                    <div className="pr-trend">
+                      <span className="pr-trend-label">Emotional trend</span>
+                      <span className="pr-trend-sub">— last {trendSessions.length} {trendSessions.length === 1 ? 'session' : 'sessions'}</span>
+                      <div className="pr-trend-row">
+                        {trendSessions.map((r, i) => (
+                          <span
+                            key={r.recordingId}
+                            className="pr-trend-item"
+                          >
+                            {i > 0 && <span className="pr-trend-caret">›</span>}
+                            <span
+                              className={`pr-trend-dot pr-trend-dot--${emotionalStateColor(r.emotionalStateEnd)}`}
+                              title={`${formatDate(r.sessionDate)}: ${r.emotionalStateObserved ?? '—'} → ${r.emotionalStateEnd ?? '—'}`}
+                            />
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {!showForm && (
-                  <button type="button" className="pr-add-btn" onClick={openForm}>
-                    + New Recording
-                  </button>
-                )}
+                <div className="pr-header-actions">
+                  {!showForm && (
+                    <button type="button" className="pr-add-btn" onClick={openForm}>
+                      + New Recording
+                    </button>
+                  )}
+                  <div className="pr-legend">
+                    <span className="pr-legend-item">
+                      <span className="pr-flag pr-flag--progress">P</span> Progress
+                    </span>
+                    <span className="pr-legend-item">
+                      <span className="pr-flag pr-flag--concern">C</span> Concerns
+                    </span>
+                    <span className="pr-legend-item">
+                      <span className="pr-flag pr-flag--referral">R</span> Referral
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {showForm && (
                 <form className="pr-form" onSubmit={handleSubmit}>
+                  {draftRestored && (
+                    <div className="pr-draft-banner">
+                      <span>Restored a draft you started earlier.</span>
+                      <button
+                        type="button"
+                        className="pr-draft-dismiss"
+                        onClick={() => setDraftRestored(false)}
+                        aria-label="Dismiss"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
                   <div className="pr-form-row">
                     <label className="pr-field">
                       <span>Session Date</span>
@@ -358,7 +488,7 @@ function ProcessRecordingsPage() {
                     <button
                       type="button"
                       className="pr-btn pr-btn--secondary"
-                      onClick={() => setShowForm(false)}
+                      onClick={closeFormDiscardDraft}
                       disabled={submitting}
                     >
                       Cancel
@@ -378,65 +508,129 @@ function ProcessRecordingsPage() {
                 </p>
               ) : (
                 <>
-                <ul className="pr-timeline">
-                  {pagedRecordings.map((r) => (
-                    <li key={r.recordingId} className="pr-card">
-                      <div className="pr-card-top">
-                        <span className="pr-card-date">{formatDate(r.sessionDate)}</span>
-                        {r.sessionType && (
-                          <span className="pr-card-type">{r.sessionType}</span>
-                        )}
-                        {r.sessionDurationMinutes != null && (
-                          <span className="pr-card-duration">{r.sessionDurationMinutes} min</span>
-                        )}
-                        {r.socialWorker && (
-                          <span className="pr-card-worker">{r.socialWorker}</span>
-                        )}
-                      </div>
+                <div className="pr-filters">
+                  <button
+                    type="button"
+                    className={`pr-filter${filter === 'all' ? ' pr-filter--active' : ''}`}
+                    onClick={() => setFilter('all')}
+                  >
+                    All ({sortedRecordings.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`pr-filter${filter === 'concerns' ? ' pr-filter--active' : ''}`}
+                    onClick={() => setFilter('concerns')}
+                  >
+                    Concerns Only ({concernsCount})
+                  </button>
+                </div>
 
-                      {(r.emotionalStateObserved || r.emotionalStateEnd) && (
-                        <div className="pr-card-emotion">
-                          <strong>Emotional state:</strong>{' '}
-                          {r.emotionalStateObserved ?? '—'}
-                          {r.emotionalStateEnd && ` → ${r.emotionalStateEnd}`}
-                        </div>
-                      )}
+                {filteredRecordings.length === 0 ? (
+                  <p className="pr-empty">No sessions flagged with concerns for this resident.</p>
+                ) : (
+                <>
+                <div className="pr-list">
+                  <div className="pr-list-head">
+                    <div>Date</div>
+                    <div>Type</div>
+                    <div>Duration</div>
+                    <div>Social Worker</div>
+                    <div>Interventions · Follow-up</div>
+                    <div className="pr-list-head-flags">Flags</div>
+                    <div className="pr-list-head-mood" title="Emotional state at end of session">Mood</div>
+                  </div>
+                  <ul className="pr-rows">
+                    {pagedRecordings.map((r) => {
+                      const isExpanded = expandedRowId === r.recordingId
+                      return (
+                        <li key={r.recordingId} className={`pr-row-wrap${isExpanded ? ' pr-row-wrap--open' : ''}`}>
+                          <button
+                            type="button"
+                            className="pr-row"
+                            onClick={() =>
+                              setExpandedRowId((cur) => (cur === r.recordingId ? null : r.recordingId))
+                            }
+                            aria-expanded={isExpanded}
+                          >
+                            <div className="pr-row-date">{formatDate(r.sessionDate)}</div>
+                            <div className="pr-row-type">
+                              {r.sessionType && (
+                                <span className="pr-card-type">{r.sessionType}</span>
+                              )}
+                            </div>
+                            <div className="pr-row-duration">
+                              {r.sessionDurationMinutes != null ? `${r.sessionDurationMinutes} min` : '—'}
+                            </div>
+                            <div className="pr-row-worker">{r.socialWorker ?? '—'}</div>
+                            <div className="pr-row-summary">
+                              {r.interventionsApplied ? (
+                                <span className="pr-row-interventions">{r.interventionsApplied}</span>
+                              ) : (
+                                <span className="pr-row-muted">No interventions logged</span>
+                              )}
+                              {r.followUpActions && (
+                                <>
+                                  <span className="pr-row-sep"> · </span>
+                                  <span className="pr-row-followup">{r.followUpActions}</span>
+                                </>
+                              )}
+                            </div>
+                            <div className="pr-row-flags">
+                              {r.progressNoted && <span className="pr-flag pr-flag--progress" title="Progress noted">P</span>}
+                              {r.concernsFlagged && <span className="pr-flag pr-flag--concern" title="Concerns flagged">C</span>}
+                              {r.referralMade && <span className="pr-flag pr-flag--referral" title="Referral made">R</span>}
+                            </div>
+                            <div className="pr-row-mood">
+                              <span
+                                className={`pr-trend-dot pr-trend-dot--${emotionalStateColor(r.emotionalStateEnd)}`}
+                                title={`${r.emotionalStateObserved ?? '—'} → ${r.emotionalStateEnd ?? '—'}`}
+                              />
+                            </div>
+                          </button>
 
-                      {r.sessionNarrative && (
-                        <div className="pr-card-section">
-                          <div className="pr-card-label">Narrative</div>
-                          <p>{r.sessionNarrative}</p>
-                        </div>
-                      )}
+                          {isExpanded && (
+                            <div className="pr-row-detail">
+                              {(r.emotionalStateObserved || r.emotionalStateEnd) && (
+                                <div className="pr-card-emotion">
+                                  <strong>Emotional state:</strong>{' '}
+                                  {r.emotionalStateObserved ?? '—'}
+                                  {r.emotionalStateEnd && ` → ${r.emotionalStateEnd}`}
+                                </div>
+                              )}
+                              {r.sessionNarrative && (
+                                <div className="pr-card-section">
+                                  <div className="pr-card-label">Narrative</div>
+                                  <p>{r.sessionNarrative}</p>
+                                </div>
+                              )}
+                              {r.interventionsApplied && (
+                                <div className="pr-card-section">
+                                  <div className="pr-card-label">Interventions</div>
+                                  <p>{r.interventionsApplied}</p>
+                                </div>
+                              )}
+                              {r.followUpActions && (
+                                <div className="pr-card-section">
+                                  <div className="pr-card-label">Follow-up</div>
+                                  <p>{r.followUpActions}</p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+                </>
+                )}
 
-                      {r.interventionsApplied && (
-                        <div className="pr-card-section">
-                          <div className="pr-card-label">Interventions</div>
-                          <p>{r.interventionsApplied}</p>
-                        </div>
-                      )}
-
-                      {r.followUpActions && (
-                        <div className="pr-card-section">
-                          <div className="pr-card-label">Follow-up</div>
-                          <p>{r.followUpActions}</p>
-                        </div>
-                      )}
-
-                      <div className="pr-card-flags">
-                        {r.progressNoted && <span className="pr-flag pr-flag--progress">Progress</span>}
-                        {r.concernsFlagged && <span className="pr-flag pr-flag--concern">Concern</span>}
-                        {r.referralMade && <span className="pr-flag pr-flag--referral">Referral</span>}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-
+                {filteredRecordings.length > 0 && (
                 <div className="pr-pagination">
                   <div className="pr-pagination-info">
                     Showing {(safePage - 1) * pageSize + 1}–
-                    {Math.min(safePage * pageSize, sortedRecordings.length)} of{' '}
-                    {sortedRecordings.length}
+                    {Math.min(safePage * pageSize, filteredRecordings.length)} of{' '}
+                    {filteredRecordings.length}
                   </div>
                   <div className="pr-pagination-controls">
                     <button
@@ -487,6 +681,7 @@ function ProcessRecordingsPage() {
                     </select>
                   </div>
                 </div>
+                )}
                 </>
               )}
             </>
