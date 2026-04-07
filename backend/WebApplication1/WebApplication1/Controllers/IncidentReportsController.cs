@@ -16,21 +16,22 @@ public class IncidentReportsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<IncidentReport>>> GetIncidentReports(
+    public async Task<IActionResult> GetAll(
         [FromQuery] int? residentId,
         [FromQuery] bool? unresolvedOnly)
     {
         var query = _context.IncidentReports.AsQueryable();
-        if (residentId.HasValue) query = query.Where(i => i.ResidentId == residentId);
+        if (residentId.HasValue)    query = query.Where(i => i.ResidentId == residentId);
         if (unresolvedOnly == true) query = query.Where(i => i.Resolved != true);
-        return await query.OrderByDescending(i => i.IncidentDate).ToListAsync();
+        var incidents = await query.OrderByDescending(i => i.IncidentDate).ToListAsync();
+        return Ok(incidents);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<IncidentReport>> GetIncidentReport(int id)
+    public async Task<IActionResult> GetById(int id)
     {
         var ir = await _context.IncidentReports.FindAsync(id);
         if (ir == null) return NotFound();
-        return ir;
+        return Ok(ir);
     }
 }
