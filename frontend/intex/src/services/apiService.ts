@@ -138,6 +138,33 @@ export interface UpcomingPlan {
   status: string | null
 }
 
+export interface SocialWorker {
+  socialWorkerId: number
+  fullName: string
+  firstName: string | null
+  lastName: string | null
+  email: string | null
+  phone: string | null
+  safehouseId: number | null
+  status: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface InterventionPlan {
+  planId: number
+  residentId: number | null
+  planCategory: string | null
+  planDescription: string | null
+  servicesProvided: string | null
+  targetValue: number | null
+  targetDate: string | null
+  status: string | null
+  caseConferenceDate: string | null
+  createdAt: string | null
+  updatedAt: string | null
+}
+
 export interface MonthlyDonationSummary {
   year: number
   month: number
@@ -186,4 +213,6 @@ export const api = {
   getLatestMetrics:           () => get<SafehouseMonthlyMetric[]>('/api/safehousemonthlymetrics/latest'),
   getIncidentReports:         () => get<IncidentReport[]>('/api/incidentreports'),
   getUpcomingPlans:           () => get<UpcomingPlan[]>('/api/interventionplans/upcoming'),
+  getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
+  getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
 }

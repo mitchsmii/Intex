@@ -382,6 +382,55 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
+      {/* ── History Log ── */}
+      <div className="ad-card">
+        <h2 className="ad-card-title">Recent Activity Log</h2>
+        <p className="ad-card-sub">Latest system activity across donations, incidents, and case plans</p>
+        <div className="ad-history-list">
+          {[
+            ...donations.slice(0, 4).map(d => ({
+              type: 'donation' as const,
+              date: d.donationDate,
+              label: `New donation recorded`,
+              detail: `${d.supporterName} · ${fmtAmount(d.amount, d.currencyCode)} · ${d.isRecurring ? 'Monthly' : 'One-time'}`,
+              id: `d-${d.donationId}`,
+            })),
+            ...incidents.slice(0, 4).map(i => ({
+              type: 'incident' as const,
+              date: i.incidentDate,
+              label: `Incident report filed`,
+              detail: `${i.incidentType ?? 'Incident'} · Resident R-${i.residentId} · ${i.severity ?? 'Unknown'} severity`,
+              id: `i-${i.incidentId}`,
+            })),
+            ...plans.slice(0, 4).map(p => ({
+              type: 'plan' as const,
+              date: p.caseConferenceDate,
+              label: `Case conference scheduled`,
+              detail: `${p.residentCode ?? `R-${p.residentId}`} · ${p.planCategory ?? 'Plan'} · ${p.assignedSocialWorker ?? 'Unassigned'}`,
+              id: `p-${p.planId}`,
+            })),
+          ]
+            .filter(e => e.date)
+            .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime())
+            .slice(0, 10)
+            .map(event => (
+              <div key={event.id} className="ad-history-row">
+                <span className={`ad-history-dot ad-hist-${event.type}`} />
+                <div className="ad-history-body">
+                  <div className="ad-history-label">{event.label}</div>
+                  <div className="ad-history-detail">{event.detail}</div>
+                </div>
+                <div className="ad-history-date">
+                  {new Date(event.date!).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+              </div>
+            ))}
+          {!loading && donations.length === 0 && incidents.length === 0 && plans.length === 0 && (
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '0.5rem 0' }}>No recent activity to display.</p>
+          )}
+        </div>
+      </div>
+
     </div>
   )
 }

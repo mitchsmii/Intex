@@ -18,6 +18,11 @@ import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
 import PrivacyPolicyPage from './pages/public/PrivacyPolicyPage'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import SafehouseLocationsPage from './pages/admin/SafehouseLocationsPage'
+import ReportsPage from './pages/admin/ReportsPage'
+import SocialWorkersPage from './pages/admin/users/SocialWorkersPage'
+import PartnersPage from './pages/admin/users/PartnersPage'
+import ResidentsManagePage from './pages/admin/users/ResidentsManagePage'
+import DonorsPage from './pages/admin/users/DonorsPage'
 import CookieConsent from './components/common/CookieConsent'
 
 function App() {
@@ -59,6 +64,11 @@ function App() {
               <Route index element={<AdminDashboardPage />} />
               <Route path="donation-report" element={<DonationReportPage />} />
               <Route path="safehouse-locations" element={<SafehouseLocationsPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="users/social-workers" element={<SocialWorkersPage />} />
+              <Route path="users/partners" element={<PartnersPage />} />
+              <Route path="users/residents" element={<ResidentsManagePage />} />
+              <Route path="users/donors" element={<DonorsPage />} />
             </Route>
           </Route>
         </Routes>
