@@ -50,6 +50,9 @@ function AssessmentForm({ residentId, instrument, onCancel, onSaved }: Props) {
   const [immediateAction, setImmediateAction] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+
+  const PAGE_SIZE = 5
 
   // Live scoring
   const score: ScoreResult = useMemo(() => {
@@ -78,6 +81,35 @@ function AssessmentForm({ residentId, instrument, onCancel, onSaved }: Props) {
   const allItemsAnswered = isSumBased
     ? template.items?.every((it) => items[it.index] != null) ?? false
     : true // suicide risk has no required completeness check beyond consent
+
+  // Pagination: split items into pages of PAGE_SIZE.
+  // Sum-based: N question pages + 1 review page.
+  // Suicide risk: 1 question page + 1 review page.
+  const itemPages = useMemo(() => {
+    if (!isSumBased || !template.items) return [] as typeof template.items[]
+    const pages: Array<NonNullable<typeof template.items>> = []
+    for (let i = 0; i < template.items.length; i += PAGE_SIZE) {
+      pages.push(template.items.slice(i, i + PAGE_SIZE))
+    }
+    return pages
+  }, [isSumBased, template.items])
+
+  const totalQuestionPages = isSumBased ? itemPages.length : 1
+  const totalPages = totalQuestionPages + 1 // +1 for review page
+  const isReviewPage = page === totalPages - 1
+  const isFirstPage = page === 0
+
+  const currentItems = isSumBased ? itemPages[page] ?? [] : []
+
+  const currentPageAnswered = useMemo(() => {
+    if (isReviewPage) return true
+    if (!isSumBased) return true
+    return currentItems.every((it) => items[it.index] != null)
+  }, [isReviewPage, isSumBased, currentItems, items])
+
+  const worstEventSatisfied = instrument !== 'PCL5' || worstEvent.trim().length > 0
+  const canGoNext =
+    !paused && currentPageAnswered && (!isFirstPage || worstEventSatisfied)
 
   const requireWorstEvent = instrument === 'PCL5'
   const worstEventOk = !requireWorstEvent || worstEvent.trim().length > 0
@@ -156,7 +188,23 @@ function AssessmentForm({ residentId, instrument, onCancel, onSaved }: Props) {
 
       {!paused && (
         <>
-          {requireWorstEvent && (
+          {/* Progress header */}
+          <div className="af-progress">
+            <div className="af-progress-label">
+              {isReviewPage
+                ? 'Review & submit'
+                : `Page ${page + 1} of ${totalQuestionPages}`}
+            </div>
+            <div className="af-progress-bar">
+              <div
+                className="af-progress-fill"
+                style={{ width: `${((page + 1) / totalPages) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* PAGE 1 extras: worst event for PCL-5 */}
+          {isFirstPage && requireWorstEvent && (
             <label className="af-field">
               <span>Worst event (in resident's words)</span>
               <textarea
@@ -169,10 +217,10 @@ function AssessmentForm({ residentId, instrument, onCancel, onSaved }: Props) {
             </label>
           )}
 
-          {/* SUM-BASED INSTRUMENTS */}
-          {isSumBased && template.items && (
-            <ol className="af-items">
-              {template.items.map((item) => (
+          {/* SUM-BASED QUESTIONS (paginated) */}
+          {!isReviewPage && isSumBased && (
+            <ol className="af-items" start={page * PAGE_SIZE + 1}>
+              {currentItems.map((item) => (
                 <li key={item.index} className="af-item">
                   <div className="af-item-question">{item.question}</div>
                   <div className="af-item-options">
@@ -201,8 +249,8 @@ function AssessmentForm({ residentId, instrument, onCancel, onSaved }: Props) {
             </ol>
           )}
 
-          {/* SUICIDE RISK SECTIONS */}
-          {instrument === 'SUICIDE_RISK' && (
+          {/* SUICIDE RISK SECTIONS (single question page, not paginated) */}
+          {!isReviewPage && instrument === 'SUICIDE_RISK' && (
             <ol className="af-items">
               <SuicideSection
                 title="1. Evidence of suicidal ideation"
@@ -253,7 +301,9 @@ function AssessmentForm({ residentId, instrument, onCancel, onSaved }: Props) {
             </ol>
           )}
 
-          {/* LIVE SCORE */}
+          {/* REVIEW PAGE: score + notes + immediate action */}
+          {isReviewPage && (
+          <>
           <div className={`af-score af-score--${bucket}`}>
             <span className="af-score-label">Computed score</span>
             <span className="af-score-value">
@@ -309,19 +359,37 @@ function AssessmentForm({ residentId, instrument, onCancel, onSaved }: Props) {
           )}
 
           {error && <div className="af-error">{error}</div>}
+          </>
+          )}
 
+          {/* Navigation footer */}
           <div className="af-actions">
             <button
               type="button"
               className="af-btn af-btn--secondary"
-              onClick={onCancel}
+              onClick={isFirstPage ? onCancel : () => setPage((p) => p - 1)}
               disabled={submitting}
             >
-              Cancel
+              {isFirstPage ? 'Cancel' : '← Previous'}
             </button>
-            <button type="submit" className="af-btn af-btn--primary" disabled={!canSubmit}>
-              {submitting ? 'Saving…' : 'Save Assessment'}
-            </button>
+            {isReviewPage ? (
+              <button
+                type="submit"
+                className="af-btn af-btn--primary"
+                disabled={!canSubmit}
+              >
+                {submitting ? 'Saving…' : 'Save Assessment'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="af-btn af-btn--primary"
+                disabled={!canGoNext}
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
+              >
+                Next →
+              </button>
+            )}
           </div>
         </>
       )}
