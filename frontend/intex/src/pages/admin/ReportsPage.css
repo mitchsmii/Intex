@@ -168,31 +168,65 @@
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* ── Fundraising Goal card ── */
-.rp-goal-card {
-  background: white;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-md);
-  padding: var(--space-lg);
-  box-shadow: var(--shadow-sm);
+/* ── Fundraising goal + monthly trend (single section) ── */
+.rp-goal-trend-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: 0;
 }
 
-.rp-goal-top {
+.rp-goal-trend-top {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-md);
   flex-wrap: wrap;
+  margin-bottom: var(--space-md);
 }
 
-.rp-goal-heading {
+.rp-goal-trend-title-block {
+  min-width: 0;
+}
+
+.rp-goal-trend-main-title {
   font-size: 1rem;
   font-weight: 600;
   color: var(--cove-deep);
   margin: 0 0 0.15rem;
+}
+
+.rp-goal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.rp-goal-presets-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.rp-goal-presets-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.rp-goal-trend-chart {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--border-light);
+}
+
+.rp-goal-chart-heading {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-md);
 }
 
 .rp-goal-period {
@@ -1129,6 +1163,181 @@
   font-size: 0.75rem;
   color: var(--text-muted);
   line-height: 1.4;
+}
+
+/* ── Why donors stop giving (segment charts) ── */
+.rp-seg-section {
+  margin-top: var(--space-md);
+}
+.rp-seg-head {
+  margin-bottom: var(--space-md);
+}
+.rp-seg-head .rp-card-title {
+  margin-bottom: var(--space-xs);
+}
+.rp-seg-lede {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+.rp-seg-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+.rp-seg-title {
+  margin: 0 0 var(--space-sm);
+  font-size: 0.95rem;
+  color: var(--cove-deep);
+}
+.rp-seg-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rp-seg-row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  font-size: 0.78rem;
+}
+.rp-seg-row-head-channel {
+  align-items: flex-start;
+}
+.rp-seg-row-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.rp-seg-row-name {
+  font-weight: 600;
+  color: var(--cove-deep);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rp-seg-row-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+.rp-seg-row-count {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.rp-seg-count-track {
+  flex: 1;
+  min-width: 48px;
+  max-width: 120px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--border-light);
+  overflow: hidden;
+}
+.rp-seg-count-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--text-muted);
+  opacity: 0.45;
+}
+.rp-seg-row-pct {
+  font-weight: 600;
+  color: var(--cove-deep);
+  flex-shrink: 0;
+}
+.rp-seg-track {
+  width: 100%;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--border-light);
+  overflow: hidden;
+}
+.rp-seg-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+.rp-seg-bar-critical { background: #dc2626; }
+.rp-seg-bar-warn { background: #b45309; }
+.rp-seg-bar-ok { background: #15803d; }
+
+.rp-insight-callout {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: #edf7f7;
+  border: 1px solid var(--cove-seaglass);
+  border-radius: var(--radius-sm);
+  color: var(--cove-deep);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  display: flex;
+  gap: var(--space-xs);
+  align-items: flex-start;
+}
+
+.rp-insight-icon {
+  font-size: 0.95rem;
+  line-height: 1.1;
+}
+
+.rp-insight-note {
+  margin: var(--space-xs) 0 0;
+  padding: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.rp-collapsible {
+  margin-top: var(--space-md);
+}
+
+.rp-collapsible-btn {
+  border: 1px solid var(--border-light);
+  background: white;
+  color: var(--cove-deep);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rp-collapsible-btn:hover {
+  border-color: var(--cove-tidal);
+  color: var(--cove-tidal);
+}
+
+.rp-lapse-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xs);
+}
+
+.rp-refresh-btn {
+  border: 1px solid var(--cove-tidal);
+  border-radius: var(--radius-sm);
+  color: var(--cove-tidal);
+  background: white;
+  padding: var(--space-xs) var(--space-sm);
+  font-weight: 600;
+}
+
+.rp-refresh-btn:hover {
+  border-color: var(--cove-deep);
+  color: var(--cove-deep);
+  background: var(--cove-seafoam);
+}
+
+@media (max-width: 900px) {
+  .rp-seg-grid { grid-template-columns: 1fr; }
 }
 
 /* ─── ML Risk Predictions ───────────────────────────────────────────────── */

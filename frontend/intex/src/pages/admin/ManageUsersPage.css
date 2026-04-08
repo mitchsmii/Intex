@@ -259,6 +259,64 @@
   letter-spacing: 0.02em;
 }
 
+.mu-seg-section {
+  margin-top: var(--space-xl);
+}
+
+.mu-seg-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.mu-seg-card {
+  padding: var(--space-md);
+}
+
+.mu-seg-title {
+  margin: 0 0 var(--space-sm);
+  color: var(--cove-deep);
+  font-size: 0.95rem;
+}
+
+.mu-seg-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.mu-seg-row-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+}
+
+.mu-seg-track {
+  width: 100%;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--border-light);
+  overflow: hidden;
+}
+
+.mu-seg-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+
+.mu-seg-bar-critical {
+  background: #dc2626;
+}
+
+.mu-seg-bar-warn {
+  background: #b45309;
+}
+
+.mu-seg-bar-ok {
+  background: #15803d;
+}
+
 /* ── Card / table ── */
 .mu-card {
   background: white;
@@ -347,8 +405,13 @@
 }
 
 .mu-badge-warn {
-  background: #fff0cc;
-  color: #7a4f00;
+  background: #fef9c3;
+  color: #b45309;
+}
+
+.mu-badge-critical {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .mu-badge-med {
@@ -537,4 +600,5 @@
 @media (max-width: 700px) {
   .mu-kpi-row        { grid-template-columns: repeat(2, 1fr); }
   .mu-form-two-col   { grid-template-columns: 1fr; }
+  .mu-seg-grid       { grid-template-columns: 1fr; }
 }
