@@ -6,6 +6,8 @@ import {
   createInterventionPlan,
   updateInterventionPlan,
 } from '../../services/socialWorkerService'
+import { api } from '../../services/apiService'
+import type { AdmissionChecklist } from '../../services/apiService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import type { Resident } from '../../types/Resident'
 import type { InterventionPlan } from '../../types/InterventionPlan'
@@ -34,6 +36,28 @@ const emptyPlanForm = (): PlanForm => ({
   status: 'In Progress',
 })
 
+// ── Admission checklist items ─────────────────────────────────────────────────
+
+const IN_FACILITY_ITEMS = [
+  'Intake form signed by resident or guardian',
+  'Initial health assessment completed',
+  'Room and bed assigned',
+  'Personal belongings inventoried and stored',
+  'Emergency contacts recorded',
+  'House rules & expectations reviewed with resident',
+] as const
+
+const NOT_IN_FACILITY_ITEMS = [
+  'Warrant for rescue / custody obtained',
+  'Restraining order against parents or guardians filed',
+  'Court order documentation prepared',
+  'DSWD referral completed',
+  'Legal guardian or DSWD representative notified',
+  'Child protective services contacted',
+] as const
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString(undefined, {
@@ -47,6 +71,8 @@ function isOverdue(targetDate: string | null, status: string | null): boolean {
   if (!targetDate || status === 'Completed') return false
   return new Date(targetDate).getTime() < Date.now()
 }
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 function InterventionPlansPage() {
   const location = useLocation()
@@ -63,6 +89,14 @@ function InterventionPlansPage() {
   const [form, setForm] = useState<PlanForm>(emptyPlanForm)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  // ── Admission checklist state ──────────────────────────────────────────────
+  const [facilityStatus, setFacilityStatus] = useState<'in' | 'not'>('in')
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
+  const [checklistSubmitting, setChecklistSubmitting] = useState(false)
+  const [checklistError, setChecklistError] = useState<string | null>(null)
+  const [existingChecklist, setExistingChecklist] = useState<AdmissionChecklist | null>(null)
+  const [checklistLoading, setChecklistLoading] = useState(false)
 
   useEffect(() => {
     fetchResidents()
@@ -81,13 +115,36 @@ function InterventionPlansPage() {
   useEffect(() => {
     if (selectedId == null) {
       setPlans([])
+      setExistingChecklist(null)
       return
     }
     setDetailLoading(true)
+    setChecklistLoading(true)
+    setCheckedItems(new Set())
+    setChecklistError(null)
+
     fetchInterventionPlans({ residentId: selectedId })
       .then(setPlans)
       .catch((err) => setError(err.message))
       .finally(() => setDetailLoading(false))
+
+    // Load any existing checklist submission for this resident
+    api.getAdmissionChecklists()
+      .then((all) => {
+        const match = all.find((c) => c.residentId === selectedId) ?? null
+        setExistingChecklist(match)
+        if (match) {
+          setFacilityStatus(match.residentInFacility ? 'in' : 'not')
+          try {
+            const items: string[] = JSON.parse(match.checkedItems)
+            setCheckedItems(new Set(items))
+          } catch {
+            setCheckedItems(new Set())
+          }
+        }
+      })
+      .catch(() => setExistingChecklist(null))
+      .finally(() => setChecklistLoading(false))
   }, [selectedId])
 
   const selectedResident = useMemo(
@@ -148,10 +205,44 @@ function InterventionPlansPage() {
     try {
       await updateInterventionPlan(plan.planId, optimistic)
     } catch {
-      // revert on failure
       setPlans((prev) => prev.map((p) => (p.planId === plan.planId ? plan : p)))
     }
   }
+
+  function toggleItem(item: string) {
+    setCheckedItems((prev) => {
+      const next = new Set(prev)
+      next.has(item) ? next.delete(item) : next.add(item)
+      return next
+    })
+  }
+
+  async function handleChecklistSubmit() {
+    if (selectedId == null) return
+    setChecklistSubmitting(true)
+    setChecklistError(null)
+    try {
+      const result = await api.submitAdmissionChecklist({
+        residentId: selectedId,
+        residentInFacility: facilityStatus === 'in',
+        checkedItems: Array.from(checkedItems),
+      })
+      setExistingChecklist(result)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Submission failed'
+      setChecklistError(msg.includes('409') || msg.includes('Conflict')
+        ? 'A pending submission already exists for this resident.'
+        : msg)
+    } finally {
+      setChecklistSubmitting(false)
+    }
+  }
+
+  const activeItems = facilityStatus === 'in'
+    ? IN_FACILITY_ITEMS
+    : NOT_IN_FACILITY_ITEMS
+
+  const allChecked = activeItems.length > 0 && activeItems.every((i) => checkedItems.has(i))
 
   if (loading) return <LoadingSpinner size="lg" />
   if (error) return <p className="ip-error">Error: {error}</p>
@@ -381,6 +472,128 @@ function InterventionPlansPage() {
                       </ul>
                     </div>
                   )}
+
+                  {/* ── Admission Checklist ─────────────────────────────── */}
+                  <div className="ip-checklist-section">
+                    <div className="ip-checklist-header">
+                      <div>
+                        <h3 className="ip-checklist-title">Admission Checklist</h3>
+                        <p className="ip-checklist-sub">
+                          Complete and submit to admin for approval before or after placement.
+                        </p>
+                      </div>
+                      {existingChecklist && (
+                        <span className={`ip-cl-status-badge ip-cl-status--${existingChecklist.status.toLowerCase()}`}>
+                          {existingChecklist.status}
+                        </span>
+                      )}
+                    </div>
+
+                    {checklistLoading ? (
+                      <p className="ip-empty">Loading checklist…</p>
+                    ) : existingChecklist?.status === 'Approved' ? (
+                      <div className="ip-cl-approved">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Checklist approved by admin on {formatDate(existingChecklist.reviewedAt)}.
+                        {existingChecklist.adminNotes && (
+                          <span className="ip-cl-notes"> Note: {existingChecklist.adminNotes}</span>
+                        )}
+                      </div>
+                    ) : existingChecklist?.status === 'Rejected' ? (
+                      <div className="ip-cl-rejected">
+                        Submission was rejected on {formatDate(existingChecklist.reviewedAt)}.
+                        {existingChecklist.adminNotes && (
+                          <span className="ip-cl-notes"> Reason: {existingChecklist.adminNotes}</span>
+                        )}
+                        <p className="ip-cl-rejected-hint">You may resubmit after addressing the concerns above.</p>
+                      </div>
+                    ) : existingChecklist?.status === 'Pending' ? (
+                      <div className="ip-cl-pending">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/>
+                          <polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        Submitted on {formatDate(existingChecklist.submittedAt)} — awaiting admin review.
+                      </div>
+                    ) : (
+                      <>
+                        {/* Facility toggle */}
+                        <div className="ip-cl-toggle-row">
+                          <span className="ip-cl-toggle-label">Resident status:</span>
+                          <div className="ip-cl-toggle">
+                            <button
+                              type="button"
+                              className={`ip-cl-toggle-btn${facilityStatus === 'in' ? ' active' : ''}`}
+                              onClick={() => { setFacilityStatus('in'); setCheckedItems(new Set()) }}
+                            >
+                              Already in facility
+                            </button>
+                            <button
+                              type="button"
+                              className={`ip-cl-toggle-btn${facilityStatus === 'not' ? ' active' : ''}`}
+                              onClick={() => { setFacilityStatus('not'); setCheckedItems(new Set()) }}
+                            >
+                              Not yet admitted
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Context note for legal docs */}
+                        {facilityStatus === 'not' && (
+                          <div className="ip-cl-legal-note">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="12" y1="8" x2="12" y2="12"/>
+                              <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            Confirm the following legal documents are in place before requesting admission approval.
+                          </div>
+                        )}
+
+                        {/* Checklist items */}
+                        <ul className="ip-cl-list">
+                          {activeItems.map((item) => (
+                            <li key={item} className="ip-cl-item">
+                              <label className="ip-cl-label">
+                                <input
+                                  type="checkbox"
+                                  className="ip-cl-check"
+                                  checked={checkedItems.has(item)}
+                                  onChange={() => toggleItem(item)}
+                                />
+                                <span className={checkedItems.has(item) ? 'ip-cl-text--checked' : ''}>
+                                  {item}
+                                </span>
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+
+                        <div className="ip-cl-footer">
+                          <span className="ip-cl-count">
+                            {checkedItems.size} / {activeItems.length} confirmed
+                          </span>
+                          {checklistError && (
+                            <span className="ip-cl-error">{checklistError}</span>
+                          )}
+                          <button
+                            type="button"
+                            className="ip-btn ip-btn--primary"
+                            disabled={checkedItems.size === 0 || checklistSubmitting}
+                            onClick={handleChecklistSubmit}
+                          >
+                            {checklistSubmitting
+                              ? 'Submitting…'
+                              : allChecked
+                                ? 'Submit for Approval'
+                                : `Submit ${checkedItems.size} item${checkedItems.size !== 1 ? 's' : ''} for Approval`}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </>
               )}
             </>

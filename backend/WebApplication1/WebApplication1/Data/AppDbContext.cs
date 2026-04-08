@@ -31,6 +31,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<HealthWellbeingRecord> HealthWellbeingRecords { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<Assessment> Assessments { get; set; }
+    public DbSet<AdmissionChecklist> AdmissionChecklists { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,5 +66,13 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<Assessment>()
             .HasIndex(a => a.ResidentId)
             .HasDatabaseName("ix_assessments_resident_id");
+
+        modelBuilder.Entity<AdmissionChecklist>()
+            .Property(a => a.ChecklistId)
+            .ValueGeneratedOnAdd();
+
+        modelBuilder.Entity<AdmissionChecklist>()
+            .HasIndex(a => a.ResidentId)
+            .HasDatabaseName("ix_admission_checklists_resident_id");
     }
 }

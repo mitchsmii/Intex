@@ -273,6 +273,20 @@ export interface SwNotification {
   createdAt: string
 }
 
+export interface AdmissionChecklist {
+  checklistId: number
+  residentId: number
+  residentCode: string | null
+  socialWorkerEmail: string | null
+  residentInFacility: boolean
+  checkedItems: string   // JSON-encoded string[]
+  status: string         // "Pending" | "Approved" | "Rejected"
+  submittedAt: string
+  reviewedAt: string | null
+  reviewedBy: string | null
+  adminNotes: string | null
+}
+
 export interface SocialMediaPost {
   postId: number
   platform: string
@@ -402,4 +416,13 @@ export const api = {
     post<SocialMediaPost>('/api/socialmediaposts', body),
   updateResident:             (id: number, body: Partial<{ safehouseId: number; assignedSocialWorker: string; currentRiskLevel: string; caseStatus: string }>) =>
     authPatchWithBody<Resident>(`/api/residents/${id}`, body),
+  getAdmissionChecklists:     (status?: string) =>
+    authGet<AdmissionChecklist[]>(`/api/admissionchecklists${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  getPendingChecklistCount:   () => authGet<number>('/api/admissionchecklists/pending-count'),
+  submitAdmissionChecklist:   (body: { residentId: number; residentInFacility: boolean; checkedItems: string[] }) =>
+    authPost<AdmissionChecklist>('/api/admissionchecklists', body),
+  approveChecklist:           (id: number, notes?: string) =>
+    authPatchWithBody<AdmissionChecklist>(`/api/admissionchecklists/${id}/approve`, { notes: notes ?? null }),
+  rejectChecklist:            (id: number, notes?: string) =>
+    authPatchWithBody<AdmissionChecklist>(`/api/admissionchecklists/${id}/reject`, { notes: notes ?? null }),
 }

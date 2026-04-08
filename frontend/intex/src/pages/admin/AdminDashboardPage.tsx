@@ -53,6 +53,7 @@ export default function AdminDashboardPage() {
   const [plans,        setPlans]        = useState<UpcomingPlan[]>([])
   const [residentCount, setResidentCount] = useState(0)
   const [supporterCount, setSupporterCount] = useState(0)
+  const [pendingApprovals, setPendingApprovals] = useState(0)
   const [loading,      setLoading]      = useState(true)
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function AdminDashboardPage() {
       api.getLatestMetrics().then(setMetrics),
       api.getIncidentReports().then(setIncidents),
       api.getUpcomingPlans().then(setPlans),
+      api.getPendingChecklistCount().then(setPendingApprovals).catch(() => {}),
     ]).finally(() => setLoading(false))
   }, [])
 
@@ -81,7 +83,7 @@ export default function AdminDashboardPage() {
   const totalCap = safehouses.reduce((s, h) => s + (h.capacityGirls ?? 0), 0)
   const openIncidents = incidents.filter(i => !i.resolved).length
 
-  const KPI: { label: string; value: string; sub: string; trend: string; icon: ReactNode }[] = [
+  const KPI: { label: string; value: string; sub: string; trend: string; icon: ReactNode; to?: string }[] = [
     {
       label: 'Active Residents', value: String(residentCount),
       sub: `across ${safehouses.filter(h => h.status === 'Active').length} safehouses`, trend: 'up',
@@ -126,6 +128,21 @@ export default function AdminDashboardPage() {
         </svg>
       ),
     },
+    {
+      label: 'Pending Approvals', value: String(pendingApprovals),
+      sub: pendingApprovals === 1 ? '1 checklist awaiting review' : `${pendingApprovals} checklists awaiting review`,
+      trend: pendingApprovals > 0 ? 'warn' : 'up',
+      to: '/admin/approvals',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      ),
+    },
   ]
 
   const recentDonations = [...donations].slice(0, 6)
@@ -159,16 +176,27 @@ export default function AdminDashboardPage() {
 
       {/* ── KPI Row ── */}
       <div className="ad-kpi-grid">
-        {KPI.map(k => (
-          <div key={k.label} className={`ad-kpi-card ad-kpi-${k.trend}`}>
-            <div className="ad-kpi-top">
-              <span className="ad-kpi-icon">{k.icon}</span>
-              <span className="ad-kpi-label">{k.label}</span>
+        {KPI.map(k => {
+          const inner = (
+            <>
+              <div className="ad-kpi-top">
+                <span className="ad-kpi-icon">{k.icon}</span>
+                <span className="ad-kpi-label">{k.label}</span>
+              </div>
+              <div className="ad-kpi-value">{k.value}</div>
+              <div className="ad-kpi-sub">{k.sub}</div>
+            </>
+          )
+          return k.to ? (
+            <Link key={k.label} to={k.to} className={`ad-kpi-card ad-kpi-${k.trend} ad-kpi-link`}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={k.label} className={`ad-kpi-card ad-kpi-${k.trend}`}>
+              {inner}
             </div>
-            <div className="ad-kpi-value">{k.value}</div>
-            <div className="ad-kpi-sub">{k.sub}</div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* ── Safehouse Status ── */}
