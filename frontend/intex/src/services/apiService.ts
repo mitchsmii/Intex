@@ -8,6 +8,15 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function authGet<T>(path: string): Promise<T> {
+  const token = localStorage.getItem('cove_token')
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface Safehouse {
@@ -34,6 +43,7 @@ export interface Resident {
   caseStatus: string | null
   sex: string | null
   dateOfBirth: string | null
+  ageUponAdmission: string | null
   dateOfAdmission: string | null
   assignedSocialWorker: string | null
   reintegrationStatus: string | null
@@ -165,6 +175,15 @@ export interface InterventionPlan {
   updatedAt: string | null
 }
 
+export interface SwNotification {
+  notificationId: number
+  recipientEmail: string
+  message: string
+  relatedResidentCode: string | null
+  isRead: boolean
+  createdAt: string
+}
+
 export interface MonthlyDonationSummary {
   year: number
   month: number
@@ -192,14 +211,54 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function authPost<T>(path: string, body: unknown): Promise<T> {
+  const token = localStorage.getItem('cove_token')
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
+async function authPatch(path: string): Promise<void> {
+  const token = localStorage.getItem('cove_token')
+  await fetch(`${BASE_URL}${path}`, {
+    method: 'PATCH',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+}
+
+async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
+  const token = localStorage.getItem('cove_token')
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
 // ── API calls ──────────────────────────────────────────────────────────────
 
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
-  getResidents:               () => get<Resident[]>('/api/residents'),
+  getResidents:               () => authGet<Resident[]>('/api/residents'),
   getSupporters:              () => get<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
+  lookupSupporterByEmail:     (email: string) =>
+    authGet<Supporter>(`/api/supporters/lookup-by-email?email=${encodeURIComponent(email)}`),
+  chatWithVanessa:            (messages: { role: 'vanessa' | 'user'; content: string }[]) =>
+    authPost<{ reply: string }>('/api/vanessa/chat', { messages }),
   getDonations:               () => get<Donation[]>('/api/donations'),
   getDonationsBySupporter:    (id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
   getDonationsMonthlySummary: () => get<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
@@ -211,8 +270,21 @@ export const api = {
     post<DonationRaw>('/api/donations', body),
   getAllocationSummary:       () => get<AllocationSummary>('/api/donationallocations/summary'),
   getLatestMetrics:           () => get<SafehouseMonthlyMetric[]>('/api/safehousemonthlymetrics/latest'),
-  getIncidentReports:         () => get<IncidentReport[]>('/api/incidentreports'),
-  getUpcomingPlans:           () => get<UpcomingPlan[]>('/api/interventionplans/upcoming'),
+  getIncidentReports:         () => authGet<IncidentReport[]>('/api/incidentreports'),
+  getUpcomingPlans:           () => authGet<UpcomingPlan[]>('/api/interventionplans/upcoming'),
+  getResidentPublicCounts:    () => get<{ totalServed: number; activeResidents: number; reintegrated: number }>('/api/residents/public-counts'),
   getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
   getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
+  getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
+  createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string; caseStatus?: string }) =>
+    authPost<Resident>('/api/residents', body),
+  createSocialWorker:         (body: { fullName: string; email?: string; phone?: string; safehouseId?: number | null; status?: string }) =>
+    authPost<SocialWorker>('/api/socialworkers', body),
+  createSupporter:            (body: { firstName?: string; lastName?: string; displayName?: string; organizationName?: string; email?: string; phone?: string; supporterType?: string; status?: string; acquisitionChannel?: string; region?: string; country?: string }) =>
+    authPost<Supporter>('/api/supporters', body),
+  getUnreadNotificationCount: () => authGet<number>('/api/notifications/unread-count'),
+  getNotifications:           () => authGet<SwNotification[]>('/api/notifications'),
+  markAllNotificationsRead:   () => authPatch('/api/notifications/mark-all-read'),
+  updateResident:             (id: number, body: Partial<{ safehouseId: number; assignedSocialWorker: string; currentRiskLevel: string; caseStatus: string }>) =>
+    authPatchWithBody<Resident>(`/api/residents/${id}`, body),
 }

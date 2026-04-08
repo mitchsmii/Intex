@@ -3,13 +3,11 @@ import { useAuth } from '../../hooks/useAuth'
 import {
   fetchResidents,
   fetchHomeVisitations,
-  fetchInterventionPlans,
   createHomeVisitation,
 } from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import type { Resident } from '../../types/Resident'
 import type { HomeVisitation } from '../../types/HomeVisitation'
-import type { InterventionPlan } from '../../types/InterventionPlan'
 import './VisitsConferencesPage.css'
 
 const VISIT_TYPES = [
@@ -19,8 +17,6 @@ const VISIT_TYPES = [
   'Post-Placement Monitoring',
   'Emergency',
 ] as const
-
-type Tab = 'visits' | 'conferences'
 
 type VisitForm = {
   visitDate: string
@@ -59,13 +55,21 @@ function formatDate(iso: string | null): string {
   })
 }
 
+function outcomeClass(outcome: string | null): string {
+  if (!outcome) return 'unknown'
+  const s = outcome.toLowerCase()
+  if (s === 'favorable') return 'good'
+  if (s === 'needs improvement') return 'warn'
+  if (s === 'unfavorable') return 'bad'
+  if (s === 'inconclusive') return 'neutral'
+  return 'unknown'
+}
+
 function VisitsConferencesPage() {
   const { user } = useAuth()
   const [residents, setResidents] = useState<Resident[]>([])
   const [visits, setVisits] = useState<HomeVisitation[]>([])
-  const [plans, setPlans] = useState<InterventionPlan[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
-  const [tab, setTab] = useState<Tab>('visits')
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -75,6 +79,7 @@ function VisitsConferencesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
+  const [expandedRowId, setExpandedRowId] = useState<number | null>(null)
   const [page, setPage] = useState(1)
   const pageSize = 10
 
@@ -89,30 +94,23 @@ function VisitsConferencesPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Per-resident: load visits + plans together
+  // Per-resident: load visits
   useEffect(() => {
     if (selectedId == null) {
       setVisits([])
-      setPlans([])
       return
     }
     setDetailLoading(true)
-    Promise.all([
-      fetchHomeVisitations({ residentId: selectedId }),
-      fetchInterventionPlans({ residentId: selectedId }),
-    ])
-      .then(([v, p]) => {
-        setVisits(v)
-        setPlans(p)
-      })
+    fetchHomeVisitations({ residentId: selectedId })
+      .then(setVisits)
       .catch((err) => setError(err.message))
       .finally(() => setDetailLoading(false))
   }, [selectedId])
 
-  // Reset page when resident or tab changes
+  // Reset page when resident changes
   useEffect(() => {
     setPage(1)
-  }, [selectedId, tab])
+  }, [selectedId])
 
   const selectedResident = useMemo(
     () => residents.find((r) => r.residentId === selectedId) ?? null,
@@ -126,27 +124,6 @@ function VisitsConferencesPage() {
       return bd - ad
     })
   }, [visits])
-
-  const todayMs = new Date().setHours(0, 0, 0, 0)
-  const conferences = useMemo(() => {
-    return plans.filter((p) => p.caseConferenceDate)
-  }, [plans])
-
-  const upcomingConferences = useMemo(
-    () =>
-      [...conferences]
-        .filter((c) => c.caseConferenceDate && new Date(c.caseConferenceDate).getTime() >= todayMs)
-        .sort((a, b) => new Date(a.caseConferenceDate!).getTime() - new Date(b.caseConferenceDate!).getTime()),
-    [conferences, todayMs],
-  )
-
-  const pastConferences = useMemo(
-    () =>
-      [...conferences]
-        .filter((c) => c.caseConferenceDate && new Date(c.caseConferenceDate).getTime() < todayMs)
-        .sort((a, b) => new Date(b.caseConferenceDate!).getTime() - new Date(a.caseConferenceDate!).getTime()),
-    [conferences, todayMs],
-  )
 
   const totalPages = Math.max(1, Math.ceil(sortedVisits.length / pageSize))
   const safePage = Math.min(page, totalPages)
@@ -200,9 +177,9 @@ function VisitsConferencesPage() {
     <div className="vc-page">
       <header className="vc-header">
         <div>
-          <h1>Home Visits & Case Conferences</h1>
+          <h1>Home Visits</h1>
           <p className="vc-sub">
-            Log home and field visits, track family cooperation, and review case conferences.
+            Log home and field visits and track family cooperation.
           </p>
         </div>
       </header>
@@ -248,33 +225,26 @@ function VisitsConferencesPage() {
                     </span>
                   </div>
                 </div>
-                {tab === 'visits' && !showForm && (
-                  <button type="button" className="vc-add-btn" onClick={openForm}>
-                    + New Visit
-                  </button>
-                )}
-              </div>
-
-              <div className="vc-tabs">
-                <button
-                  type="button"
-                  className={`vc-tab${tab === 'visits' ? ' vc-tab--active' : ''}`}
-                  onClick={() => setTab('visits')}
-                >
-                  Home Visits ({visits.length})
-                </button>
-                <button
-                  type="button"
-                  className={`vc-tab${tab === 'conferences' ? ' vc-tab--active' : ''}`}
-                  onClick={() => setTab('conferences')}
-                >
-                  Case Conferences ({conferences.length})
-                </button>
+                <div className="vc-header-actions">
+                  {!showForm && (
+                    <button type="button" className="vc-add-btn" onClick={openForm}>
+                      + New Visit
+                    </button>
+                  )}
+                  <div className="vc-legend">
+                    <span className="vc-legend-item" title="Safety concerns noted on the visit">
+                      <span className="vc-flag vc-flag--concern">S</span> Safety concern
+                    </span>
+                    <span className="vc-legend-item" title="Follow-up action required">
+                      <span className="vc-flag vc-flag--followup-muted">F</span> Follow-up
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {detailLoading ? (
                 <LoadingSpinner size="md" />
-              ) : tab === 'visits' ? (
+              ) : (
                 <>
                   {showForm && (
                     <form className="vc-form" onSubmit={handleSubmit}>
@@ -422,65 +392,92 @@ function VisitsConferencesPage() {
                     </p>
                   ) : (
                     <>
-                      <ul className="vc-timeline">
-                        {pagedVisits.map((v) => (
-                          <li key={v.visitationId} className="vc-card">
-                            <div className="vc-card-top">
-                              <span className="vc-card-date">{formatDate(v.visitDate)}</span>
-                              {v.visitType && <span className="vc-card-type">{v.visitType}</span>}
-                              {v.locationVisited && (
-                                <span className="vc-card-location">{v.locationVisited}</span>
-                              )}
-                              {v.socialWorker && (
-                                <span className="vc-card-worker">{v.socialWorker}</span>
-                              )}
-                            </div>
+                      <div className="vc-list">
+                        <div className="vc-list-head">
+                          <div>Date</div>
+                          <div>Type</div>
+                          <div>Location</div>
+                          <div>Social Worker</div>
+                          <div>Outcome</div>
+                          <div className="vc-list-head-flags">Flags</div>
+                        </div>
+                        <ul className="vc-rows">
+                          {pagedVisits.map((v) => {
+                            const isExpanded = expandedRowId === v.visitationId
+                            return (
+                              <li key={v.visitationId} className={`vc-row-wrap${isExpanded ? ' vc-row-wrap--open' : ''}`}>
+                                <button
+                                  type="button"
+                                  className="vc-row"
+                                  onClick={() =>
+                                    setExpandedRowId((cur) => (cur === v.visitationId ? null : v.visitationId))
+                                  }
+                                  aria-expanded={isExpanded}
+                                >
+                                  <div className="vc-row-date">{formatDate(v.visitDate)}</div>
+                                  <div className="vc-row-type">
+                                    {v.visitType && (
+                                      <span className="vc-card-type">{v.visitType}</span>
+                                    )}
+                                  </div>
+                                  <div className="vc-row-location">{v.locationVisited ?? '—'}</div>
+                                  <div className="vc-row-worker">{v.socialWorker ?? '—'}</div>
+                                  <div className="vc-row-summary">
+                                    {v.visitOutcome ? (
+                                      <span className={`vc-outcome vc-outcome--${outcomeClass(v.visitOutcome)}`}>
+                                        <span className="vc-outcome-dot" />
+                                        {v.visitOutcome}
+                                      </span>
+                                    ) : (
+                                      <span className="vc-row-muted">—</span>
+                                    )}
+                                  </div>
+                                  <div className="vc-row-flags">
+                                    {v.safetyConcernsNoted && (
+                                      <span className="vc-flag vc-flag--concern" title="Safety concerns noted">S</span>
+                                    )}
+                                    {v.followUpNeeded && (
+                                      <span className="vc-flag vc-flag--followup-muted" title="Follow-up needed">F</span>
+                                    )}
+                                  </div>
+                                </button>
 
-                            {v.familyMembersPresent && (
-                              <div className="vc-card-line">
-                                <strong>Family present:</strong> {v.familyMembersPresent}
-                              </div>
-                            )}
-
-                            {v.purpose && (
-                              <div className="vc-card-line">
-                                <strong>Purpose:</strong> {v.purpose}
-                              </div>
-                            )}
-
-                            {v.observations && (
-                              <div className="vc-card-section">
-                                <div className="vc-card-label">Observations</div>
-                                <p>{v.observations}</p>
-                              </div>
-                            )}
-
-                            {v.followUpNeeded && v.followUpNotes && (
-                              <div className="vc-card-section">
-                                <div className="vc-card-label">Follow-up</div>
-                                <p>{v.followUpNotes}</p>
-                              </div>
-                            )}
-
-                            <div className="vc-card-flags">
-                              {v.familyCooperationLevel && (
-                                <span className={`vc-flag vc-flag--coop-${v.familyCooperationLevel.toLowerCase()}`}>
-                                  Cooperation: {v.familyCooperationLevel}
-                                </span>
-                              )}
-                              {v.safetyConcernsNoted && (
-                                <span className="vc-flag vc-flag--concern">Safety concern</span>
-                              )}
-                              {v.followUpNeeded && (
-                                <span className="vc-flag vc-flag--followup">Follow-up</span>
-                              )}
-                              {v.visitOutcome && (
-                                <span className="vc-flag vc-flag--outcome">{v.visitOutcome}</span>
-                              )}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
+                                {isExpanded && (
+                                  <div className="vc-row-detail">
+                                    {v.purpose && (
+                                      <div className="vc-card-line">
+                                        <strong>Purpose:</strong> {v.purpose}
+                                      </div>
+                                    )}
+                                    {v.familyMembersPresent && (
+                                      <div className="vc-card-line">
+                                        <strong>Family present:</strong> {v.familyMembersPresent}
+                                      </div>
+                                    )}
+                                    {v.familyCooperationLevel && (
+                                      <div className="vc-card-line">
+                                        <strong>Cooperation:</strong> {v.familyCooperationLevel}
+                                      </div>
+                                    )}
+                                    {v.observations && (
+                                      <div className="vc-card-section">
+                                        <div className="vc-card-label">Observations</div>
+                                        <p>{v.observations}</p>
+                                      </div>
+                                    )}
+                                    {v.followUpNeeded && v.followUpNotes && (
+                                      <div className="vc-card-section">
+                                        <div className="vc-card-label">Follow-up</div>
+                                        <p>{v.followUpNotes}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </div>
 
                       <div className="vc-pagination">
                         <div className="vc-pagination-info">
@@ -529,52 +526,10 @@ function VisitsConferencesPage() {
                     </>
                   )}
                 </>
-              ) : (
-                <div className="vc-conferences">
-                  <div className="vc-conf-section">
-                    <h3>Upcoming Conferences</h3>
-                    {upcomingConferences.length === 0 ? (
-                      <p className="vc-empty">No upcoming case conferences.</p>
-                    ) : (
-                      <ul className="vc-conf-list">
-                        {upcomingConferences.map((p) => (
-                          <li key={p.planId} className="vc-conf-card vc-conf-card--upcoming">
-                            <div className="vc-conf-date">{formatDate(p.caseConferenceDate)}</div>
-                            <div className="vc-conf-body">
-                              <div className="vc-conf-cat">{p.planCategory ?? 'Case Conference'}</div>
-                              {p.planDescription && <p>{p.planDescription}</p>}
-                              {p.status && <span className="vc-conf-status">{p.status}</span>}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  <div className="vc-conf-section">
-                    <h3>Past Conferences</h3>
-                    {pastConferences.length === 0 ? (
-                      <p className="vc-empty">No past case conferences on record.</p>
-                    ) : (
-                      <ul className="vc-conf-list">
-                        {pastConferences.map((p) => (
-                          <li key={p.planId} className="vc-conf-card">
-                            <div className="vc-conf-date">{formatDate(p.caseConferenceDate)}</div>
-                            <div className="vc-conf-body">
-                              <div className="vc-conf-cat">{p.planCategory ?? 'Case Conference'}</div>
-                              {p.planDescription && <p>{p.planDescription}</p>}
-                              {p.status && <span className="vc-conf-status">{p.status}</span>}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
               )}
             </>
           ) : (
-            <p className="vc-empty">Select a resident from the left to view their visits and conferences.</p>
+            <p className="vc-empty">Select a resident from the left to view their visits.</p>
           )}
         </section>
       </div>

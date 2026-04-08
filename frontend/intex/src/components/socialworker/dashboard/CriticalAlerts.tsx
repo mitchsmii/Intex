@@ -3,18 +3,18 @@ import type { Resident } from '../../../types/Resident'
 import type { IncidentReport } from '../../../types/IncidentReport'
 import type { HomeVisitation } from '../../../types/HomeVisitation'
 import type { ProcessRecording } from '../../../types/ProcessRecording'
+import type { Assessment } from '../../../types/Assessment'
 
-interface Props {
-  residents: Resident[]
-  incidents: IncidentReport[]
-  visitations: HomeVisitation[]
-  recordings: ProcessRecording[]
-  onResidentClick?: (residentId: number) => void
-}
+export type AlertSource =
+  | 'incident'
+  | 'safety'
+  | 'session'
+  | 'risk'
+  | 'mh-suicide-bdi'
+  | 'mh-suicide-screen'
+  | 'mh-ptsd'
 
-type AlertSource = 'incident' | 'safety' | 'session' | 'risk'
-
-interface Alert {
+export interface Alert {
   key: string
   source: AlertSource
   severity: 'high' | 'medium'
@@ -23,6 +23,15 @@ interface Alert {
   title: string
   detail: string
   date: string | null
+}
+
+interface Props {
+  residents: Resident[]
+  incidents: IncidentReport[]
+  visitations: HomeVisitation[]
+  recordings: ProcessRecording[]
+  assessments?: Assessment[]
+  onAlertClick?: (alert: Alert) => void
 }
 
 const DAYS = (n: number) => n * 24 * 60 * 60 * 1000
@@ -36,7 +45,8 @@ function CriticalAlerts({
   incidents,
   visitations,
   recordings,
-  onResidentClick,
+  assessments = [],
+  onAlertClick,
 }: Props) {
   const codeOf = useMemo(() => {
     const m = new Map<number, string>()
@@ -119,6 +129,71 @@ function CriticalAlerts({
         })
       })
 
+    // 5. Mental health alerts from clinical assessments
+    assessments.forEach((a) => {
+      if (a.residentId == null) return
+      const code = codeOf.get(a.residentId) ?? `#${a.residentId}`
+
+      // BDI item-9 suicidal ideation in last 14 days
+      if (a.instrument === 'BDI' && a.responsesJson && within(a.administeredDate, 14)) {
+        try {
+          const parsed = JSON.parse(a.responsesJson)
+          const item9 = parsed?.items?.['9'] ?? parsed?.items?.[9]
+          if (typeof item9 === 'number' && item9 >= 2) {
+            out.push({
+              key: `mh-bdi-${a.assessmentId}`,
+              source: 'mh-suicide-bdi',
+              severity: 'high',
+              residentId: a.residentId,
+              residentCode: code,
+              title: 'BDI item 9: suicidal ideation',
+              detail: a.immediateAction ?? 'Item-9 score ≥ 2 — review safety plan',
+              date: a.administeredDate,
+            })
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // Suicide screen High/Emergency in last 30 days
+      if (
+        a.instrument === 'SUICIDE_RISK' &&
+        within(a.administeredDate, 30) &&
+        (a.severityBand === 'High' || a.severityBand === 'Emergency')
+      ) {
+        out.push({
+          key: `mh-suicide-${a.assessmentId}`,
+          source: 'mh-suicide-screen',
+          severity: 'high',
+          residentId: a.residentId,
+          residentCode: code,
+          title: `Suicide risk: ${a.severityBand}`,
+          detail: a.immediateAction ?? `${a.tickCount ?? 0}/6 ticks on suicide screen`,
+          date: a.administeredDate,
+        })
+      }
+
+      // PCL-5 ≥ 33 (provisional PTSD) in last 30 days
+      if (
+        a.instrument === 'PCL5' &&
+        within(a.administeredDate, 30) &&
+        a.totalScore != null &&
+        a.totalScore >= 33
+      ) {
+        out.push({
+          key: `mh-ptsd-${a.assessmentId}`,
+          source: 'mh-ptsd',
+          severity: 'medium',
+          residentId: a.residentId,
+          residentCode: code,
+          title: 'PCL-5: probable PTSD',
+          detail: `Score ${a.totalScore} ≥ 33 — trauma-informed care plan recommended`,
+          date: a.administeredDate,
+        })
+      }
+    })
+
     // Sort: high severity first, then by date desc
     return out.sort((a, b) => {
       if (a.severity !== b.severity) return a.severity === 'high' ? -1 : 1
@@ -126,13 +201,16 @@ function CriticalAlerts({
       const db = b.date ? new Date(b.date).getTime() : 0
       return db - da
     })
-  }, [incidents, visitations, recordings, residents, codeOf])
+  }, [incidents, visitations, recordings, residents, assessments, codeOf])
 
   const sourceLabel: Record<AlertSource, string> = {
     incident: 'Incident',
     safety: 'Home Visit',
     session: 'Session',
     risk: 'Risk',
+    'mh-suicide-bdi': 'BDI',
+    'mh-suicide-screen': 'Suicide',
+    'mh-ptsd': 'PTSD',
   }
 
   return (
@@ -150,7 +228,7 @@ function CriticalAlerts({
               <button
                 type="button"
                 className={`alert-row alert-row--${a.severity}`}
-                onClick={() => onResidentClick?.(a.residentId)}
+                onClick={() => onAlertClick?.(a)}
               >
                 <span className={`alert-tag alert-tag--${a.source}`}>
                   {sourceLabel[a.source]}

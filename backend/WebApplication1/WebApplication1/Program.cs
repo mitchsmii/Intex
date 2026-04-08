@@ -9,6 +9,7 @@ using WebApplication1.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient();
 builder.Services.AddOpenApi();
 
 // EF Core + Npgsql
@@ -122,6 +123,23 @@ using (var scope = app.Services.CreateScope())
         CREATE INDEX IF NOT EXISTS "IX_AspNetUserRoles_RoleId" ON "AspNetUserRoles" ("RoleId");
         CREATE INDEX IF NOT EXISTS "EmailIndex" ON "AspNetUsers" ("NormalizedEmail");
         CREATE UNIQUE INDEX IF NOT EXISTS "UserNameIndex" ON "AspNetUsers" ("NormalizedUserName");
+
+        CREATE TABLE IF NOT EXISTS sw_notifications (
+            notification_id SERIAL PRIMARY KEY,
+            recipient_email VARCHAR(256) NOT NULL,
+            message TEXT NOT NULL,
+            related_resident_code VARCHAR(50),
+            is_read BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+        CREATE INDEX IF NOT EXISTS ix_sw_notifications_recipient ON sw_notifications (recipient_email) WHERE is_read = FALSE;
+
+        -- Sync residents sequence so new INSERTs don't collide with existing rows
+        SELECT setval(
+            pg_get_serial_sequence('residents', 'resident_id'),
+            COALESCE((SELECT MAX(resident_id) FROM residents), 0),
+            true
+        );
         """;
     await cmd.ExecuteNonQueryAsync();
 

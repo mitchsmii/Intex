@@ -6,6 +6,9 @@ import type { ProcessRecording } from "../types/ProcessRecording";
 import type { HomeVisitation } from "../types/HomeVisitation";
 import type { InterventionPlan } from "../types/InterventionPlan";
 import type { IncidentReport } from "../types/IncidentReport";
+import type { EducationRecord } from "../types/EducationRecord";
+import type { HealthWellbeingRecord } from "../types/HealthWellbeingRecord";
+import type { Assessment } from "../types/Assessment";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5280";
 
@@ -114,6 +117,111 @@ export async function fetchIncidentReports(params?: {
   const res = await authedFetch(`/api/incidentreports?${qs}`);
   if (!res.ok) throw new Error(`Failed to fetch incident reports: ${res.status}`);
   return res.json();
+}
+
+export async function updateIncidentReport(
+  id: number,
+  payload: IncidentReport
+): Promise<void> {
+  const token = localStorage.getItem("cove_token");
+  const res = await fetch(`${API_URL}/api/incidentreports/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to update incident report: ${res.status}`);
+}
+
+export async function fetchEducationRecords(params?: {
+  residentId?: number;
+}): Promise<EducationRecord[]> {
+  const qs = new URLSearchParams();
+  if (params?.residentId) qs.set("residentId", String(params.residentId));
+  const res = await authedFetch(`/api/educationrecords?${qs}`);
+  if (!res.ok) throw new Error(`Failed to fetch education records: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchAssessments(params?: {
+  residentId?: number;
+  instrument?: string;
+}): Promise<Assessment[]> {
+  const qs = new URLSearchParams();
+  if (params?.residentId) qs.set("residentId", String(params.residentId));
+  if (params?.instrument) qs.set("instrument", params.instrument);
+  const res = await authedFetch(`/api/assessments?${qs}`);
+  if (!res.ok) throw new Error(`Failed to fetch assessments: ${res.status}`);
+  return res.json();
+}
+
+export async function createAssessment(
+  payload: Omit<Assessment, "assessmentId" | "createdAt">
+): Promise<Assessment> {
+  const token = localStorage.getItem("cove_token");
+  const res = await fetch(`${API_URL}/api/assessments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    let message = `Failed to create assessment: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.message) message = body.message;
+    } catch {
+      // ignore
+    }
+    throw new Error(message);
+  }
+  return res.json();
+}
+
+export async function fetchHealthWellbeingRecords(params?: {
+  residentId?: number;
+}): Promise<HealthWellbeingRecord[]> {
+  const qs = new URLSearchParams();
+  if (params?.residentId) qs.set("residentId", String(params.residentId));
+  const res = await authedFetch(`/api/healthwellbeingrecords?${qs}`);
+  if (!res.ok) throw new Error(`Failed to fetch health records: ${res.status}`);
+  return res.json();
+}
+
+export async function createInterventionPlan(
+  payload: Omit<InterventionPlan, "planId">
+): Promise<InterventionPlan> {
+  const token = localStorage.getItem("cove_token");
+  const res = await fetch(`${API_URL}/api/interventionplans`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to create intervention plan: ${res.status}`);
+  return res.json();
+}
+
+export async function updateInterventionPlan(
+  id: number,
+  payload: InterventionPlan
+): Promise<void> {
+  const token = localStorage.getItem("cove_token");
+  const res = await fetch(`${API_URL}/api/interventionplans/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Failed to update intervention plan: ${res.status}`);
 }
 
 // TODO: replace with real endpoint once HomeVisit/CaseConference tables exist.

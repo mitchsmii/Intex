@@ -58,7 +58,7 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     Promise.allSettled([
       api.getSafehouses().then(setSafehouses),
-      api.getResidents().then(r => setResidentCount(r.filter(x => !x.dateClosed).length)),
+      api.getResidents().then(r => setResidentCount(r.filter(x => x.caseStatus === 'Active').length)),
       api.getSupporters().then(s => setSupporterCount(s.length)),
       api.getDonations().then(setDonations),
       api.getAllocationSummary().then(setAllocation),

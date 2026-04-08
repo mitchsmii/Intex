@@ -18,3 +18,11 @@ public record CreateDonationDto(
     string? CampaignName,
     string? Notes
 );
+
+public record CreateResidentDto(
+    int Age,
+    int SafehouseId,
+    string AssignedSocialWorker,
+    string? SwEmail,
+    string RiskLevel
+);

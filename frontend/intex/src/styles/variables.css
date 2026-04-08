@@ -1,4 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
 :root {
+  /* ===== Typography ===== */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body:    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
   /* ===== Cove Brand Palette ===== */
   --cove-deep:      #2c4a52;  /* Deep Cove — dark teal, primary dark */
   --cove-tidal:     #5e9ea0;  /* Tidal — medium teal, primary accent */

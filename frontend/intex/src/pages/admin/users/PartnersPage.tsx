@@ -25,14 +25,78 @@ function SortTh({ label, col, sort, dir, onSort }: {
   )
 }
 
+function AddPartnerModal({ onClose, onSave }: { onClose: () => void; onSave: (s: Supporter) => void }) {
+  const [orgName,  setOrgName]  = useState('')
+  const [type,     setType]     = useState('Organization')
+  const [email,    setEmail]    = useState('')
+  const [phone,    setPhone]    = useState('')
+  const [region,   setRegion]   = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const [error,    setError]    = useState('')
+
+  async function handleSubmit() {
+    if (!orgName.trim()) { setError('Organization name is required.'); return }
+    setSaving(true); setError('')
+    try {
+      const created = await api.createSupporter({
+        organizationName: orgName.trim(),
+        supporterType:    type,
+        email:            email.trim() || undefined,
+        phone:            phone.trim() || undefined,
+        region:           region.trim() || undefined,
+        status:           'Active',
+      })
+      onSave(created)
+    } catch { setError('Failed to save. Please try again.') }
+    finally   { setSaving(false) }
+  }
+
+  return (
+    <div className="mu-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="mu-modal">
+        <h2 className="mu-modal-title">Add Partner / Organization</h2>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Organization Name *</label>
+          <input className="mu-form-input" value={orgName} onChange={e => setOrgName(e.target.value)} placeholder="e.g. Cebu Foundation Inc." />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Partner Type</label>
+          <select className="mu-form-input mu-select" value={type} onChange={e => setType(e.target.value)}>
+            {PARTNER_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Email</label>
+          <input className="mu-form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="contact@org.com" />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Phone</label>
+          <input className="mu-form-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+63 9XX XXX XXXX" />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Region / Country</label>
+          <input className="mu-form-input" value={region} onChange={e => setRegion(e.target.value)} placeholder="e.g. Cebu, Philippines" />
+        </div>
+        {error && <p style={{ color: 'var(--color-error)', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
+        <div className="mu-modal-actions">
+          <button className="mu-btn mu-btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="mu-btn mu-btn-primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Saving…' : 'Add Partner'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function PartnersPage() {
   const [supporters, setSupporters] = useState<Supporter[]>([])
   const [donations,  setDonations]  = useState<Donation[]>([])
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [kpiFilter,  setKpiFilter]  = useState<string | null>(null)
   const [sortCol,    setSortCol]    = useState<SortKey>('name')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
+  const [showAdd,    setShowAdd]    = useState(false)
 
   useEffect(() => {
     Promise.allSettled([
@@ -57,6 +121,8 @@ export default function PartnersPage() {
 
   const filtered = partners
     .filter(p => {
+      if (kpiFilter === 'active'  && p.status !== 'Active') return false
+      if (kpiFilter === 'donated' && !donations.some(d => d.supporterId === p.supporterId)) return false
       const matchSearch = !search ||
         (p.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
         (p.organizationName ?? '').toLowerCase().includes(search.toLowerCase()) ||
@@ -80,6 +146,13 @@ export default function PartnersPage() {
 
   return (
     <div className="mu-page">
+      {showAdd && (
+        <AddPartnerModal
+          onClose={() => setShowAdd(false)}
+          onSave={s => { setSupporters(prev => [...prev, s]); setShowAdd(false) }}
+        />
+      )}
+
       <div className="mu-header">
         <div>
           <h1 className="mu-title">Partners &amp; Organizations</h1>
@@ -96,17 +169,25 @@ export default function PartnersPage() {
       </div>
 
       <div className="mu-kpi-row">
-        {[
-          { label: 'Total Partners', value: String(partners.length) },
-          { label: 'Active', value: String(partners.filter(p => p.status === 'Active').length) },
-          { label: 'With Donations', value: String(partners.filter(p => donations.some(d => d.supporterId === p.supporterId)).length) },
-          { label: 'Unique Types', value: String(types.length) },
-        ].map(k => (
-          <div key={k.label} className="mu-kpi">
+        {([
+          { label: 'Total Partners',  value: String(partners.length),                                                                           key: null },
+          { label: 'Active',          value: String(partners.filter(p => p.status === 'Active').length),                                        key: 'active' },
+          { label: 'With Donations',  value: String(partners.filter(p => donations.some(d => d.supporterId === p.supporterId)).length),         key: 'donated' },
+          { label: 'Unique Types',    value: String(types.length),                                                                              key: null },
+        ] as { label: string; value: string; key: string | null }[]).map(k => (
+          <div
+            key={k.label}
+            className={`mu-kpi${k.key ? ' mu-kpi-clickable' : ''}${kpiFilter === k.key && k.key ? ' mu-kpi-active' : ''}`}
+            onClick={k.key ? () => setKpiFilter(f => f === k.key ? null : k.key) : undefined}
+          >
             <div className="mu-kpi-value">{k.value}</div>
             <div className="mu-kpi-label">{k.label}</div>
           </div>
         ))}
+        <button className="mu-kpi-add-card" onClick={() => setShowAdd(true)}>
+          <div className="mu-kpi-add-icon">+</div>
+          <div className="mu-kpi-label">Add Partner</div>
+        </button>
       </div>
 
       {loading ? <p className="mu-empty">Loading…</p> : (

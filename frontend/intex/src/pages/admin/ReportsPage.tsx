@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../../services/apiService'
+import { predictDonorChurn, fetchDonorChurnFeatureImportance } from '../../services/mlApi'
+import type { DonorChurnInput, FeatureImportance } from '../../services/mlApi'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
   AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident,
@@ -64,12 +66,12 @@ function LineChart({ data }: { data: MonthlyDonationSummary[] }) {
         </text>
       ))}
       {/* Area */}
-      <path d={area} fill="var(--cove-tidal)" opacity="0.12" />
+      <path d={area} fill="var(--cove-tidal)" opacity="0.1" />
       {/* Line */}
-      <polyline points={polyline} fill="none" stroke="var(--cove-tidal)" strokeWidth="2.5" strokeLinejoin="round" />
+      <polyline points={polyline} fill="none" stroke="var(--cove-tidal)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       {/* Dots */}
       {pts.map((p, i) => (
-        <circle key={i} cx={xp(i)} cy={yp(p.total)} r="4" fill="var(--cove-tidal)" stroke="white" strokeWidth="1.5" />
+        <circle key={i} cx={xp(i)} cy={yp(p.total)} r="5" fill="var(--cove-tidal)" stroke="white" strokeWidth="2" />
       ))}
     </svg>
   )
@@ -99,6 +101,444 @@ function BarChart({ data, labelKey, valueKey, color = 'var(--cove-tidal)' }: {
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// ─── Donor Lapse Risk (ML) ────────────────────────────────────────────────────
+
+interface LapseRow {
+  supporterId: number
+  name: string
+  email: string | null
+  total: number
+  count: number
+  avg: number
+  lastDonation: string | null
+  daysSinceFirst: number
+  variety: number
+  recurring: boolean
+  probability: number
+  reasons: string[]
+}
+
+function deriveReasons(input: {
+  count: number
+  avg: number
+  lastDonation: string | null
+  daysSinceFirst: number
+  variety: number
+  recurring: boolean
+}): string[] {
+  const reasons: string[] = []
+  const daysSinceLast = input.lastDonation
+    ? Math.round((Date.now() - new Date(input.lastDonation).getTime()) / 86_400_000)
+    : null
+
+  if (input.avg < 200) reasons.push('Small average gift')
+  if (daysSinceLast != null && daysSinceLast > 365) reasons.push(`Silent ${Math.round(daysSinceLast / 30)}+ months`)
+  else if (daysSinceLast != null && daysSinceLast > 180) reasons.push('No gift in 6+ months')
+  if (input.daysSinceFirst < 90 && input.count <= 2) reasons.push('New donor, few gifts')
+  if (input.count >= 3 && !input.recurring) reasons.push('Never went recurring')
+  if (input.variety === 1 && input.count >= 3) reasons.push('Single channel only')
+
+  return reasons.slice(0, 2)
+}
+
+type RiskFilter = 'all' | 'high' | 'medium' | 'low'
+
+function riskOf(p: number): 'high' | 'medium' | 'low' {
+  return p >= 0.7 ? 'high' : p >= 0.4 ? 'medium' : 'low'
+}
+
+const FEATURE_LABELS: Record<string, string> = {
+  total_donation_count: 'Total donation count',
+  total_amount: 'Total amount given',
+  avg_donation_amount: 'Average donation',
+  days_since_first_donation: 'Days since first donation',
+  donation_type_variety: 'Donation type variety',
+  is_recurring_donor: 'Recurring donor',
+}
+
+function prettifyFeature(name: string): string {
+  if (FEATURE_LABELS[name]) return FEATURE_LABELS[name]
+  if (name.startsWith('acq_')) {
+    return 'Acquisition: ' + name.slice(4).replace(/_/g, ' ')
+  }
+  return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function buildOutreachMailto(r: LapseRow): string {
+  if (!r.email) return '#'
+  const firstName = r.name.split(/\s+/)[0] || 'there'
+  const lastGift = r.lastDonation
+    ? new Date(r.lastDonation).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+    : 'a while ago'
+  const subject = `We miss you, ${firstName}`
+  const body =
+    `Hi ${firstName},\n\n` +
+    `It's been since ${lastGift} that we last heard from you, and the team at Cove wanted to ` +
+    `reach out and say thank you for the ${r.count} gift${r.count === 1 ? '' : 's'} you've made ` +
+    `to support our work. Your generosity has made a real difference for the residents we serve.\n\n` +
+    `If there's anything we can share about how your past support has been used, or if you'd like ` +
+    `to talk about how to stay involved, just hit reply — I'd love to hear from you.\n\n` +
+    `With gratitude,\nThe Cove team`
+  return `mailto:${r.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
+function fmtDate(iso: string | null) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function buildChurnInput(rows: Donation[]): DonorChurnInput {
+  const count = rows.length
+  const total = rows.reduce((s, d) => s + (d.amount ?? 0), 0)
+  const avg = count ? total / count : 0
+  const firstTs = rows
+    .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
+    .filter(n => !Number.isNaN(n))
+  const first = firstTs.length ? Math.min(...firstTs) : Date.now()
+  const days = Math.max(0, Math.round((Date.now() - first) / 86_400_000))
+  const variety = new Set(rows.map(d => d.donationType ?? 'Unknown')).size
+  const recurring = rows.some(d => d.isRecurring === true)
+  return {
+    total_donation_count: count,
+    total_amount: total,
+    avg_donation_amount: avg,
+    days_since_first_donation: days,
+    donation_type_variety: variety,
+    is_recurring_donor: recurring,
+  }
+}
+
+const LAPSE_PAGE_SIZE = 25
+
+function LapseRiskPanel({ donations, currency }: { donations: Donation[]; currency: string }) {
+  const [rows, setRows] = useState<LapseRow[]>([])
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [error, setError] = useState<string | null>(null)
+  const [page, setPage] = useState(0)
+  const [filter, setFilter] = useState<RiskFilter>('all')
+  const [emailMap, setEmailMap] = useState<Map<number, string | null>>(new Map())
+  const [featureImportance, setFeatureImportance] = useState<FeatureImportance[]>([])
+
+  useEffect(() => {
+    fetchDonorChurnFeatureImportance()
+      .then(setFeatureImportance)
+      .catch(() => { /* non-fatal */ })
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    api.getSupporters()
+      .then(list => {
+        if (cancelled) return
+        const m = new Map<number, string | null>()
+        for (const s of list) m.set(s.supporterId, s.email)
+        setEmailMap(m)
+      })
+      .catch(() => { /* email column will show — */ })
+    return () => { cancelled = true }
+  }, [])
+
+  const hasAutoRun = useRef(false)
+
+  const perDonor = useMemo(() => {
+    const map = new Map<number, { name: string; rows: Donation[] }>()
+    for (const d of donations) {
+      if (d.supporterId == null) continue
+      const entry = map.get(d.supporterId) ?? { name: d.supporterName, rows: [] }
+      entry.rows.push(d)
+      map.set(d.supporterId, entry)
+    }
+    return map
+  }, [donations])
+
+  async function runPredictions() {
+    setStatus('loading')
+    setError(null)
+    try {
+      const entries = Array.from(perDonor.entries())
+      const results = await Promise.all(
+        entries.map(async ([supporterId, { name, rows }]) => {
+          const input = buildChurnInput(rows)
+          const res = await predictDonorChurn(input)
+          const lastTs = rows
+            .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
+            .filter(n => !Number.isNaN(n))
+          const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
+          const reasons = deriveReasons({
+            count: input.total_donation_count,
+            avg: input.avg_donation_amount,
+            lastDonation,
+            daysSinceFirst: input.days_since_first_donation,
+            variety: input.donation_type_variety,
+            recurring: input.is_recurring_donor,
+          })
+          return {
+            supporterId,
+            name,
+            email: emailMap.get(supporterId) ?? null,
+            total: input.total_amount,
+            count: input.total_donation_count,
+            avg: input.avg_donation_amount,
+            lastDonation,
+            daysSinceFirst: input.days_since_first_donation,
+            variety: input.donation_type_variety,
+            recurring: input.is_recurring_donor,
+            probability: res.probability,
+            reasons,
+          }
+        }),
+      )
+      results.sort((a, b) => b.probability - a.probability)
+      setRows(results)
+      setPage(0)
+      setFilter('all')
+      setStatus('done')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Prediction failed')
+      setStatus('error')
+    }
+  }
+
+  // Auto-run scoring once donor data is available.
+  useEffect(() => {
+    if (hasAutoRun.current) return
+    if (perDonor.size === 0) return
+    if (status !== 'idle') return
+    hasAutoRun.current = true
+    void runPredictions()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perDonor, status])
+
+  const counts = useMemo(() => {
+    let high = 0, medium = 0, low = 0
+    let dollarsHigh = 0, dollarsMedium = 0, dollarsLow = 0
+    for (const r of rows) {
+      const k = riskOf(r.probability)
+      if (k === 'high') { high++; dollarsHigh += r.total }
+      else if (k === 'medium') { medium++; dollarsMedium += r.total }
+      else { low++; dollarsLow += r.total }
+    }
+    return { high, medium, low, all: rows.length, dollarsHigh, dollarsMedium, dollarsLow }
+  }, [rows])
+
+  const filteredRows = useMemo(() => {
+    if (filter === 'all') return rows
+    return rows
+      .filter(r => riskOf(r.probability) === filter)
+      .sort((a, b) => b.total - a.total)
+  }, [rows, filter])
+
+  return (
+    <div className="rp-section">
+      <h3 className="rp-section-title">Donor Lapse Risk</h3>
+      <p className="rp-empty" style={{ textAlign: 'left', marginBottom: 'var(--space-sm)' }}>
+        Donors most likely to stop giving, ranked from highest to lowest risk.
+      </p>
+      {status === 'loading' && (
+        <p className="rp-empty" style={{ textAlign: 'left' }}>
+          Scoring {perDonor.size} donors…
+        </p>
+      )}
+      {status === 'done' && (
+        <button
+          type="button"
+          className="rp-tab-btn"
+          onClick={runPredictions}
+          style={{ marginBottom: 'var(--space-sm)' }}
+        >
+          Refresh scores
+        </button>
+      )}
+      {error && <p className="rp-empty" style={{ color: 'var(--color-error)' }}>{error}</p>}
+      {featureImportance.length > 0 && (
+        <div className="lapse-importance">
+          <div className="lapse-importance-header">
+            <h4 className="lapse-importance-title">What predicts donor lapse</h4>
+            <span className="lapse-importance-sub">
+              The bigger the bar, the more this factor influences whether a donor is likely to lapse
+            </span>
+          </div>
+          <div className="lapse-importance-list">
+            {featureImportance.map(f => {
+              const pct = f.importance * 100
+              const barWidth = Math.max(2, (f.importance / featureImportance[0].importance) * 100)
+              return (
+                <div key={f.feature} className="lapse-importance-row">
+                  <span className="lapse-importance-label">{prettifyFeature(f.feature)}</span>
+                  <div className="lapse-importance-track">
+                    <div
+                      className="lapse-importance-fill"
+                      style={{ width: `${barWidth}%` }}
+                    />
+                  </div>
+                  <span className="lapse-importance-value">{pct.toFixed(1)}%</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+      {status === 'done' && rows.length > 0 && (
+        <div className="lapse-risk-boxes">
+          {([
+            { key: 'high', label: 'High Risk', count: counts.high, dollars: counts.dollarsHigh, tone: 'var(--color-error)', bg: '#fee2e2' },
+            { key: 'medium', label: 'Medium Risk', count: counts.medium, dollars: counts.dollarsMedium, tone: 'var(--color-warning)', bg: '#fef3c7' },
+            { key: 'low', label: 'Low Risk', count: counts.low, dollars: counts.dollarsLow, tone: 'var(--color-success)', bg: '#d1fae5' },
+          ] as const).map(box => {
+            const active = filter === box.key
+            return (
+              <button
+                key={box.key}
+                type="button"
+                onClick={() => { setFilter(active ? 'all' : box.key); setPage(0) }}
+                className="lapse-risk-box"
+                style={{
+                  borderLeft: `4px solid ${box.tone}`,
+                  background: active ? box.bg : 'white',
+                  outline: active ? `2px solid ${box.tone}` : 'none',
+                }}
+              >
+                <span style={{ fontSize: '2rem', fontWeight: 700, color: box.tone, lineHeight: 1 }}>
+                  {box.count}
+                </span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                  {box.label}
+                </span>
+                <span className="lapse-risk-box-dollars">
+                  {fmtAmt(box.dollars, currency)} lifetime giving
+                </span>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                  {active ? 'Click to clear filter' : 'Click to filter'}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+      {status === 'done' && filter !== 'all' && (
+        <div style={{ marginTop: 'var(--space-sm)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+          Showing {filter} risk donors only ·{' '}
+          <button
+            type="button"
+            onClick={() => { setFilter('all'); setPage(0) }}
+            style={{ background: 'none', border: 'none', color: 'var(--cove-tidal)', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+          >
+            show all
+          </button>
+        </div>
+      )}
+      {status === 'done' && (
+        <table className="rp-table rp-table-wide" style={{ marginTop: 'var(--space-md)' }}>
+          <thead>
+            <tr>
+              <th>Donor</th>
+              <th>Email</th>
+              <th>Donations</th>
+              <th>Total Given</th>
+              <th>Last Donation</th>
+              <th>Lapse Probability</th>
+              <th>Risk</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRows.slice(page * LAPSE_PAGE_SIZE, (page + 1) * LAPSE_PAGE_SIZE).map(r => {
+              const pct = Math.round(r.probability * 100)
+              const tone =
+                r.probability >= 0.7 ? 'var(--color-error)'
+                : r.probability >= 0.4 ? 'var(--color-warning)'
+                : 'var(--color-success)'
+              return (
+                <tr key={r.supporterId}>
+                  <td className="rp-td-name">
+                    <div>{r.name}</div>
+                    {r.reasons.length > 0 && (
+                      <div className="lapse-reasons">
+                        {r.reasons.map(reason => (
+                          <span key={reason} className="lapse-reason-chip">{reason}</span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ fontSize: '0.82rem' }}>
+                    {r.email ? (
+                      <a
+                        href={buildOutreachMailto(r)}
+                        style={{ color: 'var(--cove-tidal)' }}
+                      >
+                        {r.email}
+                      </a>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }}>—</span>
+                    )}
+                  </td>
+                  <td className="rp-td-num">{r.count}</td>
+                  <td className="rp-td-num">{fmtAmt(r.total, currency)}</td>
+                  <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{fmtDate(r.lastDonation)}</td>
+                  <td>
+                    <div className="rp-mini-track">
+                      <div className="rp-mini-fill" style={{ width: `${pct}%`, background: tone }} />
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{pct}%</span>
+                  </td>
+                  <td style={{ color: tone, fontWeight: 600 }}>
+                    {r.probability >= 0.7 ? 'High' : r.probability >= 0.4 ? 'Medium' : 'Low'}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
+      {status === 'done' && filteredRows.length > LAPSE_PAGE_SIZE && (() => {
+        const totalPages = Math.ceil(filteredRows.length / LAPSE_PAGE_SIZE)
+        const start = page * LAPSE_PAGE_SIZE + 1
+        const end = Math.min((page + 1) * LAPSE_PAGE_SIZE, filteredRows.length)
+        return (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 'var(--space-md)',
+              marginTop: 'var(--space-md)',
+              fontSize: '0.85rem',
+              color: 'var(--text-muted)',
+            }}
+          >
+            <span>
+              Showing {start}–{end} of {filteredRows.length}
+              {filter === 'all' ? ' (sorted highest risk first)' : ` ${filter} risk · sorted by total given`}
+            </span>
+            <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+              <button
+                type="button"
+                className="rp-tab-btn"
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                Previous
+              </button>
+              <span style={{ alignSelf: 'center', padding: '0 var(--space-sm)' }}>
+                Page {page + 1} of {totalPages}
+              </span>
+              <button
+                type="button"
+                className="rp-tab-btn"
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -204,6 +644,8 @@ function DonationsTab({
           </div>
         </div>
       )}
+
+      <LapseRiskPanel donations={donations} currency={currency} />
 
       <div className="rp-section">
         <h3 className="rp-section-title">Funding Thresholds</h3>

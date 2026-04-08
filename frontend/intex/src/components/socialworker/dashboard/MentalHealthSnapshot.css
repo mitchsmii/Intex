@@ -1,0 +1,101 @@
+@import '../../../styles/variables.css';
+
+.mhs-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.mhs-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: white;
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.mhs-row:hover {
+  background: var(--cove-seafoam);
+  border-color: var(--cove-tidal);
+}
+
+.mhs-resident {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mhs-code {
+  font-weight: 700;
+  color: var(--cove-deep);
+  font-size: 0.9rem;
+}
+
+.mhs-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.mhs-chips {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mhs-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px var(--space-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light, #e5e7eb);
+  background: #fafafa;
+  min-width: 56px;
+}
+
+.mhs-chip--good { background: var(--cove-seafoam); border-color: var(--color-success); }
+.mhs-chip--warn { background: var(--cove-sand); border-color: var(--color-warning); }
+.mhs-chip--bad  { background: #fee2e2; border-color: var(--color-error); }
+.mhs-chip--neutral { background: #f1f5f9; }
+
+.mhs-chip-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.mhs-chip-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.mhs-trend { font-size: 0.7rem; }
+.mhs-trend--down { color: var(--color-success); }
+.mhs-trend--up { color: var(--color-error); }
+.mhs-trend--flat { color: var(--text-muted); }
+
+@media (max-width: 700px) {
+  .mhs-row {
+    grid-template-columns: 1fr;
+  }
+  .mhs-chips {
+    justify-content: flex-start;
+  }
+}

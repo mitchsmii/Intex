@@ -165,6 +165,31 @@
   padding-top: 0.4rem;
 }
 
+.sl-tip-others {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.45rem;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  padding-top: 0.4rem;
+}
+
+.sl-tip-other-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.82);
+}
+
+.sl-tip-other-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.4);
+}
+
 /* ── Sidebar ── */
 .sl-sidebar {
   display: flex;
@@ -233,12 +258,18 @@
 }
 
 .sl-pin-dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   border: 2px solid var(--cove-deep);
   background: white;
   flex-shrink: 0;
+}
+
+/* Colored dots for other facility types use inline style for background;
+   override the default border to match the dot color */
+.sl-legend-pin .sl-pin-dot[style] {
+  border-color: transparent;
 }
 
 /* ── Info card ── */
@@ -347,11 +378,27 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  padding: 0.45rem 0;
+  padding: 0.45rem 0.4rem;
   border-bottom: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
 }
 
 .sl-cand-row:last-child { border-bottom: none; }
+
+.sl-cand-row-btn {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.sl-cand-row-btn:hover {
+  background: var(--cove-seafoam);
+}
+
+.sl-cand-row-active {
+  background: var(--cove-seafoam);
+  outline: 2px solid var(--cove-tidal);
+  outline-offset: -2px;
+}
 
 .sl-cand-rank {
   font-size: 0.72rem;

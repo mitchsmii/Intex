@@ -1,15 +1,15 @@
 """Utilities for loading raw data from Supabase Postgres tables."""
 
 from __future__ import annotations
-
-import os
 from pathlib import Path
 from typing import Optional
+import os
 
 import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from dotenv import load_dotenv
 
 # Load DATABASE_URL from the .env file in the ml_pipelines directory.
 # Falls back to the environment variable if already set (e.g. in CI/CD).

@@ -3,6 +3,7 @@ import type { Resident } from '../../../types/Resident'
 import type { ProcessRecording } from '../../../types/ProcessRecording'
 import type { HomeVisitation } from '../../../types/HomeVisitation'
 import type { InterventionPlan } from '../../../types/InterventionPlan'
+import type { Assessment } from '../../../types/Assessment'
 import { computeReadiness, type ReadinessLevel } from '../../../utils/readinessScore'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
   recordings: ProcessRecording[]
   visitations: HomeVisitation[]
   plans: InterventionPlan[]
+  assessments?: Assessment[]
   onResidentClick?: (residentId: number) => void
 }
 
@@ -20,16 +22,16 @@ const LEVEL_CLASS: Record<ReadinessLevel, string> = {
   'Not Ready': 'level--notready',
 }
 
-function ReadinessPipeline({ residents, recordings, visitations, plans, onResidentClick }: Props) {
+function ReadinessPipeline({ residents, recordings, visitations, plans, assessments = [], onResidentClick }: Props) {
   const ranked = useMemo(() => {
     return residents
       .filter((r) => r.caseStatus === 'Active')
       .map((r) => ({
         resident: r,
-        readiness: computeReadiness(r, recordings, visitations, plans),
+        readiness: computeReadiness(r, recordings, visitations, plans, assessments),
       }))
       .sort((a, b) => b.readiness.score - a.readiness.score)
-  }, [residents, recordings, visitations, plans])
+  }, [residents, recordings, visitations, plans, assessments])
 
   return (
     <section className="sw-dash-section sw-dash-readiness">

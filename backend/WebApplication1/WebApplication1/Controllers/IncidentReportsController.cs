@@ -45,4 +45,35 @@ public class IncidentReportsController : ControllerBase
         if (ir == null) return NotFound();
         return Ok(ir);
     }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateIncident(int id, IncidentReport incident)
+    {
+        if (id != incident.IncidentId) return BadRequest();
+
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (string.IsNullOrEmpty(username)) return Forbid();
+            var existing = await _context.IncidentReports.AsNoTracking()
+                .FirstOrDefaultAsync(i => i.IncidentId == id);
+            if (existing == null) return NotFound();
+            var allowed = await _context.Residents
+                .AnyAsync(r => r.ResidentId == existing.ResidentId && r.AssignedSocialWorker == username);
+            if (!allowed) return Forbid();
+        }
+
+        _context.Entry(incident).State = EntityState.Modified;
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!await _context.IncidentReports.AnyAsync(i => i.IncidentId == id))
+                return NotFound();
+            throw;
+        }
+        return NoContent();
+    }
 }

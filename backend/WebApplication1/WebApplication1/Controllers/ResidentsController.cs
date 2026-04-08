@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -46,5 +47,97 @@ public class ResidentsController : ControllerBase
         }
 
         return resident;
+    }
+
+    [HttpGet("public-counts")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicCounts()
+    {
+        var residents = await _context.Residents
+            .Select(r => new { r.DateClosed, r.ReintegrationStatus })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            totalServed = residents.Count,
+            activeResidents = residents.Count(r => r.DateClosed == null),
+            reintegrated = residents.Count(r =>
+                r.ReintegrationStatus == "Reintegrated" || r.ReintegrationStatus == "Completed")
+        });
+    }
+
+    [HttpGet("next-code")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetNextCode()
+    {
+        var codes = await _context.Residents
+            .Where(r => r.InternalCode != null && r.InternalCode.StartsWith("LS-"))
+            .Select(r => r.InternalCode!)
+            .ToListAsync();
+
+        int maxNum = codes
+            .Select(c => int.TryParse(c[3..], out var n) ? n : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        int next = maxNum + 1;
+        return Ok(new
+        {
+            internalCode = $"LS-{next:D4}",
+            caseControlNo = $"CC-{next:D4}"
+        });
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<Resident>> CreateResident([FromBody] CreateResidentDto dto)
+    {
+        // Generate unique codes atomically
+        var codes = await _context.Residents
+            .Where(r => r.InternalCode != null && r.InternalCode.StartsWith("LS-"))
+            .Select(r => r.InternalCode!)
+            .ToListAsync();
+
+        int maxNum = codes
+            .Select(c => int.TryParse(c[3..], out var n) ? n : 0)
+            .DefaultIfEmpty(0)
+            .Max();
+
+        int next = maxNum + 1;
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        var resident = new Resident
+        {
+            InternalCode = $"LS-{next:D4}",
+            CaseControlNo = $"CC-{next:D4}",
+            AgeUponAdmission = dto.Age.ToString(),
+            PresentAge = dto.Age.ToString(),
+            SafehouseId = dto.SafehouseId,
+            AssignedSocialWorker = dto.AssignedSocialWorker,
+            CurrentRiskLevel = dto.RiskLevel,
+            InitialRiskLevel = dto.RiskLevel,
+            CaseStatus = "Active",
+            DateOfAdmission = today,
+            CreatedAt = DateTime.UtcNow,
+        };
+
+        _context.Residents.Add(resident);
+        await _context.SaveChangesAsync();
+
+        // Create notification for the assigned social worker
+        if (!string.IsNullOrEmpty(dto.SwEmail))
+        {
+            _context.Notifications.Add(new Notification
+            {
+                RecipientEmail = dto.SwEmail,
+                Message = $"You have been assigned a new resident: {resident.InternalCode}",
+                RelatedResidentCode = resident.InternalCode,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        return CreatedAtAction(nameof(GetResident), new { id = resident.ResidentId }, resident);
     }
 }

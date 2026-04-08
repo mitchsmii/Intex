@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 import {
   fetchResidents,
   fetchUpcomingEvents,
@@ -8,13 +9,15 @@ import {
   fetchHomeVisitations,
   fetchProcessRecordings,
   fetchInterventionPlans,
+  fetchAssessments,
 } from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import StatStrip from '../../components/socialworker/dashboard/StatStrip'
+import NextUpHero from '../../components/socialworker/dashboard/NextUpHero'
 import UpcomingSchedule from '../../components/socialworker/dashboard/UpcomingSchedule'
 import ReadinessPipeline from '../../components/socialworker/dashboard/ReadinessPipeline'
 import ActionItems from '../../components/socialworker/dashboard/ActionItems'
-import CriticalAlerts from '../../components/socialworker/dashboard/CriticalAlerts'
+import CriticalAlerts, { type Alert } from '../../components/socialworker/dashboard/CriticalAlerts'
+import MentalHealthSnapshot from '../../components/socialworker/dashboard/MentalHealthSnapshot'
 import ResidentCard from '../../components/socialworker/dashboard/ResidentCard'
 import type { Resident } from '../../types/Resident'
 import type { ScheduleEvent } from '../../types/ScheduleEvent'
@@ -23,11 +26,15 @@ import type { IncidentReport } from '../../types/IncidentReport'
 import type { HomeVisitation } from '../../types/HomeVisitation'
 import type { ProcessRecording } from '../../types/ProcessRecording'
 import type { InterventionPlan } from '../../types/InterventionPlan'
+import type { Assessment } from '../../types/Assessment'
 import '../../components/socialworker/dashboard/dashboard.css'
 import './SocialWorkerHomePage.css'
 
 function SocialWorkerHomePage() {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const { user } = useAuth()
+  const base = pathname.startsWith('/admin') ? '/admin/sw' : '/socialworker/dashboard'
   const [residents, setResidents] = useState<Resident[]>([])
   const [events, setEvents] = useState<ScheduleEvent[]>([])
   const [actions, setActions] = useState<ActionItem[]>([])
@@ -35,6 +42,7 @@ function SocialWorkerHomePage() {
   const [visitations, setVisitations] = useState<HomeVisitation[]>([])
   const [recordings, setRecordings] = useState<ProcessRecording[]>([])
   const [plans, setPlans] = useState<InterventionPlan[]>([])
+  const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,13 +50,14 @@ function SocialWorkerHomePage() {
     fetchResidents()
       .then(async (r) => {
         setResidents(r)
-        const [ev, ai, inc, vis, rec, pl] = await Promise.all([
+        const [ev, ai, inc, vis, rec, pl, asm] = await Promise.all([
           fetchUpcomingEvents(r),
           fetchActionItems(r),
           fetchIncidentReports({ unresolvedOnly: true }),
           fetchHomeVisitations({ limit: 500 }),
           fetchProcessRecordings({ limit: 500 }),
           fetchInterventionPlans(),
+          fetchAssessments(),
         ])
         setEvents(ev)
         setActions(ai)
@@ -56,6 +65,7 @@ function SocialWorkerHomePage() {
         setVisitations(vis)
         setRecordings(rec)
         setPlans(pl)
+        setAssessments(asm)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -65,9 +75,9 @@ function SocialWorkerHomePage() {
   if (error) return <p className="sw-home-error">Error: {error}</p>
 
   const goToResident = (r: Resident) =>
-    navigate(`/socialworker/dashboard/residents/${r.residentId}`)
+    navigate(`${base}/residents/${r.residentId}`)
   const goToResidentById = (id: number) =>
-    navigate(`/socialworker/dashboard/residents/${id}`)
+    navigate(`${base}/residents/${id}`)
 
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
@@ -75,43 +85,82 @@ function SocialWorkerHomePage() {
     day: 'numeric',
   })
 
+  const rawName = user?.username ?? ''
+  const firstName = rawName
+    ? rawName.charAt(0).toUpperCase() + rawName.slice(1).split(/[@.\s]/)[0]
+    : ''
+  const hour = new Date().getHours()
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
   return (
     <div className="sw-dash">
-      <div className="sw-dash-header">
-        <div>
-          <h1>Welcome back</h1>
-          <div className="sw-dash-header-meta">{today}</div>
+      <header className="sw-dash-masthead sw-dash-masthead--compact">
+        <div className="sw-dash-masthead-line">
+          <h1>
+            {greeting}
+            {firstName ? (
+              <>
+                , <em>{firstName}</em>
+              </>
+            ) : null}
+            .
+          </h1>
+          <div className="sw-dash-chips">
+            <span className="sw-dash-chip">{today}</span>
+            <span className="sw-dash-chip">
+              <strong>{incidents.length}</strong> open{' '}
+              {incidents.length === 1 ? 'incident' : 'incidents'}
+            </span>
+            <span className="sw-dash-chip">
+              <strong>{actions.length}</strong> {actions.length === 1 ? 'task' : 'tasks'}
+            </span>
+            <span className="sw-dash-chip">
+              <strong>{residents.length}</strong> residents
+            </span>
+          </div>
         </div>
-        <button
-          type="button"
-          className="sw-dash-add-btn"
-          onClick={() => navigate('/socialworker/dashboard/residents')}
-        >
-          + Add Resident
-        </button>
+      </header>
+
+      <NextUpHero events={events} />
+
+      <div className="sw-dash-triple">
+        <div className="sw-dash-triple-col">
+          <CriticalAlerts
+            residents={residents}
+            incidents={incidents}
+            visitations={visitations}
+            recordings={recordings}
+            assessments={assessments}
+            onAlertClick={(alert: Alert) =>
+              navigate(`/socialworker/dashboard/residents/${alert.residentId}`, {
+                state: { alert },
+              })
+            }
+          />
+        </div>
+        <div className="sw-dash-triple-col">
+          <ActionItems items={actions} onItemClick={goToResidentById} />
+        </div>
+        <div className="sw-dash-triple-col">
+          <UpcomingSchedule events={events} />
+        </div>
       </div>
-
-      <StatStrip residents={residents} actionItems={actions} />
-
-      <CriticalAlerts
-        residents={residents}
-        incidents={incidents}
-        visitations={visitations}
-        recordings={recordings}
-        onResidentClick={goToResidentById}
-      />
 
       <ReadinessPipeline
         residents={residents}
         recordings={recordings}
         visitations={visitations}
         plans={plans}
+        assessments={assessments}
         onResidentClick={goToResidentById}
       />
 
-      <UpcomingSchedule events={events} />
-
-      <ActionItems items={actions} onItemClick={goToResidentById} />
+      <MentalHealthSnapshot
+        residents={residents}
+        assessments={assessments}
+        onResidentClick={goToResidentById}
+      />
 
       <section className="sw-dash-section">
         <header className="sw-dash-section-header">

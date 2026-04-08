@@ -149,6 +149,298 @@
 
 .vc-add-btn:hover { background: var(--cove-deep); }
 
+/* ---------- Header actions + legend ---------- */
+.vc-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-xs);
+}
+
+.vc-legend {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+}
+
+.vc-legend-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.vc-legend-label {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cove-deep);
+  font-size: 0.6rem;
+}
+
+.vc-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.vc-legend-item .vc-flag {
+  font-size: 0.6rem;
+  padding: 1px 5px;
+  min-width: 14px;
+  text-align: center;
+}
+
+.vc-legend-item .vc-coop-dot {
+  width: 10px;
+  height: 10px;
+}
+
+/* ---------- Compact list view ---------- */
+.vc-list {
+  background: var(--bg-card, white);
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.vc-list-head,
+.vc-row {
+  display: grid;
+  grid-template-columns: 110px 180px 130px 75px 1fr 60px;
+  gap: var(--space-md);
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+}
+
+.vc-list-head {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border-light, #e5e7eb);
+}
+
+.vc-list-head-flags,
+.vc-list-head-coop {
+  text-align: center;
+}
+
+.vc-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vc-row-wrap + .vc-row-wrap {
+  border-top: 1px solid var(--border-light, #e5e7eb);
+}
+
+.vc-row {
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--cove-deep);
+  font-size: 0.85rem;
+}
+
+.vc-row:hover {
+  background: var(--cove-seafoam);
+}
+
+.vc-row-wrap--open .vc-row {
+  background: var(--cove-seafoam);
+}
+
+.vc-row-date {
+  font-weight: 700;
+}
+
+.vc-row-type .vc-card-type {
+  font-size: 0.7rem;
+  padding: 2px var(--space-sm);
+}
+
+.vc-row-location,
+.vc-row-worker {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vc-row-summary {
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.vc-row-purpose {
+  color: var(--cove-deep);
+  font-weight: 600;
+}
+
+.vc-row-outcome {
+  color: var(--text-muted);
+}
+
+.vc-row-sep {
+  color: var(--text-muted);
+}
+
+/* Outcome: subtle dot + plain text. Only Unfavorable goes loud. */
+.vc-outcome {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.vc-outcome-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.vc-outcome--good .vc-outcome-dot { background: var(--color-success); }
+.vc-outcome--warn .vc-outcome-dot { background: var(--color-warning); }
+.vc-outcome--bad .vc-outcome-dot { background: var(--color-error); }
+.vc-outcome--neutral .vc-outcome-dot { background: #cbd5e1; }
+.vc-outcome--unknown .vc-outcome-dot { background: #cbd5e1; }
+
+/* Only the bad case gets loud text treatment */
+.vc-outcome--bad {
+  color: var(--color-error);
+  font-weight: 700;
+}
+
+.vc-row-muted {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.vc-row-flags {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+}
+
+.vc-row-flags .vc-flag {
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  min-width: 16px;
+  text-align: center;
+}
+
+.vc-row-coop {
+  display: flex;
+  justify-content: center;
+}
+
+.vc-coop-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  cursor: default;
+}
+
+.vc-coop-dot--good { background: var(--color-success); }
+.vc-coop-dot--warn { background: var(--color-warning); }
+.vc-coop-dot--bad  { background: var(--color-error); }
+.vc-coop-dot--unknown { background: #cbd5e1; }
+
+.vc-row-detail {
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
+  background: #fafafa;
+  border-top: 1px solid var(--border-light, #e5e7eb);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.vc-row-detail .vc-card-line,
+.vc-row-detail .vc-card-section {
+  font-size: 0.85rem;
+}
+
+.vc-row-detail .vc-card-section p {
+  margin: 2px 0 0;
+  white-space: pre-wrap;
+  color: var(--text-primary);
+}
+
+.vc-row-detail .vc-card-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 1200px) {
+  .vc-list-head,
+  .vc-row {
+    grid-template-columns: 100px 170px 110px 1fr 60px;
+  }
+  .vc-list-head > div:nth-child(4),
+  .vc-row-worker {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .vc-list-head,
+  .vc-row {
+    grid-template-columns: 100px 160px 1fr 60px;
+  }
+  .vc-list-head > div:nth-child(3),
+  .vc-row-location {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .vc-list-head {
+    display: none;
+  }
+  .vc-row {
+    grid-template-columns: 1fr auto;
+    gap: var(--space-xs);
+  }
+  .vc-row-type,
+  .vc-row-location,
+  .vc-row-worker {
+    display: none;
+  }
+  .vc-row-summary {
+    grid-column: 1;
+    white-space: normal;
+  }
+  .vc-row-flags {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .vc-row-date {
+    grid-column: 1;
+    font-size: 0.75rem;
+  }
+}
+
 .vc-empty {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -377,6 +669,11 @@
 .vc-flag--coop-low { background: #fee2e2; color: var(--color-error); }
 .vc-flag--concern { background: #fee2e2; color: var(--color-error); }
 .vc-flag--followup { background: var(--cove-sand); color: var(--color-warning); }
+.vc-flag--followup-muted {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border-light, #d1d5db);
+}
 .vc-flag--outcome { background: var(--cove-seaglass); color: var(--cove-deep); }
 
 /* ---------- Pagination ---------- */
