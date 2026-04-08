@@ -535,8 +535,16 @@
 }
 
 @media (max-width: 600px) {
-  .ad-kpi-grid       { grid-template-columns: minmax(0, 1fr); }
+  .ad-kpi-grid       { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ad-safehouse-grid { grid-template-columns: minmax(0, 1fr); }
+  .ad-kpi-card       { padding: var(--space-sm) var(--space-md); min-width: 0; }
+  .ad-kpi-value      { font-size: 1.4rem; }
+  .ad-kpi-label      { font-size: 0.72rem; word-break: break-word; }
+  .ad-header         { flex-direction: column; }
   .ad-table th:nth-child(5),
   .ad-table td:nth-child(5) { display: none; }
+}
+
+@media (max-width: 360px) {
+  .ad-kpi-grid { grid-template-columns: minmax(0, 1fr); }
 }

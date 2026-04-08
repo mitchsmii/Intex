@@ -9,3 +9,18 @@
   background: var(--bg-page);
   padding: var(--space-xl);
 }
+
+@media (max-width: 768px) {
+  .admin-layout {
+    overflow-x: hidden;
+  }
+
+  .admin-content {
+    margin-left: 0;
+    padding: var(--space-sm);
+    padding-top: calc(60px + var(--space-sm));
+    max-width: 100vw;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+}
