@@ -787,9 +787,21 @@
   white-space: nowrap;
 }
 
-/* ── Retention insights segmentation ── */
+/* ── Why donors stop giving (segment charts) ── */
 .rp-seg-section {
   margin-top: var(--space-md);
+}
+.rp-seg-head {
+  margin-bottom: var(--space-md);
+}
+.rp-seg-head .rp-card-title {
+  margin-bottom: var(--space-xs);
+}
+.rp-seg-lede {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.45;
 }
 .rp-seg-grid {
   display: grid;
