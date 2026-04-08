@@ -77,6 +77,13 @@ export async function fetchSocialEngagementFeatureImportance(): Promise<FeatureI
   return data.features
 }
 
+export async function fetchResidentRiskFeatureImportance(): Promise<FeatureImportance[]> {
+  const res = await fetch(`${ML_BASE_URL}/feature-importance/resident-risk`)
+  if (!res.ok) throw new Error(`ML API error ${res.status}: /feature-importance/resident-risk`)
+  const data = (await res.json()) as { features: FeatureImportance[] }
+  return data.features
+}
+
 export interface ResidentRiskInput {
   days_in_care: number
   initial_risk_level_enc: number

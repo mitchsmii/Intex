@@ -135,6 +135,42 @@ export interface IncidentReport {
   followUpRequired: boolean | null
 }
 
+export interface ProcessRecording {
+  recordingId: number
+  residentId: number | null
+  sessionDate: string | null
+  progressNoted: boolean | null
+  concernsFlagged: boolean | null
+  referralMade: boolean | null
+  emotionalStateObserved: string | null
+  emotionalStateEnd: string | null
+  sessionDurationMinutes: number | null
+}
+
+export interface HealthRecord {
+  healthRecordId: number
+  residentId: number | null
+  recordDate: string | null
+  generalHealthScore: number | null
+  sleepQualityScore: number | null
+}
+
+export interface HomeVisitation {
+  visitationId: number
+  residentId: number | null
+  visitDate: string | null
+  safetyConcernsNoted: boolean | null
+  familyCooperationLevel: string | null
+}
+
+export interface EducationRecord {
+  educationRecordId: number
+  residentId: number | null
+  recordDate: string | null
+  attendanceRate: number | null
+  progressPercent: number | null
+}
+
 export interface UpcomingPlan {
   planId: number
   residentId: number | null
@@ -302,6 +338,11 @@ export const api = {
   getUnreadNotificationCount: () => authGet<number>('/api/notifications/unread-count'),
   getNotifications:           () => authGet<SwNotification[]>('/api/notifications'),
   markAllNotificationsRead:   () => authPatch('/api/notifications/mark-all-read'),
+  getProcessRecordingsByResident: (id: number) => authGet<ProcessRecording[]>(`/api/processrecordings?residentId=${id}`),
+  getHealthRecordsByResident:     (id: number) => authGet<HealthRecord[]>(`/api/healthwellbeingrecords?residentId=${id}`),
+  getHomeVisitationsByResident:   (id: number) => authGet<HomeVisitation[]>(`/api/homevisitations?residentId=${id}`),
+  getEducationRecordsByResident:  (id: number) => authGet<EducationRecord[]>(`/api/educationrecords?residentId=${id}`),
+  getIncidentsByResident:         (id: number) => authGet<IncidentReport[]>(`/api/incidentreports?residentId=${id}`),
   getSocialMediaPosts:        () => get<SocialMediaPost[]>('/api/socialmediaposts'),
   createSocialMediaPost:      (body: Omit<SocialMediaPost, 'postId'>) =>
     post<SocialMediaPost>('/api/socialmediaposts', body),
