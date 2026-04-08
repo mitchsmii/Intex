@@ -342,3 +342,54 @@
 .rd-contact-pill--warn { background: var(--cove-sand); color: var(--color-warning); }
 .rd-contact-pill--bad { background: #fee2e2; color: var(--color-error); }
 .rd-contact-pill--unknown { background: #f1f5f9; color: var(--text-muted); }
+
+/* ---------- Mental Health snapshot ---------- */
+.rd-mh-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+}
+
+.rd-mh-cell {
+  background: white;
+  border: 1px solid var(--border-light, #e5e7eb);
+  border-left: 4px solid var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rd-mh-cell--good { border-left-color: var(--color-success); }
+.rd-mh-cell--warn { border-left-color: var(--color-warning); }
+.rd-mh-cell--bad  { border-left-color: var(--color-error); background: #fef2f2; }
+.rd-mh-cell--neutral { border-left-color: #cbd5e1; }
+
+.rd-mh-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.rd-mh-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  line-height: 1.1;
+}
+
+.rd-mh-band {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.rd-mh-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+  padding-top: var(--space-xs);
+}

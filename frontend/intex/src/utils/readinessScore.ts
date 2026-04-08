@@ -2,6 +2,7 @@ import type { Resident } from '../types/Resident'
 import type { ProcessRecording } from '../types/ProcessRecording'
 import type { HomeVisitation } from '../types/HomeVisitation'
 import type { InterventionPlan } from '../types/InterventionPlan'
+import type { Assessment } from '../types/Assessment'
 
 export type ReadinessLevel = 'Not Ready' | 'Building' | 'Almost' | 'Ready'
 
@@ -76,9 +77,47 @@ function familyEnvironment(visits: HomeVisitation[]): number {
   return total / recent.length
 }
 
+// Mental health trajectory: improvement in PCL-5 / BDI from earliest to latest.
+// Returns null if there isn't enough data to compute (so weights can rebalance).
+function mentalHealthTrajectory(assessments: Assessment[]): number | null {
+  const trackable = assessments.filter(
+    (a) => (a.instrument === 'PCL5' || a.instrument === 'BDI') && a.totalScore != null,
+  )
+  if (trackable.length < 2) return null
+
+  const byInstrument: Record<string, Assessment[]> = {}
+  for (const a of trackable) {
+    ;(byInstrument[a.instrument] ||= []).push(a)
+  }
+
+  const improvements: number[] = []
+  for (const list of Object.values(byInstrument)) {
+    if (list.length < 2) continue
+    const sorted = [...list].sort(
+      (a, b) => new Date(a.administeredDate).getTime() - new Date(b.administeredDate).getTime(),
+    )
+    const earliest = sorted[0].totalScore!
+    const latest = sorted[sorted.length - 1].totalScore!
+    if (earliest <= 0) continue
+    // (earliest - latest) / earliest → 0..1 improvement; negative means worsening
+    improvements.push(clamp((earliest - latest) / earliest))
+  }
+  if (improvements.length === 0) return null
+  return improvements.reduce((s, v) => s + v, 0) / improvements.length
+}
+
 // === Composite ===
 
-const WEIGHTS = {
+// Default weights when mental health data is available; if not, the function
+// rebalances proportionally so the score still totals 100.
+const WEIGHTS_WITH_MH = {
+  risk: 25,
+  plans: 20,
+  sessions: 20,
+  family: 20,
+  mentalHealth: 15,
+}
+const WEIGHTS_NO_MH = {
   risk: 30,
   plans: 25,
   sessions: 25,
@@ -90,17 +129,31 @@ export function computeReadiness(
   recordings: ProcessRecording[],
   visitations: HomeVisitation[],
   plans: InterventionPlan[],
+  assessments: Assessment[] = [],
 ): ReadinessResult {
   const rRecordings = recordings.filter((p) => p.residentId === resident.residentId)
   const rVisits = visitations.filter((v) => v.residentId === resident.residentId)
   const rPlans = plans.filter((p) => p.residentId === resident.residentId)
+  const rAssessments = assessments.filter((a) => a.residentId === resident.residentId)
+
+  const mhScore = mentalHealthTrajectory(rAssessments)
+  const useMh = mhScore !== null
+  const W = useMh ? WEIGHTS_WITH_MH : WEIGHTS_NO_MH
 
   const factors: ReadinessFactor[] = [
-    { key: 'risk', label: 'Risk trajectory', score: riskTrajectory(resident), weight: WEIGHTS.risk },
-    { key: 'plans', label: 'Intervention plans completed', score: planCompletion(rPlans), weight: WEIGHTS.plans },
-    { key: 'sessions', label: 'Recent session progress', score: sessionProgress(rRecordings), weight: WEIGHTS.sessions },
-    { key: 'family', label: 'Family home environment', score: familyEnvironment(rVisits), weight: WEIGHTS.family },
+    { key: 'risk', label: 'Risk trajectory', score: riskTrajectory(resident), weight: W.risk },
+    { key: 'plans', label: 'Intervention plans completed', score: planCompletion(rPlans), weight: W.plans },
+    { key: 'sessions', label: 'Recent session progress', score: sessionProgress(rRecordings), weight: W.sessions },
+    { key: 'family', label: 'Family home environment', score: familyEnvironment(rVisits), weight: W.family },
   ]
+  if (useMh) {
+    factors.push({
+      key: 'mentalHealth',
+      label: 'Mental health trajectory',
+      score: mhScore!,
+      weight: WEIGHTS_WITH_MH.mentalHealth,
+    })
+  }
 
   const score = Math.round(
     factors.reduce((sum, f) => sum + f.score * f.weight, 0),

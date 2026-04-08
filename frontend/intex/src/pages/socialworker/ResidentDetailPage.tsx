@@ -9,6 +9,7 @@ import {
   fetchProcessRecordings,
   fetchHomeVisitations,
   fetchIncidentReports,
+  fetchAssessments,
 } from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import IncidentBanner from '../../components/socialworker/IncidentBanner'
@@ -19,6 +20,8 @@ import type { HealthWellbeingRecord } from '../../types/HealthWellbeingRecord'
 import type { ProcessRecording } from '../../types/ProcessRecording'
 import type { HomeVisitation } from '../../types/HomeVisitation'
 import type { IncidentReport } from '../../types/IncidentReport'
+import type { Assessment, Instrument } from '../../types/Assessment'
+import { severityBucket } from '../../utils/assessmentScoring'
 import './ResidentDetailPage.css'
 
 function formatDate(iso: string | null | undefined): string {
@@ -57,6 +60,7 @@ function ResidentDetailPage() {
   const [recordings, setRecordings] = useState<ProcessRecording[]>([])
   const [visits, setVisits] = useState<HomeVisitation[]>([])
   const [incidents, setIncidents] = useState<IncidentReport[]>([])
+  const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -71,8 +75,9 @@ function ResidentDetailPage() {
       fetchProcessRecordings({ residentId, limit: 5 }),
       fetchHomeVisitations({ residentId, limit: 5 }),
       fetchIncidentReports({ residentId }),
+      fetchAssessments({ residentId }),
     ])
-      .then(([r, sh, edu, hw, rec, vis, inc]) => {
+      .then(([r, sh, edu, hw, rec, vis, inc, asm]) => {
         setResident(r)
         const matched = sh.find((s) => s.safehouseId === r.safehouseId)
         setSafehouseName(matched?.name ?? null)
@@ -81,6 +86,7 @@ function ResidentDetailPage() {
         setRecordings(rec)
         setVisits(vis)
         setIncidents(inc)
+        setAssessments(asm)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -123,6 +129,20 @@ function ResidentDetailPage() {
       prev.map((i) => (i.incidentId === updated.incidentId ? updated : i)),
     )
   }
+
+  const latestAssessmentByInstrument = useMemo(() => {
+    const map = new Map<Instrument, Assessment>()
+    for (const a of assessments) {
+      const existing = map.get(a.instrument)
+      if (
+        !existing ||
+        new Date(a.administeredDate).getTime() > new Date(existing.administeredDate).getTime()
+      ) {
+        map.set(a.instrument, a)
+      }
+    }
+    return map
+  }, [assessments])
 
   const lastContactDays = useMemo(() => {
     const lastRecording = recordings[0]?.sessionDate
@@ -348,6 +368,38 @@ function ResidentDetailPage() {
               </span>
             )}
           </div>
+        </section>
+
+        {/* Mental Health Snapshot */}
+        <section className="rd-card">
+          <h2>Mental Health</h2>
+          {assessments.length === 0 ? (
+            <p className="rd-empty">No assessments on record. Schedule one from the Assessments page.</p>
+          ) : (
+            <>
+              <div className="rd-mh-grid">
+                {(['PCL5', 'BDI', 'BAI', 'SUICIDE_RISK'] as Instrument[]).map((inst) => {
+                  const latest = latestAssessmentByInstrument.get(inst)
+                  const bucket = latest ? severityBucket(latest.severityBand) : 'neutral'
+                  const label = inst === 'PCL5' ? 'PCL-5'
+                    : inst === 'SUICIDE_RISK' ? 'Suicide Risk'
+                    : inst
+                  return (
+                    <div key={inst} className={`rd-mh-cell rd-mh-cell--${bucket}`}>
+                      <div className="rd-mh-label">{label}</div>
+                      <div className="rd-mh-value">
+                        {latest ? (latest.totalScore ?? latest.tickCount ?? '—') : '—'}
+                      </div>
+                      <div className="rd-mh-band">{latest?.severityBand ?? 'No data'}</div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="rd-mh-meta">
+                {assessments.length} {assessments.length === 1 ? 'assessment' : 'assessments'} on record
+              </div>
+            </>
+          )}
         </section>
       </div>
     </div>

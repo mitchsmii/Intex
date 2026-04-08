@@ -27,6 +27,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<EducationRecord> EducationRecords { get; set; }
     public DbSet<HealthWellbeingRecord> HealthWellbeingRecords { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<Assessment> Assessments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,5 +54,13 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<SocialWorker>()
             .HasIndex(s => s.SafehouseId)
             .HasDatabaseName("IX_social_workers_safehouse_id");
+
+        modelBuilder.Entity<Assessment>()
+            .Property(a => a.AssessmentId)
+            .ValueGeneratedOnAdd();
+
+        modelBuilder.Entity<Assessment>()
+            .HasIndex(a => a.ResidentId)
+            .HasDatabaseName("ix_assessments_resident_id");
     }
 }
