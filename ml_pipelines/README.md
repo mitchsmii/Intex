@@ -69,6 +69,7 @@ ml_pipelines/
 | Donor Churn | `01_donor_churn/donor_churn.ipynb` | Mikelle | `is_lapsed` | supporters, donations |
 | Social Media | `02_social_engagement/social_engagement.ipynb` | Teammate 2 | `made_donation_referral` | social_media_posts |
 | Resident Risk | `03_resident_risk/resident_risk.ipynb` | Teammate 3 | `high_risk` | residents, health, education, process_recordings, intervention_plans |
+| Education Outcome | `04_education_outcome/education_outcome.ipynb` | Will | `completed` | residents, education_records, health_wellbeing_records, process_recordings, incident_reports, home_visitations, intervention_plans |
 
 ---
 
