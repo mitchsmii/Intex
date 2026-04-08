@@ -5,11 +5,10 @@ import '../ManageUsersPage.css'
 
 function fmtAmt(n: number | null, currency?: string | null) {
   if (n == null || n === 0) return '—'
-  const sym = currency === 'USD' ? '$' : '₱'
+  const sym = currency === 'PHP' ? '₱' : '$'
   return sym + n.toLocaleString(undefined, { maximumFractionDigits: 0 })
 }
 
-const INDIVIDUAL_TYPES = ['Individual', 'Person', 'Alumni', 'Volunteer', 'Staff', '']
 
 type SortKey = 'name' | 'email' | 'region' | 'channel' | 'count' | 'total' | 'recurring' | 'status' | 'firstDate'
 type Dir = 'asc' | 'desc'
@@ -94,10 +93,13 @@ export default function DonorsPage() {
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [chanFilter, setChanFilter] = useState('')
-  const [kpiFilter,  setKpiFilter]  = useState<string | null>(null)
-  const [sortCol,    setSortCol]    = useState<SortKey>('name')
-  const [sortDir,    setSortDir]    = useState<Dir>('asc')
-  const [showAdd,    setShowAdd]    = useState(false)
+  const [kpiFilter,   setKpiFilter]   = useState<string | null>(null)
+  const [sortCol,     setSortCol]     = useState<SortKey>('name')
+  const [sortDir,     setSortDir]     = useState<Dir>('asc')
+  const [valueFilter, setValueFilter] = useState('')
+  const [showAdd,     setShowAdd]     = useState(false)
+
+  useEffect(() => { setValueFilter('') }, [sortCol])
 
   useEffect(() => {
     Promise.allSettled([
@@ -106,10 +108,7 @@ export default function DonorsPage() {
     ]).finally(() => setLoading(false))
   }, [])
 
-  const donors = supporters.filter(s =>
-    !s.supporterType ||
-    INDIVIDUAL_TYPES.some(t => (s.supporterType ?? '').toLowerCase() === t.toLowerCase())
-  )
+  const donors = supporters.filter(s => !s.organizationName && (!!s.firstName || !!s.lastName))
 
   const donationsBySupporter = (id: number) => donations.filter(d => d.supporterId === id)
   const totalBySupporter     = (id: number) => donationsBySupporter(id).reduce((s, d) => s + (d.amount ?? 0), 0)
@@ -122,10 +121,27 @@ export default function DonorsPage() {
 
   const channels = [...new Set(donors.map(d => d.acquisitionChannel).filter(Boolean))] as string[]
 
+  const pinValue = (d: Supporter): string => {
+    if (sortCol === 'channel')   return d.acquisitionChannel ?? ''
+    if (sortCol === 'status')    return d.status ?? ''
+    if (sortCol === 'recurring') return isRecurring(d.supporterId) ? 'Monthly' : 'One-Time'
+    if (sortCol === 'region')    return [d.region, d.country].filter(Boolean).join(', ')
+    return ''
+  }
+
+  const discreteOptions: string[] = (() => {
+    if (sortCol === 'channel')   return [...new Set(donors.map(d => d.acquisitionChannel).filter(Boolean))].sort() as string[]
+    if (sortCol === 'status')    return [...new Set(donors.map(d => d.status).filter(Boolean))].sort() as string[]
+    if (sortCol === 'recurring') return ['Monthly', 'One-Time']
+    if (sortCol === 'region')    return [...new Set(donors.map(d => [d.region, d.country].filter(Boolean).join(', ')).filter(Boolean))].sort()
+    return []
+  })()
+
   const filtered = donors
     .filter(d => {
       if (kpiFilter === 'recurring' && !isRecurring(d.supporterId))    return false
       if (kpiFilter === 'active'    && d.status !== 'Active')           return false
+      if (valueFilter && pinValue(d) !== valueFilter) return false
       const matchSearch = !search ||
         (d.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
         (`${d.firstName ?? ''} ${d.lastName ?? ''}`).toLowerCase().includes(search.toLowerCase()) ||
@@ -150,7 +166,7 @@ export default function DonorsPage() {
     })
 
   const totalRaised = donors.reduce((s, d) => s + totalBySupporter(d.supporterId), 0)
-  const currency    = donations[0]?.currencyCode ?? 'PHP'
+  const currency    = donations[0]?.currencyCode ?? 'USD'
   const recurring   = donors.filter(d => isRecurring(d.supporterId)).length
 
   return (
@@ -179,17 +195,19 @@ export default function DonorsPage() {
 
       <div className="mu-kpi-row">
         {([
-          { label: 'Total Donors',     value: String(donors.length),                                     key: null },
-          { label: 'Recurring Donors', value: String(recurring),                                          key: 'recurring' },
-          { label: 'Active Status',    value: String(donors.filter(d => d.status === 'Active').length),   key: 'active' },
-          { label: 'Total Raised',     value: fmtAmt(totalRaised, currency),                              key: null },
-        ] as { label: string; value: string; key: string | null }[]).map(k => (
+          { label: 'Total Donors',     display: String(donors.length),                                    num: donors.length,                                    den: null,           key: null },
+          { label: 'Recurring Donors', display: null,                                                      num: recurring,                                        den: donors.length,  key: 'recurring' },
+          { label: 'Active Status',    display: null,                                                      num: donors.filter(d => d.status === 'Active').length, den: donors.length,  key: 'active' },
+          { label: 'Total Raised',     display: fmtAmt(totalRaised, currency),                            num: 0,                                                den: null,           key: null },
+        ] as { label: string; display: string | null; num: number; den: number | null; key: string | null }[]).map(k => (
           <div
             key={k.label}
             className={`mu-kpi${k.key ? ' mu-kpi-clickable' : ''}${kpiFilter === k.key && k.key ? ' mu-kpi-active' : ''}`}
             onClick={k.key ? () => setKpiFilter(f => f === k.key ? null : k.key) : undefined}
           >
-            <div className="mu-kpi-value">{k.value}</div>
+            <div className="mu-kpi-value">
+              {k.display ?? (<>{k.num}{k.den != null && <span className="mu-kpi-denom">/{k.den}</span>}</>)}
+            </div>
             <div className="mu-kpi-label">{k.label}</div>
           </div>
         ))}
@@ -198,6 +216,32 @@ export default function DonorsPage() {
           <div className="mu-kpi-label">Add Donor</div>
         </button>
       </div>
+
+      {!loading && (
+        <div className="mu-sort-bar">
+          <span className="mu-sort-bar-label">Sort by</span>
+          <select className="mu-sort-select" value={sortCol} onChange={e => setSortCol(e.target.value as SortKey)}>
+            <option value="name">Name</option>
+            <option value="email">Email</option>
+            <option value="region">Region</option>
+            <option value="channel">Channel</option>
+            <option value="count">Donations</option>
+            <option value="total">Total Given</option>
+            <option value="recurring">Recurring</option>
+            <option value="status">Status</option>
+            <option value="firstDate">First Gift</option>
+          </select>
+          <button className="mu-sort-dir-btn" onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}>
+            {sortDir === 'asc' ? '↑ Asc' : '↓ Desc'}
+          </button>
+          {discreteOptions.length > 0 && (
+            <select className="mu-sort-value-select" value={valueFilter} onChange={e => setValueFilter(e.target.value)}>
+              <option value="">All values</option>
+              {discreteOptions.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          )}
+        </div>
+      )}
 
       {loading ? <p className="mu-empty">Loading…</p> : (
         <div className="mu-card">

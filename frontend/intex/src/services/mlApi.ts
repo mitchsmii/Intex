@@ -1,6 +1,10 @@
+// In dev, route through Vite's proxy (/ml-api) to avoid CORS.
+// In production, call the Azure ML API directly.
 const ML_BASE_URL =
   import.meta.env.VITE_ML_API_URL ??
-  'https://lighthouse-ml-api-intex.azurewebsites.net'
+  (import.meta.env.DEV
+    ? '/ml-api'
+    : 'https://lighthouse-ml-api-intex.azurewebsites.net')
 
 async function mlPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${ML_BASE_URL}${path}`, {
@@ -64,6 +68,13 @@ export function predictSocialEngagement(
   input: SocialEngagementInput,
 ): Promise<SocialEngagementResult> {
   return mlPost<SocialEngagementResult>('/predict/social-engagement', input)
+}
+
+export async function fetchSocialEngagementFeatureImportance(): Promise<FeatureImportance[]> {
+  const res = await fetch(`${ML_BASE_URL}/feature-importance/social-engagement`)
+  if (!res.ok) throw new Error(`ML API error ${res.status}: /feature-importance/social-engagement`)
+  const data = (await res.json()) as { features: FeatureImportance[] }
+  return data.features
 }
 
 export interface ResidentRiskInput {

@@ -30,7 +30,10 @@ export default function ResidentsManagePage() {
   const [kpiFilter,    setKpiFilter]    = useState<string | null>(null)
   const [sortCol,      setSortCol]      = useState<SortKey>('code')
   const [sortDir,      setSortDir]      = useState<Dir>('asc')
+  const [valueFilter,  setValueFilter]  = useState('')
   const [showWizard,   setShowWizard]   = useState(false)
+
+  useEffect(() => { setValueFilter('') }, [sortCol])
 
   useEffect(() => {
     Promise.allSettled([
@@ -70,6 +73,25 @@ export default function ResidentsManagePage() {
   const isArchived = (r: Resident) => r.caseStatus === 'Archived'
   const isActive   = (r: Resident) => !r.dateClosed && !isArchived(r)
   const isClosed   = (r: Resident) => !!r.dateClosed && !isArchived(r)
+  const statusLbl  = (r: Resident) => isArchived(r) ? 'Archived' : r.dateClosed ? 'Closed' : 'Active'
+
+  const pinValue = (r: Resident): string => {
+    if (sortCol === 'risk')      return r.currentRiskLevel ?? ''
+    if (sortCol === 'reint')     return r.reintegrationStatus ?? ''
+    if (sortCol === 'safehouse') return shName(r.safehouseId ?? null)
+    if (sortCol === 'worker')    return r.assignedSocialWorker ?? ''
+    if (sortCol === 'status')    return statusLbl(r)
+    return ''
+  }
+
+  const discreteOptions: string[] = (() => {
+    if (sortCol === 'risk')      return ['Low', 'Medium', 'High', 'Critical'].filter(v => residents.some(r => r.currentRiskLevel === v))
+    if (sortCol === 'reint')     return [...new Set(residents.map(r => r.reintegrationStatus).filter(Boolean))].sort() as string[]
+    if (sortCol === 'safehouse') return [...new Set(residents.map(r => shName(r.safehouseId ?? null)).filter(v => v !== '—'))].sort()
+    if (sortCol === 'worker')    return [...new Set(residents.map(r => r.assignedSocialWorker).filter(Boolean))].sort() as string[]
+    if (sortCol === 'status')    return ['Active', 'Closed', 'Archived'].filter(v => residents.some(r => statusLbl(r) === v))
+    return []
+  })()
 
   const displayed = residents
     .filter(r => {
@@ -79,6 +101,7 @@ export default function ResidentsManagePage() {
       if (kpiFilter === 'active'   && !isActive(r))   return false
       if (kpiFilter === 'risk'     && r.currentRiskLevel !== 'High' && r.currentRiskLevel !== 'Critical') return false
       if (kpiFilter === 'reint'    && r.reintegrationStatus !== 'Reintegrated' && r.reintegrationStatus !== 'Completed') return false
+      if (valueFilter && pinValue(r) !== valueFilter) return false
       if (search) {
         const q = search.toLowerCase()
         return (r.internalCode ?? '').toLowerCase().includes(q) ||
@@ -149,17 +172,19 @@ export default function ResidentsManagePage() {
 
       <div className="mu-kpi-row">
         {([
-          { label: 'Active Residents',     value: String(activeCount), key: 'active' },
-          { label: 'High / Critical Risk', value: String(highRisk),    key: 'risk',  warn: highRisk > 0 },
-          { label: 'Reintegrated',         value: String(reint),       key: 'reint' },
-          { label: 'Total on Record',      value: String(residents.length), key: 'total' },
-        ] as { label: string; value: string; key: string; warn?: boolean }[]).map(k => (
+          { label: 'Active Residents',     num: activeCount,       den: null,                                                             key: 'active' },
+          { label: 'High / Critical Risk', num: highRisk,          den: activeCount,                                                      key: 'risk',  warn: highRisk > 0 },
+          { label: 'Reintegrated',         num: reint,             den: residents.filter(r => !isArchived(r)).length,                     key: 'reint' },
+          { label: 'Total on Record',      num: residents.length,  den: null,                                                             key: 'total' },
+        ] as { label: string; num: number; den: number | null; key: string; warn?: boolean }[]).map(k => (
           <div
             key={k.label}
             className={`mu-kpi mu-kpi-clickable${k.warn ? ' mu-kpi-warn' : ''}${kpiFilter === k.key ? ' mu-kpi-active' : ''}`}
             onClick={() => setKpiFilter(f => f === k.key ? null : k.key)}
           >
-            <div className="mu-kpi-value">{k.value}</div>
+            <div className="mu-kpi-value">
+              {k.num}{k.den != null && <span className="mu-kpi-denom">/{k.den}</span>}
+            </div>
             <div className="mu-kpi-label">{k.label}</div>
           </div>
         ))}
@@ -179,6 +204,32 @@ export default function ResidentsManagePage() {
             setShowWizard(false)
           }}
         />
+      )}
+
+      {!loading && (
+        <div className="mu-sort-bar">
+          <span className="mu-sort-bar-label">Sort by</span>
+          <select className="mu-sort-select" value={sortCol} onChange={e => setSortCol(e.target.value as SortKey)}>
+            <option value="code">Code</option>
+            <option value="caseNo">Case No.</option>
+            <option value="age">Age</option>
+            <option value="safehouse">Safehouse</option>
+            <option value="worker">Social Worker</option>
+            <option value="risk">Risk Level</option>
+            <option value="reint">Reintegration</option>
+            <option value="status">Status</option>
+            <option value="admitted">Admitted</option>
+          </select>
+          <button className="mu-sort-dir-btn" onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}>
+            {sortDir === 'asc' ? '↑ Asc' : '↓ Desc'}
+          </button>
+          {discreteOptions.length > 0 && (
+            <select className="mu-sort-value-select" value={valueFilter} onChange={e => setValueFilter(e.target.value)}>
+              <option value="">All values</option>
+              {discreteOptions.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          )}
+        </div>
       )}
 
       {loading ? <p className="mu-empty">Loading…</p> : (

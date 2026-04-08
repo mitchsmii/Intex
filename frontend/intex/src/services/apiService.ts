@@ -184,6 +184,23 @@ export interface SwNotification {
   createdAt: string
 }
 
+export interface SocialMediaPost {
+  postId: number
+  platform: string
+  postDate: string
+  caption: string | null
+  hashtags: string | null
+  reach: number | null
+  likes: number | null
+  comments: number | null
+  secondaryMetric: number | null
+  secondaryLabel: string | null
+  emailsSent: number | null
+  emailsOpened: number | null
+  emailsClicked: number | null
+  openRate: number | null
+}
+
 export interface MonthlyDonationSummary {
   year: number
   month: number
@@ -285,6 +302,9 @@ export const api = {
   getUnreadNotificationCount: () => authGet<number>('/api/notifications/unread-count'),
   getNotifications:           () => authGet<SwNotification[]>('/api/notifications'),
   markAllNotificationsRead:   () => authPatch('/api/notifications/mark-all-read'),
+  getSocialMediaPosts:        () => get<SocialMediaPost[]>('/api/socialmediaposts'),
+  createSocialMediaPost:      (body: Omit<SocialMediaPost, 'postId'>) =>
+    post<SocialMediaPost>('/api/socialmediaposts', body),
   updateResident:             (id: number, body: Partial<{ safehouseId: number; assignedSocialWorker: string; currentRiskLevel: string; caseStatus: string }>) =>
     authPatchWithBody<Resident>(`/api/residents/${id}`, body),
 }

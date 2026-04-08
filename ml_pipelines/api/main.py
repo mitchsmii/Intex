@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import json
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +18,7 @@ app = FastAPI()
 # CORS — allow the Vercel-hosted frontend (prod + preview deploys) and local dev.
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:5173",
+    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:\d+",
     allow_methods=["*"],
     allow_headers=["*"],
     allow_credentials=False,
@@ -39,6 +38,7 @@ DONOR_MODEL_PATH = SAVED_MODELS_DIR / "donor_churn_model.pkl"
 DONOR_FEATURES_PATH = SAVED_MODELS_DIR / "donor_churn_features.pkl"
 SOCIAL_MODEL_PATH = SAVED_MODELS_DIR / "social_engagement_classifier.pkl"
 SOCIAL_FEATURES_PATH = SAVED_MODELS_DIR / "social_engagement_features.pkl"
+SOCIAL_REGRESSION_PATH = SAVED_MODELS_DIR / "social_engagement_regression.pkl"
 RESIDENT_RISK_MODEL_PATH = SAVED_MODELS_DIR / "resident_risk_model.pkl"
 RESIDENT_RISK_METADATA_PATH = SAVED_MODELS_DIR / "resident_risk_metadata.json"
 EDUCATION_OUTCOME_MODEL_PATH = SAVED_MODELS_DIR / "education_outcome_model.pkl"
@@ -194,6 +194,18 @@ def _extract_feature_importance(model: Any, feature_names: list[str]) -> list[di
     ]
     pairs.sort(key=lambda item: item["importance"], reverse=True)
     return pairs
+
+
+@app.get("/feature-importance/social-engagement")
+def social_engagement_feature_importance() -> dict[str, Any]:
+    """Return global feature importance for the social engagement donation classifier.
+
+    Returns:
+        dict[str, Any]: ``{"features": [{feature, importance}, ...]}``.
+    """
+    social_model = _load_artifact(SOCIAL_MODEL_PATH)
+    social_features = list(_load_artifact(SOCIAL_FEATURES_PATH))
+    return {"features": _extract_feature_importance(social_model, social_features)}
 
 
 @app.get("/feature-importance/donor-churn")

@@ -36,17 +36,16 @@ const iH = CH - PAD.top - PAD.bottom
 
 function LineChart({ data }: { data: MonthlyDonationSummary[] }) {
   if (data.length < 2) return <p className="rp-empty">Not enough data for chart.</p>
-  const pts = data.slice(-12)
-  const vals = pts.map(d => d.total)
+  const vals = data.map(d => d.total)
   const maxV = Math.max(...vals, 1)
   const minV = 0
-  const xp = (i: number) => PAD.left + (i / (pts.length - 1)) * iW
+  const xp = (i: number) => PAD.left + (i / (data.length - 1)) * iW
   const yp = (v: number) => PAD.top + iH - ((v - minV) / (maxV - minV)) * iH
   const ticks = [0, 0.25, 0.5, 0.75, 1].map(t => minV + t * (maxV - minV))
-  const polyline = pts.map((p, i) => `${xp(i)},${yp(p.total)}`).join(' ')
-  const area = `M ${xp(0)} ${yp(pts[0].total)} ` +
-    pts.map((p, i) => `L ${xp(i)} ${yp(p.total)}`).join(' ') +
-    ` L ${xp(pts.length - 1)} ${PAD.top + iH} L ${PAD.left} ${PAD.top + iH} Z`
+  const polyline = data.map((p, i) => `${xp(i)},${yp(p.total)}`).join(' ')
+  const area = `M ${xp(0)} ${yp(data[0].total)} ` +
+    data.map((p, i) => `L ${xp(i)} ${yp(p.total)}`).join(' ') +
+    ` L ${xp(data.length - 1)} ${PAD.top + iH} L ${PAD.left} ${PAD.top + iH} Z`
 
   return (
     <svg viewBox={`0 0 ${CW} ${CH}`} className="rp-chart" aria-label="Monthly donation trend">
@@ -60,7 +59,7 @@ function LineChart({ data }: { data: MonthlyDonationSummary[] }) {
         </g>
       ))}
       {/* X labels */}
-      {pts.map((p, i) => (
+      {data.map((p, i) => (
         <text key={i} x={xp(i)} y={CH - 4} textAnchor="middle" fontSize="10" fill="var(--text-muted)">
           {monthLabel(p.month)}
         </text>
@@ -70,7 +69,7 @@ function LineChart({ data }: { data: MonthlyDonationSummary[] }) {
       {/* Line */}
       <polyline points={polyline} fill="none" stroke="var(--cove-tidal)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       {/* Dots */}
-      {pts.map((p, i) => (
+      {data.map((p, i) => (
         <circle key={i} cx={xp(i)} cy={yp(p.total)} r="5" fill="var(--cove-tidal)" stroke="white" strokeWidth="2" />
       ))}
     </svg>
@@ -543,6 +542,24 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
   )
 }
 
+// ─── Donation goal presets ─────────────────────────────────────────────────────
+
+const DONATION_GOALS = [
+  { label: 'Essential Ops',     amount: 11_000,  desc: 'Minimum to keep doors open monthly' },
+  { label: 'Full Capacity',     amount: 25_000,  desc: 'All programs fully staffed & funded' },
+  { label: 'Wheels of Hope',    amount: 35_000,  desc: 'One-time transportation campaign' },
+  { label: 'Shelter Expansion', amount: 100_000, desc: 'Capital goal — 18 additional beds' },
+]
+
+type TrendRange = '1M' | '3M' | '1Y' | 'all'
+
+const RANGE_LABELS: Record<TrendRange, string> = {
+  '1M':  'This Month',
+  '3M':  'Last 3 Months',
+  '1Y':  'This Year',
+  'all': 'All Time',
+}
+
 // ─── Tab: Donations ────────────────────────────────────────────────────────────
 
 function DonationsTab({
@@ -554,6 +571,9 @@ function DonationsTab({
   allocation: AllocationSummary | null
   loading: boolean
 }) {
+  const [trendRange,   setTrendRange]   = useState<TrendRange>('1Y')
+  const [selectedGoal, setSelectedGoal] = useState(1) // index into DONATION_GOALS
+
   const now = new Date()
   const curYear = now.getFullYear()
   const curMonth = now.getMonth() + 1
@@ -562,7 +582,19 @@ function DonationsTab({
   const total = donations.reduce((s, d) => s + (d.amount ?? 0), 0)
   const avg = donations.length ? total / donations.length : 0
   const recurring = donations.filter(d => d.isRecurring).length
-  const currency = donations[0]?.currencyCode ?? 'PHP'
+  const currency = donations[0]?.currencyCode ?? 'USD'
+
+  const filteredMonthly: MonthlyDonationSummary[] = (() => {
+    if (trendRange === '1M')  return monthly.slice(-1)
+    if (trendRange === '3M')  return monthly.slice(-3)
+    if (trendRange === '1Y')  return monthly.slice(-12)
+    return monthly
+  })()
+
+  const rangeTotal = filteredMonthly.reduce((s, m) => s + m.total, 0)
+  const goal       = DONATION_GOALS[selectedGoal]
+  const goalPct    = Math.min(100, Math.round((rangeTotal / goal.amount) * 100))
+  const goalLeft   = Math.max(0, goal.amount - rangeTotal)
 
   const channelCounts: Record<string, number> = {}
   for (const d of donations) {
@@ -590,9 +622,69 @@ function DonationsTab({
         ))}
       </div>
 
+      {/* ── Fundraising Goal Progress ── */}
+      <div className="rp-goal-card">
+        <div className="rp-goal-top">
+          <div>
+            <h3 className="rp-goal-heading">Fundraising Goal</h3>
+            <p className="rp-goal-period">{RANGE_LABELS[trendRange]}</p>
+          </div>
+          <div className="rp-goal-presets">
+            {DONATION_GOALS.map((g, i) => (
+              <button
+                key={g.label}
+                className={`rp-goal-preset${selectedGoal === i ? ' rp-goal-preset-active' : ''}`}
+                onClick={() => setSelectedGoal(i)}
+                title={g.desc}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rp-goal-amounts">
+          <span className="rp-goal-raised">{fmtAmt(rangeTotal, currency)}</span>
+          <span className="rp-goal-of"> raised of </span>
+          <span className="rp-goal-target">{fmtAmt(goal.amount, 'USD')}</span>
+          <span className={`rp-goal-pct-badge${goalPct >= 100 ? ' rp-goal-pct-done' : ''}`}>{goalPct}%</span>
+        </div>
+
+        <div className="rp-goal-track">
+          {[25, 50, 75].map(m => (
+            <div key={m} className="rp-goal-milestone" style={{ left: `${m}%` }} />
+          ))}
+          <div
+            className={`rp-goal-fill${goalPct >= 100 ? ' rp-goal-fill-done' : ''}`}
+            style={{ width: `${goalPct}%` }}
+          />
+        </div>
+
+        <div className="rp-goal-footer">
+          <span className="rp-goal-desc">{goal.desc}</span>
+          <span className="rp-goal-remaining">
+            {goalPct >= 100 ? 'Goal reached!' : `${fmtAmt(goalLeft, 'USD')} to go`}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Monthly Trend Chart ── */}
       <div className="rp-section">
-        <h3 className="rp-section-title">Monthly Donation Trend (Last 12 Months)</h3>
-        {loading ? <p className="rp-empty">Loading…</p> : <LineChart data={monthly} />}
+        <div className="rp-section-header">
+          <h3 className="rp-section-title rp-section-title-inline">Monthly Donation Trend</h3>
+          <div className="rp-range-toggle">
+            {(['1M', '3M', '1Y', 'all'] as const).map(r => (
+              <button
+                key={r}
+                className={`rp-range-btn${trendRange === r ? ' rp-range-active' : ''}`}
+                onClick={() => setTrendRange(r)}
+              >
+                {r === 'all' ? 'All' : r}
+              </button>
+            ))}
+          </div>
+        </div>
+        {loading ? <p className="rp-empty">Loading…</p> : <LineChart data={filteredMonthly} />}
       </div>
 
       <div className="rp-two-col">

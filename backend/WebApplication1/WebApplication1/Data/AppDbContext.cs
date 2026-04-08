@@ -18,6 +18,9 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<DonationAllocation> DonationAllocations { get; set; }
     public DbSet<SafehouseMonthlyMetric> SafehouseMonthlyMetrics { get; set; }
 
+    // Social media
+    public DbSet<SocialMediaPost> SocialMediaPosts { get; set; }
+
     // Case-management tables
     public DbSet<SocialWorker> SocialWorkers { get; set; }
     public DbSet<ProcessRecording> ProcessRecordings { get; set; }
