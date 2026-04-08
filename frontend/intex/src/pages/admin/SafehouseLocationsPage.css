@@ -60,7 +60,7 @@
 /* ── Main layout ── */
 .sl-main {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-lg);
   align-items: start;
 }
@@ -71,17 +71,21 @@
   border-radius: var(--radius-lg);
   overflow: visible;
   box-shadow: var(--shadow-md);
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .sl-svg {
   display: block;
+  width: 100%;
+  height: auto;
+  /* never taller than the visible viewport minus nav + page header */
+  max-height: calc(100vh - 180px);
   border-radius: var(--radius-lg);
 }
 
 .sl-loading {
-  width: 420px;
-  height: 730px;
+  width: 100%;
+  height: calc(100vh - 180px);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -194,7 +198,7 @@
 .sl-sidebar {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
 /* Shared card */
@@ -203,7 +207,7 @@
 .sl-cand-card {
   background: var(--bg-card);
   border-radius: var(--radius-lg);
-  padding: var(--space-md) var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
 }
@@ -283,8 +287,8 @@
 }
 
 .sl-info-header {
-  margin: calc(-1 * var(--space-md)) calc(-1 * var(--space-lg)) var(--space-md);
-  padding: var(--space-sm) var(--space-lg);
+  margin: calc(-1 * var(--space-sm)) calc(-1 * var(--space-md)) var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   display: flex;
   flex-direction: column;
@@ -320,6 +324,56 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.sl-vawc-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  color: white;
+  font-size: 0.6rem;
+  font-weight: 700;
+  cursor: help;
+  flex-shrink: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1;
+  position: relative;
+}
+
+.sl-vawc-help::after {
+  content: 'Violence Against Women and Children — reported cases per 100,000 population (PNP/PSA data). Higher rates indicate greater need for protective services.';
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 220px;
+  background: #2c4a52;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 400;
+  line-height: 1.45;
+  padding: 7px 10px;
+  border-radius: 6px;
+  pointer-events: none;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.sl-vawc-help:hover::after {
+  opacity: 1;
 }
 
 .sl-metric-value {
@@ -328,16 +382,39 @@
   color: var(--text-primary);
 }
 
+.sl-info-sh-list {
+  border-top: 1px solid var(--border-light);
+  margin-top: var(--space-xs);
+  padding-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .sl-info-served {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.35rem;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--color-success);
-  border-top: 1px solid var(--border-light);
-  padding-top: var(--space-sm);
-  margin-top: var(--space-xs);
+}
+
+.sl-info-sh-list .sl-info-served {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.sl-info-sh-city {
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.sl-info-sh-status {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-muted);
 }
 
 .sl-deselect {
@@ -442,12 +519,109 @@
   padding: var(--space-sm) 0;
 }
 
+/* ── Income metric (full-width, expanded) ── */
+.sl-metric-income {
+  grid-column: 1 / -1;
+}
+
+.sl-income-usd {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.sl-income-badge {
+  display: inline-block;
+  margin-top: 0.35rem;
+  align-self: flex-start;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.18rem 0.55rem;
+  border-radius: var(--radius-full);
+}
+
+/* ── Other facilities in region ── */
+.sl-info-facilities {
+  border-top: 1px solid var(--border-light);
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sl-info-facilities-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+
+.sl-info-facility-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+}
+
+.sl-info-facility-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sl-info-facility-name {
+  flex: 1;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.sl-info-facility-type {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Country toggle ── */
+.sl-country-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  align-self: flex-start;
+  margin-bottom: var(--space-sm);
+}
+
+.sl-country-btn {
+  background: none;
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.sl-country-btn:hover { color: var(--cove-deep); }
+
+.sl-country-active {
+  background: white;
+  color: var(--cove-deep) !important;
+  box-shadow: 0 1px 4px rgba(44,74,82,0.12);
+}
+
 /* ── Responsive ── */
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
   .sl-main {
     grid-template-columns: 1fr;
-  }
-  .sl-map-outer {
-    margin: 0 auto;
   }
 }

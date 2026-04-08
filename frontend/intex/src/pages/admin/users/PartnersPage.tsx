@@ -93,10 +93,13 @@ export default function PartnersPage() {
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [typeFilter, setTypeFilter] = useState('')
-  const [kpiFilter,  setKpiFilter]  = useState<string | null>(null)
-  const [sortCol,    setSortCol]    = useState<SortKey>('name')
-  const [sortDir,    setSortDir]    = useState<Dir>('asc')
-  const [showAdd,    setShowAdd]    = useState(false)
+  const [kpiFilter,   setKpiFilter]   = useState<string | null>(null)
+  const [sortCol,     setSortCol]     = useState<SortKey>('name')
+  const [sortDir,     setSortDir]     = useState<Dir>('asc')
+  const [valueFilter, setValueFilter] = useState('')
+  const [showAdd,     setShowAdd]     = useState(false)
+
+  useEffect(() => { setValueFilter('') }, [sortCol])
 
   useEffect(() => {
     Promise.allSettled([
@@ -105,9 +108,7 @@ export default function PartnersPage() {
     ]).finally(() => setLoading(false))
   }, [])
 
-  const partners = supporters.filter(s =>
-    s.supporterType && PARTNER_TYPES.some(t => (s.supporterType ?? '').toLowerCase().includes(t.toLowerCase()))
-  )
+  const partners = supporters.filter(s => !!s.organizationName || (!s.firstName && !s.lastName))
 
   const totalBySupporter = (id: number) =>
     donations.filter(d => d.supporterId === id).reduce((s, d) => s + (d.amount ?? 0), 0)
@@ -119,10 +120,25 @@ export default function PartnersPage() {
 
   const types = [...new Set(partners.map(p => p.supporterType).filter(Boolean))] as string[]
 
+  const pinValue = (p: Supporter): string => {
+    if (sortCol === 'type')   return p.supporterType ?? ''
+    if (sortCol === 'status') return p.status ?? ''
+    if (sortCol === 'region') return [p.region, p.country].filter(Boolean).join(', ')
+    return ''
+  }
+
+  const discreteOptions: string[] = (() => {
+    if (sortCol === 'type')   return [...new Set(partners.map(p => p.supporterType).filter(Boolean))].sort() as string[]
+    if (sortCol === 'status') return [...new Set(partners.map(p => p.status).filter(Boolean))].sort() as string[]
+    if (sortCol === 'region') return [...new Set(partners.map(p => [p.region, p.country].filter(Boolean).join(', ')).filter(Boolean))].sort()
+    return []
+  })()
+
   const filtered = partners
     .filter(p => {
       if (kpiFilter === 'active'  && p.status !== 'Active') return false
       if (kpiFilter === 'donated' && !donations.some(d => d.supporterId === p.supporterId)) return false
+      if (valueFilter && pinValue(p) !== valueFilter) return false
       const matchSearch = !search ||
         (p.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
         (p.organizationName ?? '').toLowerCase().includes(search.toLowerCase()) ||
@@ -170,17 +186,19 @@ export default function PartnersPage() {
 
       <div className="mu-kpi-row">
         {([
-          { label: 'Total Partners',  value: String(partners.length),                                                                           key: null },
-          { label: 'Active',          value: String(partners.filter(p => p.status === 'Active').length),                                        key: 'active' },
-          { label: 'With Donations',  value: String(partners.filter(p => donations.some(d => d.supporterId === p.supporterId)).length),         key: 'donated' },
-          { label: 'Unique Types',    value: String(types.length),                                                                              key: null },
-        ] as { label: string; value: string; key: string | null }[]).map(k => (
+          { label: 'Total Partners',  num: partners.length,                                                                            den: null,             key: null },
+          { label: 'Active',          num: partners.filter(p => p.status === 'Active').length,                                         den: partners.length,  key: 'active' },
+          { label: 'With Donations',  num: partners.filter(p => donations.some(d => d.supporterId === p.supporterId)).length,          den: partners.length,  key: 'donated' },
+          { label: 'Unique Types',    num: types.length,                                                                               den: null,             key: null },
+        ] as { label: string; num: number; den: number | null; key: string | null }[]).map(k => (
           <div
             key={k.label}
             className={`mu-kpi${k.key ? ' mu-kpi-clickable' : ''}${kpiFilter === k.key && k.key ? ' mu-kpi-active' : ''}`}
             onClick={k.key ? () => setKpiFilter(f => f === k.key ? null : k.key) : undefined}
           >
-            <div className="mu-kpi-value">{k.value}</div>
+            <div className="mu-kpi-value">
+              {k.num}{k.den != null && <span className="mu-kpi-denom">/{k.den}</span>}
+            </div>
             <div className="mu-kpi-label">{k.label}</div>
           </div>
         ))}
@@ -189,6 +207,29 @@ export default function PartnersPage() {
           <div className="mu-kpi-label">Add Partner</div>
         </button>
       </div>
+
+      {!loading && (
+        <div className="mu-sort-bar">
+          <span className="mu-sort-bar-label">Sort by</span>
+          <select className="mu-sort-select" value={sortCol} onChange={e => setSortCol(e.target.value as SortKey)}>
+            <option value="name">Organization</option>
+            <option value="type">Type</option>
+            <option value="region">Region</option>
+            <option value="status">Status</option>
+            <option value="total">Total Contributed</option>
+            <option value="firstDate">First Gift</option>
+          </select>
+          <button className="mu-sort-dir-btn" onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}>
+            {sortDir === 'asc' ? '↑ Asc' : '↓ Desc'}
+          </button>
+          {discreteOptions.length > 0 && (
+            <select className="mu-sort-value-select" value={valueFilter} onChange={e => setValueFilter(e.target.value)}>
+              <option value="">All values</option>
+              {discreteOptions.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          )}
+        </div>
+      )}
 
       {loading ? <p className="mu-empty">Loading…</p> : (
         <div className="mu-card">

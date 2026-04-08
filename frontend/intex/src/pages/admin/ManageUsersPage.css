@@ -144,6 +144,69 @@
   margin-bottom: var(--space-xs);
 }
 
+.mu-kpi-denom {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ── Sort Bar ──────────────────────────────────────────────────────────────── */
+
+.mu-sort-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.mu-sort-bar-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.mu-sort-select {
+  padding: 4px 8px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--text-default);
+  height: 28px;
+}
+
+.mu-sort-dir-btn {
+  padding: 0 10px;
+  height: 28px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--cove-tidal);
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 26px;
+}
+
+.mu-sort-dir-btn:hover {
+  background: var(--border-light);
+}
+
+.mu-sort-value-select {
+  padding: 4px 8px;
+  border: 1px solid var(--cove-tidal);
+  border-radius: var(--radius-sm);
+  background: #edf7f7;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--cove-deep);
+  height: 28px;
+}
+
 .mu-kpi-label {
   font-size: 0.8rem;
   color: var(--text-muted);

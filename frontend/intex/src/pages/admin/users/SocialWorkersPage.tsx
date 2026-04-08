@@ -105,7 +105,10 @@ export default function SocialWorkersPage() {
   const [kpiFilter,  setKpiFilter]  = useState<string | null>(null)
   const [sortCol,    setSortCol]    = useState<SortKey>('fullName')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
+  const [valueFilter, setValueFilter] = useState('')
   const [showAdd,    setShowAdd]    = useState(false)
+
+  useEffect(() => { setValueFilter('') }, [sortCol])
 
   useEffect(() => {
     Promise.allSettled([
@@ -159,10 +162,23 @@ export default function SocialWorkersPage() {
     else { setSortCol(col); setSortDir('asc') }
   }
 
+  const pinValue = (w: SocialWorker): string => {
+    if (sortCol === 'status')    return w.status
+    if (sortCol === 'safehouse') return shName(w.safehouseId ?? null)
+    return ''
+  }
+
+  const discreteOptions: string[] = (() => {
+    if (sortCol === 'status')    return [...new Set(workers.map(w => w.status).filter(Boolean))].sort()
+    if (sortCol === 'safehouse') return [...new Set(workers.map(w => shName(w.safehouseId ?? null)).filter(v => v !== '—'))].sort()
+    return []
+  })()
+
   const filtered = workers
     .filter(w => {
       if (kpiFilter === 'active'   && w.status !== 'Active') return false
       if (kpiFilter === 'assigned' && !w.safehouseId)        return false
+      if (valueFilter && pinValue(w) !== valueFilter) return false
       return !search || w.fullName.toLowerCase().includes(search.toLowerCase()) ||
         (w.email ?? '').toLowerCase().includes(search.toLowerCase())
     })
@@ -209,17 +225,19 @@ export default function SocialWorkersPage() {
 
       <div className="mu-kpi-row">
         {([
-          { label: 'Total Social Workers',   value: String(workers.length),                                                              key: null },
-          { label: 'Active',                 value: String(active),                                                                      key: 'active' },
-          { label: 'Assigned to Safehouses', value: String(workers.filter(w => w.safehouseId).length),                                  key: 'assigned' },
-          { label: 'Safehouses with Staff',  value: String(new Set(workers.filter(w => w.safehouseId).map(w => w.safehouseId)).size),   key: null },
-        ] as { label: string; value: string; key: string | null }[]).map(k => (
+          { label: 'Total Social Workers',   num: workers.length,                                                               den: null,              key: null },
+          { label: 'Active',                 num: active,                                                                        den: workers.length,    key: 'active' },
+          { label: 'Assigned to Safehouses', num: workers.filter(w => w.safehouseId).length,                                    den: workers.length,    key: 'assigned' },
+          { label: 'Safehouses with Staff',  num: new Set(workers.filter(w => w.safehouseId).map(w => w.safehouseId)).size,     den: safehouses.length, key: null },
+        ] as { label: string; num: number; den: number | null; key: string | null }[]).map(k => (
           <div
             key={k.label}
             className={`mu-kpi${k.key ? ' mu-kpi-clickable' : ''}${kpiFilter === k.key && k.key ? ' mu-kpi-active' : ''}`}
             onClick={k.key ? () => setKpiFilter(f => f === k.key ? null : k.key) : undefined}
           >
-            <div className="mu-kpi-value">{k.value}</div>
+            <div className="mu-kpi-value">
+              {k.num}{k.den != null && <span className="mu-kpi-denom">/{k.den}</span>}
+            </div>
             <div className="mu-kpi-label">{k.label}</div>
           </div>
         ))}
@@ -228,6 +246,29 @@ export default function SocialWorkersPage() {
           <div className="mu-kpi-label">Add Social Worker</div>
         </button>
       </div>
+
+      {!loading && (
+        <div className="mu-sort-bar">
+          <span className="mu-sort-bar-label">Sort by</span>
+          <select className="mu-sort-select" value={sortCol} onChange={e => setSortCol(e.target.value as SortKey)}>
+            <option value="fullName">Name</option>
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+            <option value="safehouse">Safehouse</option>
+            <option value="status">Status</option>
+            <option value="createdAt">Since</option>
+          </select>
+          <button className="mu-sort-dir-btn" onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}>
+            {sortDir === 'asc' ? '↑ Asc' : '↓ Desc'}
+          </button>
+          {discreteOptions.length > 0 && (
+            <select className="mu-sort-value-select" value={valueFilter} onChange={e => setValueFilter(e.target.value)}>
+              <option value="">All values</option>
+              {discreteOptions.map(v => <option key={v} value={v}>{v}</option>)}
+            </select>
+          )}
+        </div>
+      )}
 
       {loading ? (
         <p className="mu-empty">Loading…</p>
