@@ -51,6 +51,59 @@ export interface Resident {
   dateClosed: string | null
 }
 
+// Per-resident ML feature vector returned by GET /api/residents/ml-features.
+// Field names match the snake_case columns the resident_risk_model.pkl was trained on
+// and are forwarded as-is to the FastAPI ML service.
+export interface ResidentMlFeatures {
+  resident_id: number
+  internal_code: string | null
+  case_control_no: string | null
+  current_risk_level: string | null
+  assigned_social_worker: string | null
+  last_action_date: string | null
+  last_action_type: string | null
+  safehouse_id: number
+  sub_cat_trafficked: number
+  sub_cat_child_labor: number
+  sub_cat_physical_abuse: number
+  sub_cat_sexual_abuse: number
+  sub_cat_osaec: number
+  is_pwd: number
+  has_special_needs: number
+  family_is_4ps: number
+  family_solo_parent: number
+  family_informal_settler: number
+  age_upon_admission: number
+  present_age: number
+  length_of_stay_days: number
+  days_in_care: number
+  initial_risk_level_enc: number
+  case_cat_Abandoned: number
+  case_cat_Foundling: number
+  case_cat_Neglected: number
+  case_cat_Surrendered: number
+  total_sessions: number
+  pct_concerns_flagged: number
+  pct_progress_noted: number
+  pct_referral_made: number
+  emotional_improvement_rate: number
+  avg_session_duration: number
+  avg_general_health_score: number
+  avg_nutrition_score: number
+  avg_sleep_quality_score: number
+  health_trend_slope: number
+  avg_attendance_rate: number
+  avg_progress_percent: number
+  enroll_Enrolled: number
+  total_incidents: number
+  unresolved_incidents: number
+  max_incident_severity: number
+  total_home_visits: number
+  pct_visits_safety_concerns: number
+  family_cooperation_enc: number
+  active_interventions: number
+}
+
 export interface Supporter {
   supporterId: number
   supporterType: string | null
@@ -305,6 +358,7 @@ async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
   getResidents:               () => authGet<Resident[]>('/api/residents'),
+  getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
   getSupporters:              () => get<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
