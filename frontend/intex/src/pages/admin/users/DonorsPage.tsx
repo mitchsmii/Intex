@@ -25,6 +25,69 @@ function SortTh({ label, col, sort, dir, onSort }: {
   )
 }
 
+function AddDonorModal({ onClose, onSave }: { onClose: () => void; onSave: (s: Supporter) => void }) {
+  const [firstName, setFirstName] = useState('')
+  const [lastName,  setLastName]  = useState('')
+  const [email,     setEmail]     = useState('')
+  const [phone,     setPhone]     = useState('')
+  const [channel,   setChannel]   = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [error,     setError]     = useState('')
+
+  async function handleSubmit() {
+    if (!firstName.trim() && !lastName.trim()) { setError('At least a first or last name is required.'); return }
+    setSaving(true); setError('')
+    try {
+      const created = await api.createSupporter({
+        firstName:          firstName.trim() || undefined,
+        lastName:           lastName.trim()  || undefined,
+        email:              email.trim()     || undefined,
+        phone:              phone.trim()     || undefined,
+        acquisitionChannel: channel.trim()   || undefined,
+        supporterType:      'Individual',
+        status:             'Active',
+      })
+      onSave(created)
+    } catch { setError('Failed to save. Please try again.') }
+    finally   { setSaving(false) }
+  }
+
+  return (
+    <div className="mu-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="mu-modal">
+        <h2 className="mu-modal-title">Add Donor</h2>
+        <div className="mu-form-two-col">
+          <div className="mu-form-row">
+            <label className="mu-form-label">First Name</label>
+            <input className="mu-form-input" value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="Maria" />
+          </div>
+          <div className="mu-form-row">
+            <label className="mu-form-label">Last Name</label>
+            <input className="mu-form-input" value={lastName} onChange={e => setLastName(e.target.value)} placeholder="Santos" />
+          </div>
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Email</label>
+          <input className="mu-form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Phone</label>
+          <input className="mu-form-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+63 9XX XXX XXXX" />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Acquisition Channel</label>
+          <input className="mu-form-input" value={channel} onChange={e => setChannel(e.target.value)} placeholder="e.g. Facebook, Referral" />
+        </div>
+        {error && <p style={{ color: 'var(--color-error)', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
+        <div className="mu-modal-actions">
+          <button className="mu-btn mu-btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="mu-btn mu-btn-primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Saving…' : 'Add Donor'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function DonorsPage() {
   const [supporters, setSupporters] = useState<Supporter[]>([])
   const [donations,  setDonations]  = useState<Donation[]>([])
@@ -33,6 +96,7 @@ export default function DonorsPage() {
   const [chanFilter, setChanFilter] = useState('')
   const [sortCol,    setSortCol]    = useState<SortKey>('name')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
+  const [showAdd,    setShowAdd]    = useState(false)
 
   useEffect(() => {
     Promise.allSettled([
@@ -88,6 +152,13 @@ export default function DonorsPage() {
 
   return (
     <div className="mu-page">
+      {showAdd && (
+        <AddDonorModal
+          onClose={() => setShowAdd(false)}
+          onSave={s => { setSupporters(prev => [...prev, s]); setShowAdd(false) }}
+        />
+      )}
+
       <div className="mu-header">
         <div>
           <h1 className="mu-title">Donors</h1>
@@ -115,6 +186,10 @@ export default function DonorsPage() {
             <div className="mu-kpi-label">{k.label}</div>
           </div>
         ))}
+        <button className="mu-kpi-add-card" onClick={() => setShowAdd(true)}>
+          <div className="mu-kpi-add-icon">+</div>
+          <div className="mu-kpi-label">Add Donor</div>
+        </button>
       </div>
 
       {loading ? <p className="mu-empty">Loading…</p> : (

@@ -64,12 +64,12 @@ function LineChart({ data }: { data: MonthlyDonationSummary[] }) {
         </text>
       ))}
       {/* Area */}
-      <path d={area} fill="var(--cove-tidal)" opacity="0.12" />
+      <path d={area} fill="var(--cove-tidal)" opacity="0.1" />
       {/* Line */}
-      <polyline points={polyline} fill="none" stroke="var(--cove-tidal)" strokeWidth="2.5" strokeLinejoin="round" />
+      <polyline points={polyline} fill="none" stroke="var(--cove-tidal)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       {/* Dots */}
       {pts.map((p, i) => (
-        <circle key={i} cx={xp(i)} cy={yp(p.total)} r="4" fill="var(--cove-tidal)" stroke="white" strokeWidth="1.5" />
+        <circle key={i} cx={xp(i)} cy={yp(p.total)} r="5" fill="var(--cove-tidal)" stroke="white" strokeWidth="2" />
       ))}
     </svg>
   )

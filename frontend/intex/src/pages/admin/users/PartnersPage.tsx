@@ -25,6 +25,68 @@ function SortTh({ label, col, sort, dir, onSort }: {
   )
 }
 
+function AddPartnerModal({ onClose, onSave }: { onClose: () => void; onSave: (s: Supporter) => void }) {
+  const [orgName,  setOrgName]  = useState('')
+  const [type,     setType]     = useState('Organization')
+  const [email,    setEmail]    = useState('')
+  const [phone,    setPhone]    = useState('')
+  const [region,   setRegion]   = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const [error,    setError]    = useState('')
+
+  async function handleSubmit() {
+    if (!orgName.trim()) { setError('Organization name is required.'); return }
+    setSaving(true); setError('')
+    try {
+      const created = await api.createSupporter({
+        organizationName: orgName.trim(),
+        supporterType:    type,
+        email:            email.trim() || undefined,
+        phone:            phone.trim() || undefined,
+        region:           region.trim() || undefined,
+        status:           'Active',
+      })
+      onSave(created)
+    } catch { setError('Failed to save. Please try again.') }
+    finally   { setSaving(false) }
+  }
+
+  return (
+    <div className="mu-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="mu-modal">
+        <h2 className="mu-modal-title">Add Partner / Organization</h2>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Organization Name *</label>
+          <input className="mu-form-input" value={orgName} onChange={e => setOrgName(e.target.value)} placeholder="e.g. Cebu Foundation Inc." />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Partner Type</label>
+          <select className="mu-form-input mu-select" value={type} onChange={e => setType(e.target.value)}>
+            {PARTNER_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Email</label>
+          <input className="mu-form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="contact@org.com" />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Phone</label>
+          <input className="mu-form-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+63 9XX XXX XXXX" />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Region / Country</label>
+          <input className="mu-form-input" value={region} onChange={e => setRegion(e.target.value)} placeholder="e.g. Cebu, Philippines" />
+        </div>
+        {error && <p style={{ color: 'var(--color-error)', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
+        <div className="mu-modal-actions">
+          <button className="mu-btn mu-btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
+          <button className="mu-btn mu-btn-primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Saving…' : 'Add Partner'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function PartnersPage() {
   const [supporters, setSupporters] = useState<Supporter[]>([])
   const [donations,  setDonations]  = useState<Donation[]>([])
@@ -33,6 +95,7 @@ export default function PartnersPage() {
   const [typeFilter, setTypeFilter] = useState('')
   const [sortCol,    setSortCol]    = useState<SortKey>('name')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
+  const [showAdd,    setShowAdd]    = useState(false)
 
   useEffect(() => {
     Promise.allSettled([
@@ -80,6 +143,13 @@ export default function PartnersPage() {
 
   return (
     <div className="mu-page">
+      {showAdd && (
+        <AddPartnerModal
+          onClose={() => setShowAdd(false)}
+          onSave={s => { setSupporters(prev => [...prev, s]); setShowAdd(false) }}
+        />
+      )}
+
       <div className="mu-header">
         <div>
           <h1 className="mu-title">Partners &amp; Organizations</h1>
@@ -107,6 +177,10 @@ export default function PartnersPage() {
             <div className="mu-kpi-label">{k.label}</div>
           </div>
         ))}
+        <button className="mu-kpi-add-card" onClick={() => setShowAdd(true)}>
+          <div className="mu-kpi-add-icon">+</div>
+          <div className="mu-kpi-label">Add Partner</div>
+        </button>
       </div>
 
       {loading ? <p className="mu-empty">Loading…</p> : (
