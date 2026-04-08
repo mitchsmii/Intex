@@ -41,6 +41,15 @@
   --color-error:   #c94a4a;
   --color-info:    var(--cove-tidal);
 
+  /* ===== Semantic role tokens (SW dashboard redesign) ===== */
+  /* Prefer these over raw brand vars — they encode *intent*, not color. */
+  --cove-anchor:   var(--cove-deep);     /* Page anchors: Focus Bar, section titles, resident codes */
+  --cove-interact: var(--cove-tidal);    /* Interactive: buttons, focus rings, chevrons */
+  --cove-calm:     var(--cove-seaglass); /* Positive states: on-track, improving */
+  --cove-done:     var(--cove-seafoam);  /* Quiet/empty: hover bg, empty states */
+  --cove-warning:  var(--cove-sand);     /* Medium-severity accents ONLY — not card backgrounds */
+  --cove-urgent:   #c94a4a;              /* Reserved: high-severity rails, suicide-risk chip */
+
   /* Shadows */
   --shadow-sm:  0 1px 3px rgba(44, 74, 82, 0.08);
   --shadow-md:  0 4px 12px rgba(44, 74, 82, 0.12);

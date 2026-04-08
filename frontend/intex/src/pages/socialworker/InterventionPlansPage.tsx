@@ -53,6 +53,7 @@ function InterventionPlansPage() {
   const preSelectedResidentId = (location.state as { preSelectedResidentId?: number } | null)?.preSelectedResidentId
   const [residents, setResidents] = useState<Resident[]>([])
   const [plans, setPlans] = useState<InterventionPlan[]>([])
+  const [knownServices, setKnownServices] = useState<string[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [filter, setFilter] = useState<StatusFilter>('All')
   const [loading, setLoading] = useState(true)
@@ -77,6 +78,25 @@ function InterventionPlansPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [preSelectedResidentId])
+
+  // Pull every existing services_provided value once so we can offer them as
+  // checkboxes when adding/editing a plan. Splits comma-separated entries so
+  // historical free-text inputs become individual options.
+  useEffect(() => {
+    fetchInterventionPlans()
+      .then((all) => {
+        const set = new Set<string>()
+        all.forEach((p) => {
+          if (!p.servicesProvided) return
+          p.servicesProvided.split(',').forEach((s) => {
+            const trimmed = s.trim()
+            if (trimmed) set.add(trimmed)
+          })
+        })
+        setKnownServices(Array.from(set).sort((a, b) => a.localeCompare(b)))
+      })
+      .catch(() => { /* non-fatal */ })
+  }, [])
 
   useEffect(() => {
     if (selectedId == null) {
@@ -274,15 +294,42 @@ function InterventionPlansPage() {
                         />
                       </label>
 
-                      <label className="ip-field">
+                      <div className="ip-field">
                         <span>Services Provided</span>
-                        <input
-                          type="text"
-                          placeholder="e.g. Counseling, school enrollment, medical referral"
-                          value={form.servicesProvided}
-                          onChange={(e) => updateField('servicesProvided', e.target.value)}
-                        />
-                      </label>
+                        {knownServices.length === 0 ? (
+                          <input
+                            type="text"
+                            placeholder="e.g. Counseling, school enrollment, medical referral"
+                            value={form.servicesProvided}
+                            onChange={(e) => updateField('servicesProvided', e.target.value)}
+                          />
+                        ) : (
+                          <div className="ip-services-grid">
+                            {knownServices.map((svc) => {
+                              const selected = form.servicesProvided
+                                .split(',')
+                                .map((s) => s.trim())
+                                .filter(Boolean)
+                              const isChecked = selected.includes(svc)
+                              return (
+                                <label key={svc} className="ip-services-option">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                      const next = e.target.checked
+                                        ? [...selected, svc]
+                                        : selected.filter((s) => s !== svc)
+                                      updateField('servicesProvided', next.join(', '))
+                                    }}
+                                  />
+                                  <span>{svc}</span>
+                                </label>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
 
                       {submitError && <div className="ip-form-error">{submitError}</div>}
 
@@ -324,7 +371,7 @@ function InterventionPlansPage() {
                   ) : (
                     <div className="ip-list">
                       <div className="ip-list-head">
-                        <div>Category</div>
+                        <div>Plan</div>
                         <div>Description</div>
                         <div>Services</div>
                         <div>Target</div>

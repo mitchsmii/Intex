@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import {
@@ -12,11 +12,10 @@ import {
   fetchAssessments,
 } from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import NextUpHero from '../../components/socialworker/dashboard/NextUpHero'
-import UpcomingSchedule from '../../components/socialworker/dashboard/UpcomingSchedule'
 import ReadinessPipeline from '../../components/socialworker/dashboard/ReadinessPipeline'
-import ActionItems from '../../components/socialworker/dashboard/ActionItems'
-import CriticalAlerts, { type Alert } from '../../components/socialworker/dashboard/CriticalAlerts'
+import { buildAlerts } from '../../components/socialworker/dashboard/CriticalAlerts'
+import TodaysPriorities from '../../components/socialworker/dashboard/TodaysPriorities'
+import WeekCalendar from '../../components/socialworker/dashboard/WeekCalendar'
 import MentalHealthSnapshot from '../../components/socialworker/dashboard/MentalHealthSnapshot'
 import ResidentCard from '../../components/socialworker/dashboard/ResidentCard'
 import type { Resident } from '../../types/Resident'
@@ -45,6 +44,8 @@ function SocialWorkerHomePage() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  type DashTab = 'today' | 'wellbeing' | 'residents'
+  const [tab, setTab] = useState<DashTab>('today')
 
   useEffect(() => {
     fetchResidents()
@@ -70,6 +71,12 @@ function SocialWorkerHomePage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
+
+  // Must sit above any conditional return so the hook order stays stable.
+  const mergedAlerts = useMemo(
+    () => buildAlerts({ residents, incidents, visitations, recordings, assessments }),
+    [residents, incidents, visitations, recordings, assessments],
+  )
 
   if (loading) return <LoadingSpinner size="lg" />
   if (error) return <p className="sw-home-error">Error: {error}</p>
@@ -122,57 +129,77 @@ function SocialWorkerHomePage() {
         </div>
       </header>
 
-      <NextUpHero events={events} />
+      <nav className="sw-dash-tabs">
+        <button
+          type="button"
+          className={`sw-dash-tab-btn${tab === 'today' ? ' sw-dash-tab-active' : ''}`}
+          onClick={() => setTab('today')}
+        >
+          Today
+        </button>
+        <button
+          type="button"
+          className={`sw-dash-tab-btn${tab === 'wellbeing' ? ' sw-dash-tab-active' : ''}`}
+          onClick={() => setTab('wellbeing')}
+        >
+          Wellbeing
+        </button>
+        <button
+          type="button"
+          className={`sw-dash-tab-btn${tab === 'residents' ? ' sw-dash-tab-active' : ''}`}
+          onClick={() => setTab('residents')}
+        >
+          Residents
+        </button>
+      </nav>
 
-      <div className="sw-dash-triple">
-        <div className="sw-dash-triple-col">
-          <CriticalAlerts
-            residents={residents}
-            incidents={incidents}
-            visitations={visitations}
-            recordings={recordings}
-            assessments={assessments}
-            onAlertClick={(alert: Alert) =>
-              navigate(`/socialworker/dashboard/residents/${alert.residentId}`, {
-                state: { alert },
-              })
-            }
+      {tab === 'today' && (
+        <div className="sw-dash-tab-content">
+          <TodaysPriorities
+            alerts={mergedAlerts}
+            actions={actions}
+            onSelect={goToResidentById}
+          />
+          <WeekCalendar
+            events={events}
+            onEventClick={(ev) => goToResidentById(ev.residentId)}
           />
         </div>
-        <div className="sw-dash-triple-col">
-          <ActionItems items={actions} onItemClick={goToResidentById} />
-        </div>
-        <div className="sw-dash-triple-col">
-          <UpcomingSchedule events={events} />
-        </div>
-      </div>
+      )}
 
-      <ReadinessPipeline
-        residents={residents}
-        recordings={recordings}
-        visitations={visitations}
-        plans={plans}
-        assessments={assessments}
-        onResidentClick={goToResidentById}
-      />
-
-      <MentalHealthSnapshot
-        residents={residents}
-        assessments={assessments}
-        onResidentClick={goToResidentById}
-      />
-
-      <section className="sw-dash-section">
-        <header className="sw-dash-section-header">
-          <h2>My Residents</h2>
-          <span className="sw-dash-mock">{residents.length} total</span>
-        </header>
-        <div className="sw-dash-grid">
-          {residents.map((r) => (
-            <ResidentCard key={r.residentId} resident={r} onClick={goToResident} />
-          ))}
+      {tab === 'wellbeing' && (
+        <div className="sw-dash-tab-content">
+          <ReadinessPipeline
+            residents={residents}
+            recordings={recordings}
+            visitations={visitations}
+            plans={plans}
+            assessments={assessments}
+            onResidentClick={goToResidentById}
+          />
+          <MentalHealthSnapshot
+            residents={residents}
+            assessments={assessments}
+            onResidentClick={goToResidentById}
+          />
         </div>
-      </section>
+      )}
+
+      {tab === 'residents' && (
+        <div className="sw-dash-tab-content">
+          <section className="sw-dash-section">
+            <header className="sw-dash-section-header">
+              <h2>My Residents</h2>
+              <span className="sw-dash-mock">{residents.length} total</span>
+            </header>
+            <div className="sw-dash-grid">
+              {residents.map((r) => (
+                <ResidentCard key={r.residentId} resident={r} onClick={goToResident} />
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }
