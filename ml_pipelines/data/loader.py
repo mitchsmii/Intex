@@ -9,6 +9,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import PendingRollbackError
 from dotenv import load_dotenv
 
 # Load DATABASE_URL from the .env file in the ml_pipelines directory.
@@ -46,7 +47,13 @@ def _load_table(table_name: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Table contents as a DataFrame.
     """
-    df = pd.read_sql_table(table_name, con=get_engine())
+    engine = get_engine()
+    try:
+        df = pd.read_sql_table(table_name, con=engine)
+    except PendingRollbackError:
+        # Recover from invalid pooled transaction state after a failed query.
+        engine.dispose()
+        df = pd.read_sql_table(table_name, con=get_engine())
     print(f"Loaded '{table_name}' with {len(df):,} rows.")
     return df
 
