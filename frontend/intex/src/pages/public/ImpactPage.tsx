@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import type { SafehouseMonthlyMetric, Safehouse } from '../../services/apiService'
-import kidsJumping from '../../assets/kids-jumping.png'
-import kidsCircle  from '../../assets/kids-circle.png'
+import shelterImg    from '../../assets/shelter.webp'
+import kidsJumping   from '../../assets/kids-jumping.png'
+import kidsCircle    from '../../assets/kids-circle.png'
+import girlsHandsRaised from '../../assets/girls-hands-raised.png'
 import './ImpactPage.css'
 
 // ─── Animated counter ────────────────────────────────────────────────────────
@@ -89,18 +91,20 @@ export default function ImpactPage() {
     <div className="ip-page">
 
       {/* ── Hero ── */}
-      <section className="ip-hero">
-        <div className="ip-hero-inner">
-          <p className="ip-hero-eyebrow">Transparency · Trust · Impact</p>
-          <h1 className="ip-hero-title">See Your Impact</h1>
-          <p className="ip-hero-sub">
-            Every contribution moves lives forward. Here's a real-time look at
-            what the Lighthouse Sanctuary community has achieved together — and
-            how far we still have to go.
-          </p>
-          <div className="ip-hero-actions">
-            <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
-            <a href="#impact-numbers" className="ip-btn-ghost">See the Numbers</a>
+      <section className="ip-hero" style={{ backgroundImage: `url(${shelterImg})` }}>
+        <div className="ip-hero-overlay">
+          <div className="ip-hero-inner">
+            <p className="ip-hero-eyebrow">Transparency · Trust · Impact</p>
+            <h1 className="ip-hero-title">See Your Impact</h1>
+            <p className="ip-hero-sub">
+              Every contribution moves lives forward. Here's a real-time look at
+              what the Lighthouse Sanctuary community has achieved together — and
+              how far we still have to go.
+            </p>
+            <div className="ip-hero-actions">
+              <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
+              <a href="#impact-numbers" className="ip-btn-ghost">See the Numbers</a>
+            </div>
           </div>
         </div>
       </section>
@@ -171,6 +175,21 @@ export default function ImpactPage() {
                 <div className="ip-stat-sub">{s.sub}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Photo break 1 ── */}
+      <section className="ip-photo-break">
+        <div className="ip-photo-break-inner">
+          <div className="ip-photo-break-text">
+            <p className="ip-section-label">Their Stories</p>
+            <h2>Behind Every Number<br/>Is a Life Reclaimed</h2>
+            <p>The girls in our care arrive broken. They leave with dignity, skills, and hope — supported every step of the way by our dedicated team.</p>
+          </div>
+          <div className="ip-photo-break-img-wrap">
+            {/* Replace src with girls-together image when ready */}
+            <img src={kidsJumping} alt="Girls celebrating together" className="ip-photo-break-img" />
           </div>
         </div>
       </section>
@@ -300,6 +319,14 @@ export default function ImpactPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Photo break 2 ── */}
+      <section className="ip-photo-full">
+        <img src={girlsHandsRaised} alt="Girls with hands raised together in front of a Philippine church" className="ip-photo-full-img" />
+        <div className="ip-photo-full-overlay">
+          <p className="ip-photo-full-quote">"Every child deserves safety, healing, and a future."</p>
         </div>
       </section>
 
