@@ -1,11 +1,16 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { api } from '../../services/apiService'
-import { predictDonorChurn, fetchDonorChurnFeatureImportance } from '../../services/mlApi'
+import {
+  predictDonorChurn,
+  fetchDonorChurnFeatureImportance,
+  predictResidentRisk,
+  type ResidentRiskInput,
+} from '../../services/mlApi'
 import type { DonorChurnInput, FeatureImportance } from '../../services/mlApi'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
-  AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident,
+  AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident, ResidentMlFeatures,
 } from '../../services/apiService'
 import './ReportsPage.css'
 
@@ -689,6 +694,81 @@ function OutcomesTab({
   const reintegrated = residents.filter(r => r.reintegrationStatus && r.reintegrationStatus !== 'Not Started')
   const highRisk = residents.filter(r => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical')
 
+  // ── ML: Resident risk predictions ───────────────────────────────────────────
+  const [riskPreds, setRiskPreds] = useState<
+    { resident: Resident; probability: number; isHighRisk: boolean }[]
+  >([])
+  const [riskLoading, setRiskLoading] = useState(false)
+  const [riskError, setRiskError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (activeResidents.length === 0) return
+    let cancelled = false
+    setRiskLoading(true)
+    setRiskError(null)
+
+    const activeIds = new Set(activeResidents.map(r => r.residentId))
+
+    api.getResidentMlFeatures()
+      .then(async (allFeatures: ResidentMlFeatures[]) => {
+        const features = allFeatures.filter(f => activeIds.has(f.resident_id))
+        const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
+
+        return Promise.all(
+          features.map(async (f) => {
+            // Strip metadata fields; forward only the model's input columns.
+            const {
+              resident_id: _id,
+              internal_code: _ic,
+              case_control_no: _cc,
+              current_risk_level: _crl,
+              ...input
+            } = f
+            void _id; void _ic; void _cc; void _crl
+            try {
+              const res = await predictResidentRisk(input as unknown as ResidentRiskInput)
+              return {
+                resident: residentById.get(f.resident_id)!,
+                probability: res.probability,
+                isHighRisk: res.is_high_risk,
+              }
+            } catch {
+              return {
+                resident: residentById.get(f.resident_id)!,
+                probability: 0,
+                isHighRisk: false,
+              }
+            }
+          }),
+        )
+      })
+      .then((results) => {
+        if (cancelled) return
+        results.sort((a, b) => b.probability - a.probability)
+        setRiskPreds(results)
+      })
+      .catch((err) => {
+        if (!cancelled) setRiskError(err instanceof Error ? err.message : 'Prediction failed')
+      })
+      .finally(() => {
+        if (!cancelled) setRiskLoading(false)
+      })
+
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [residents.length])
+
+  const modelHighRiskCount = riskPreds.filter(p => p.isHighRisk).length
+
+  const [riskPage, setRiskPage] = useState(1)
+  const RISK_PAGE_SIZE = 10
+  const riskPageCount = Math.max(1, Math.ceil(riskPreds.length / RISK_PAGE_SIZE))
+  const riskPageItems = riskPreds.slice(
+    (riskPage - 1) * RISK_PAGE_SIZE,
+    riskPage * RISK_PAGE_SIZE,
+  )
+  useEffect(() => { setRiskPage(1) }, [riskPreds.length])
+
   const avgHealth = metrics.length
     ? metrics.reduce((s, m) => s + (m.avgHealthScore ?? 0), 0) / metrics.filter(m => m.avgHealthScore != null).length
     : 0
@@ -716,6 +796,7 @@ function OutcomesTab({
           { label: 'Avg. Health Score', value: avgHealth ? `${avgHealth.toFixed(1)} / 5` : '—', sub: 'across all safehouses' },
           { label: 'Avg. Education Progress', value: avgEdu ? `${Math.round(avgEdu)}%` : '—', sub: 'across all safehouses' },
           { label: 'Reintegration Pipeline', value: String(reintegrated.length), sub: `${highRisk.length} high-risk residents` },
+          { label: 'ML-Flagged High Risk', value: riskLoading ? '…' : String(modelHighRiskCount), sub: 'predicted by resident risk model' },
         ].map(k => (
           <div key={k.label} className="rp-kpi">
             <div className="rp-kpi-label">{k.label}</div>
@@ -775,6 +856,93 @@ function OutcomesTab({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="rp-section">
+            <h3 className="rp-section-title">
+              ML Risk Predictions — Residents to Prioritize
+            </h3>
+            <p className="rp-empty" style={{ marginTop: 0 }}>
+              Ranked by the resident risk model's predicted probability of High/Critical status.
+              Use as a triage hint, not a verdict — social workers should still review every case.
+            </p>
+            {riskError && <p className="rp-empty" style={{ color: 'var(--color-warning)' }}>{riskError}</p>}
+            {riskLoading ? (
+              <p className="rp-empty">Scoring residents…</p>
+            ) : riskPreds.length === 0 ? (
+              <p className="rp-empty">No active residents to score.</p>
+            ) : (
+              <table className="rp-table rp-table-wide">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Resident</th>
+                    <th>Current Risk</th>
+                    <th>Predicted Probability</th>
+                    <th>Risk Bar</th>
+                    <th>ML Flag</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {riskPageItems.map((p, idx) => {
+                    const i = (riskPage - 1) * RISK_PAGE_SIZE + idx
+                    const pct = Math.round(p.probability * 100)
+                    const color = p.probability >= 0.75
+                      ? 'var(--color-warning)'
+                      : p.probability >= 0.5
+                        ? 'var(--cove-tidal)'
+                        : 'var(--cove-seaglass)'
+                    return (
+                      <tr key={p.resident.residentId}>
+                        <td className="rp-td-num">{i + 1}</td>
+                        <td className="rp-td-name">
+                          {p.resident.internalCode ?? p.resident.caseControlNo ?? `#${p.resident.residentId}`}
+                        </td>
+                        <td>{p.resident.currentRiskLevel ?? '—'}</td>
+                        <td className="rp-td-num">{pct}%</td>
+                        <td>
+                          <div className="rp-mini-track">
+                            <div className="rp-mini-fill" style={{ width: `${pct}%`, background: color }} />
+                          </div>
+                        </td>
+                        <td style={{ color: p.isHighRisk ? 'var(--color-warning)' : 'inherit' }}>
+                          {p.isHighRisk ? 'High Risk' : 'OK'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+            {riskPreds.length > RISK_PAGE_SIZE && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: 'var(--space-sm)',
+                  marginTop: 'var(--space-sm)',
+                }}
+              >
+                <button
+                  className="rp-tab-btn"
+                  disabled={riskPage === 1}
+                  onClick={() => setRiskPage(p => Math.max(1, p - 1))}
+                >
+                  Prev
+                </button>
+                <span style={{ fontSize: '0.875rem' }}>
+                  Page {riskPage} of {riskPageCount}
+                </span>
+                <button
+                  className="rp-tab-btn"
+                  disabled={riskPage === riskPageCount}
+                  onClick={() => setRiskPage(p => Math.min(riskPageCount, p + 1))}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="rp-two-col">
