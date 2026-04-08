@@ -263,6 +263,10 @@ export const api = {
   getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
   createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string }) =>
     authPost<Resident>('/api/residents', body),
+  createSocialWorker:         (body: { fullName: string; email?: string; phone?: string; safehouseId?: number | null; status?: string }) =>
+    authPost<SocialWorker>('/api/socialworkers', body),
+  createSupporter:            (body: { firstName?: string; lastName?: string; displayName?: string; organizationName?: string; email?: string; phone?: string; supporterType?: string; status?: string; acquisitionChannel?: string }) =>
+    authPost<Supporter>('/api/supporters', body),
   getUnreadNotificationCount: () => authGet<number>('/api/notifications/unread-count'),
   getNotifications:           () => authGet<SwNotification[]>('/api/notifications'),
   markAllNotificationsRead:   () => authPatch('/api/notifications/mark-all-read'),

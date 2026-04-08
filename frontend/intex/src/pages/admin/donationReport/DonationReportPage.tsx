@@ -260,7 +260,7 @@ export default function DonationReportPage() {
 
               <polyline
                 points={chart.pts.map((d, i) => `${chart.xPos(i)},${chart.yPos(d.total)}`).join(' ')}
-                fill="none" stroke="#5e9ea0" strokeWidth="2.5" strokeLinejoin="round"
+                fill="none" stroke="#5e9ea0" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round"
               />
 
               {burnByMonth.length > 0 && (() => {
@@ -283,7 +283,7 @@ export default function DonationReportPage() {
 
               {chart.pts.map((d, i) => (
                 <circle key={`in-${i}`} cx={chart.xPos(i)} cy={chart.yPos(d.total)}
-                  r="4" fill="#5e9ea0" stroke="white" strokeWidth="2" />
+                  r="5" fill="#5e9ea0" stroke="white" strokeWidth="2.5" />
               ))}
 
               {chart.pts.map((d, i) => (

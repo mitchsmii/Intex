@@ -32,26 +32,30 @@ interface GeoJSON {
 }
 
 // ─── Region data ─────────────────────────────────────────────────────────────
-// Sources: PSA 2020 Census, PSA FIES 2021, PNP Annual Report 2022 (estimates)
+// Population: PSA estimates (M = million). Income: PSA FIES 2021.
+// VAWC rate (per 100k): 10 regions from verified PNP/PSA data supplied Apr 2026.
+// Remaining 7 regions marked with † use proportional mid-range estimates (~15/100k)
+// and should be replaced with official PNP regional breakdowns when available.
 
 const REGIONS: RegionInfo[] = [
-  { geoName: 'Metropolitan Manila',                         name: 'National Capital Region',        code: 'NCR',   population: 13_484_462, area: 636,   density: 21_204, avgIncome: 448_000, vawcPer100k: 215, existingSafehouse: 'SH-01 · Quezon City', group: 'Luzon'    },
-  { geoName: 'Ilocos Region (Region I)',                    name: 'Ilocos Region',                  code: 'I',     population:  5_301_722, area: 13_012, density:    408, avgIncome: 248_000, vawcPer100k: 102, existingSafehouse: null,                  group: 'Luzon'    },
-  { geoName: 'Cagayan Valley (Region II)',                  name: 'Cagayan Valley',                 code: 'II',    population:  3_685_744, area: 28_228, density:    131, avgIncome: 220_000, vawcPer100k:  98, existingSafehouse: null,                  group: 'Luzon'    },
-  { geoName: 'Central Luzon (Region III)',                  name: 'Central Luzon',                  code: 'III',   population: 12_422_172, area: 22_014, density:    565, avgIncome: 348_000, vawcPer100k: 138, existingSafehouse: null,                  group: 'Luzon'    },
-  { geoName: 'CALABARZON (Region IV-A)',                    name: 'CALABARZON',                     code: 'IVA',   population: 16_195_042, area: 16_873, density:    960, avgIncome: 398_000, vawcPer100k: 142, existingSafehouse: null,                  group: 'Luzon'    },
-  { geoName: 'MIMAROPA (Region IV-B)',                      name: 'MIMAROPA',                       code: 'IVB',   population:  3_228_558, area: 29_621, density:    109, avgIncome: 195_000, vawcPer100k: 118, existingSafehouse: null,                  group: 'Luzon'    },
-  { geoName: 'Bicol Region (Region V)',                     name: 'Bicol Region',                   code: 'V',     population:  6_082_165, area: 18_155, density:    335, avgIncome: 175_000, vawcPer100k: 127, existingSafehouse: null,                  group: 'Luzon'    },
-  { geoName: 'Cordillera Administrative Region (CAR)',      name: 'Cordillera (CAR)',                code: 'CAR',   population:  1_797_660, area: 19_422, density:     93, avgIncome: 248_000, vawcPer100k:  74, existingSafehouse: null,                  group: 'Luzon'    },
-  { geoName: 'Western Visayas (Region VI)',                 name: 'Western Visayas',                code: 'VI',    population:  7_954_723, area: 20_223, density:    393, avgIncome: 220_000, vawcPer100k: 174, existingSafehouse: 'SH-04 · Iloilo City', group: 'Visayas'  },
-  { geoName: 'Central Visayas (Region VII)',                name: 'Central Visayas',                code: 'VII',   population:  8_081_988, area: 15_873, density:    509, avgIncome: 244_000, vawcPer100k: 198, existingSafehouse: 'SH-02 · Cebu City',   group: 'Visayas'  },
-  { geoName: 'Eastern Visayas (Region VIII)',               name: 'Eastern Visayas',                code: 'VIII',  population:  4_547_150, area: 21_432, density:    212, avgIncome: 175_000, vawcPer100k: 134, existingSafehouse: null,                  group: 'Visayas'  },
-  { geoName: 'Zamboanga Peninsula (Region IX)',             name: 'Zamboanga Peninsula',            code: 'IX',    population:  3_875_576, area: 17_067, density:    227, avgIncome: 165_000, vawcPer100k: 132, existingSafehouse: null,                  group: 'Mindanao' },
-  { geoName: 'Northern Mindanao (Region X)',                name: 'Northern Mindanao',              code: 'X',     population:  5_022_768, area: 20_496, density:    245, avgIncome: 215_000, vawcPer100k: 147, existingSafehouse: null,                  group: 'Mindanao' },
-  { geoName: 'Davao Region (Region XI)',                    name: 'Davao Region',                   code: 'XI',    population:  5_243_536, area: 20_357, density:    257, avgIncome: 248_000, vawcPer100k: 161, existingSafehouse: 'SH-03 · Davao City',  group: 'Mindanao' },
-  { geoName: 'SOCCSKSARGEN (Region XII)',                   name: 'SOCCSKSARGEN',                   code: 'XII',   population:  4_901_486, area: 22_513, density:    218, avgIncome: 188_000, vawcPer100k: 121, existingSafehouse: null,                  group: 'Mindanao' },
-  { geoName: 'Caraga (Region XIII)',                        name: 'Caraga',                         code: 'XIII',  population:  2_804_788, area: 21_478, density:    131, avgIncome: 188_000, vawcPer100k: 115, existingSafehouse: null,                  group: 'Mindanao' },
-  { geoName: 'Autonomous Region of Muslim Mindanao (ARMM)', name: 'Bangsamoro (BARMM)',             code: 'BARMM', population:  4_404_228, area: 40_782, density:    108, avgIncome: 143_000, vawcPer100k:  89, existingSafehouse: null,                  group: 'Mindanao' },
+  // existingSafehouse = Lighthouse Sanctuary locations only
+  { geoName: 'Metropolitan Manila',                         name: 'National Capital Region',  code: 'NCR',   population: 14_500_000, area:  636,   density: 21_204, avgIncome: 448_000, vawcPer100k: 11.4, existingSafehouse: 'Lighthouse Sanctuary · Quezon City', group: 'Luzon'    },
+  { geoName: 'Ilocos Region (Region I)',                    name: 'Ilocos Region',            code: 'I',     population:  5_400_000, area: 13_012, density:    415, avgIncome: 248_000, vawcPer100k: 10.7, existingSafehouse: 'Lighthouse Sanctuary · Ilocos',      group: 'Luzon'    },
+  { geoName: 'Cagayan Valley (Region II)',                  name: 'Cagayan Valley',           code: 'II',    population:  3_700_000, area: 28_228, density:    131, avgIncome: 220_000, vawcPer100k: 11.3, existingSafehouse: null,                                 group: 'Luzon'    },
+  { geoName: 'Central Luzon (Region III)',                  name: 'Central Luzon',            code: 'III',   population: 12_600_000, area: 22_014, density:    573, avgIncome: 348_000, vawcPer100k: 12.0, existingSafehouse: null,                                 group: 'Luzon'    },
+  { geoName: 'CALABARZON (Region IV-A)',                    name: 'CALABARZON',               code: 'IVA',   population: 16_500_000, area: 16_873, density:    978, avgIncome: 398_000, vawcPer100k: 12.0, existingSafehouse: null,                                 group: 'Luzon'    },
+  { geoName: 'MIMAROPA (Region IV-B)',                      name: 'MIMAROPA',                 code: 'IVB',   population:  3_228_558, area: 29_621, density:    109, avgIncome: 195_000, vawcPer100k: 15.0, existingSafehouse: null,                                 group: 'Luzon'    },
+  { geoName: 'Bicol Region (Region V)',                     name: 'Bicol Region',             code: 'V',     population:  6_082_165, area: 18_155, density:    335, avgIncome: 175_000, vawcPer100k: 16.0, existingSafehouse: null,                                 group: 'Luzon'    },
+  { geoName: 'Cordillera Administrative Region (CAR)',      name: 'Cordillera (CAR)',         code: 'CAR',   population:  1_800_000, area: 19_422, density:     93, avgIncome: 248_000, vawcPer100k: 65.8, existingSafehouse: null,                                 group: 'Luzon'    },
+  { geoName: 'Western Visayas (Region VI)',                 name: 'Western Visayas',          code: 'VI',    population:  8_100_000, area: 20_223, density:    401, avgIncome: 220_000, vawcPer100k: 21.6, existingSafehouse: null,                                 group: 'Visayas'  },
+  { geoName: 'Central Visayas (Region VII)',                name: 'Central Visayas',          code: 'VII',   population:  8_200_000, area: 15_873, density:    517, avgIncome: 244_000, vawcPer100k: 18.0, existingSafehouse: null,                                 group: 'Visayas'  },
+  { geoName: 'Eastern Visayas (Region VIII)',               name: 'Eastern Visayas',          code: 'VIII',  population:  4_547_150, area: 21_432, density:    212, avgIncome: 175_000, vawcPer100k: 17.0, existingSafehouse: null,                                 group: 'Visayas'  },
+  { geoName: 'Zamboanga Peninsula (Region IX)',             name: 'Zamboanga Peninsula',      code: 'IX',    population:  3_875_576, area: 17_067, density:    227, avgIncome: 165_000, vawcPer100k: 15.0, existingSafehouse: null,                                 group: 'Mindanao' },
+  { geoName: 'Northern Mindanao (Region X)',                name: 'Northern Mindanao',        code: 'X',     population:  5_022_768, area: 20_496, density:    245, avgIncome: 215_000, vawcPer100k: 17.0, existingSafehouse: null,                                 group: 'Mindanao' },
+  { geoName: 'Davao Region (Region XI)',                    name: 'Davao Region',             code: 'XI',    population:  5_400_000, area: 20_357, density:    265, avgIncome: 248_000, vawcPer100k: 20.3, existingSafehouse: null,                                 group: 'Mindanao' },
+  { geoName: 'SOCCSKSARGEN (Region XII)',                   name: 'SOCCSKSARGEN',             code: 'XII',   population:  4_901_486, area: 22_513, density:    218, avgIncome: 188_000, vawcPer100k: 15.0, existingSafehouse: null,                                 group: 'Mindanao' },
+  { geoName: 'Caraga (Region XIII)',                        name: 'Caraga',                   code: 'XIII',  population:  2_804_788, area: 21_478, density:    131, avgIncome: 188_000, vawcPer100k: 14.0, existingSafehouse: null,                                 group: 'Mindanao' },
+  { geoName: 'Autonomous Region of Muslim Mindanao (ARMM)', name: 'Bangsamoro (BARMM)',       code: 'BARMM', population:  4_900_000, area: 40_782, density:    120, avgIncome: 143_000, vawcPer100k:  4.3, existingSafehouse: null,                                 group: 'Mindanao' },
 ]
 
 // ─── Map projection ───────────────────────────────────────────────────────────
@@ -113,6 +117,51 @@ function textOnColor(density: number): string {
   return t > 0.55 ? '#ffffff' : '#2c4a52'
 }
 
+// ─── Other facilities (non-Lighthouse) ───────────────────────────────────────
+
+type FacilityType = 'DSWD' | 'NGO' | 'Church' | 'Private'
+
+interface OtherFacility {
+  key: string
+  name: string
+  type: FacilityType
+  region: string   // matches RegionInfo.code
+  lon: number
+  lat: number
+}
+
+const FACILITY_COLOR: Record<FacilityType, string> = {
+  DSWD:    '#4a90c4',  // government blue
+  NGO:     '#e07b39',  // warm orange
+  Church:  '#8e5ea2',  // purple
+  Private: '#3aaa7a',  // green
+}
+
+const OTHER_FACILITIES: OtherFacility[] = [
+  // Region I – Regional Haven (DSWD) alongside Lighthouse
+  { key: 'i-dswd',      name: 'Regional Haven (DSWD)',          type: 'DSWD',    region: 'I',     lon: 120.52, lat: 17.55 },
+  // CAR – Baguio facilities
+  { key: 'car-dswd',    name: 'Regional Haven, Baguio (DSWD)',  type: 'DSWD',    region: 'CAR',   lon: 120.59, lat: 16.41 },
+  { key: 'car-rscc',    name: 'RSCC',                           type: 'NGO',     region: 'CAR',   lon: 120.63, lat: 16.38 },
+  // NCR – high-density cluster
+  { key: 'ncr-mar',     name: 'Marillac Hills (DSWD)',          type: 'DSWD',    region: 'NCR',   lon: 121.00, lat: 14.55 },
+  { key: 'ncr-lv',      name: 'Laura Vicuña',                   type: 'Church',  region: 'NCR',   lon: 121.09, lat: 14.70 },
+  // Region III – gap area, only DSWD
+  { key: 'iii-dswd',    name: 'Regional Haven (DSWD)',          type: 'DSWD',    region: 'III',   lon: 120.69, lat: 15.12 },
+  // Region IV-A – gap area
+  { key: 'iva-dswd',    name: 'Regional Haven (DSWD)',          type: 'DSWD',    region: 'IVA',   lon: 121.07, lat: 14.21 },
+  { key: 'iva-faith',   name: 'Faith-based NGOs',               type: 'Church',  region: 'IVA',   lon: 121.16, lat: 14.08 },
+  // Region VII – NGO hub (Cebu)
+  { key: 'vii-hh',      name: 'Happy Horizons',                 type: 'NGO',     region: 'VII',   lon: 123.87, lat: 10.37 },
+  { key: 'vii-ef',      name: 'EverFree',                       type: 'NGO',     region: 'VII',   lon: 123.92, lat: 10.32 },
+  { key: 'vii-pcs',     name: "Philippine Children's Shelter",  type: 'NGO',     region: 'VII',   lon: 123.95, lat: 10.30 },
+  // Region XI – Davao
+  { key: 'xi-dswd',     name: 'Regional Haven (DSWD)',          type: 'DSWD',    region: 'XI',    lon: 125.57, lat: 7.15 },
+  { key: 'xi-traf',     name: 'Trafficking Specialist Center',  type: 'Private', region: 'XI',    lon: 125.63, lat: 7.10 },
+  // BARMM – critical desert, only DSWD present
+  { key: 'barmm-dswd',  name: 'Regional Haven (DSWD)',          type: 'DSWD',    region: 'BARMM', lon: 124.25, lat: 7.30 },
+]
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmtPop(n: number): string {
@@ -121,11 +170,19 @@ function fmtPop(n: number): string {
 }
 
 function scoreRegion(r: RegionInfo): number {
-  // Composite score for site-selection: density + vawc + unserved bonus
+  // Already has a Lighthouse — not a candidate
+  if (r.existingSafehouse) return -1
+
   const densityScore = Math.log10(r.density) / Math.log10(21_204)
-  const vawcScore    = r.vawcPer100k / 215
-  const unserved     = r.existingSafehouse ? 0 : 1
-  return (densityScore * 0.4 + vawcScore * 0.4 + unserved * 0.2)
+  const vawcScore    = r.vawcPer100k / 65.8
+  const needScore    = densityScore * 0.5 + vawcScore * 0.5
+
+  // Penalize regions that already have coverage from other orgs
+  // Each other facility reduces score by 0.1, capped at 0.4
+  const otherCount     = OTHER_FACILITIES.filter(f => f.region === r.code).length
+  const coveragePenalty = Math.min(0.4, otherCount * 0.1)
+
+  return needScore - coveragePenalty
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -232,61 +289,78 @@ export default function SafehouseLocationsPage() {
                 )
               })}
 
-              {/* Existing safehouse pins */}
+              {/* Other charity / NGO / DSWD pins */}
+              {OTHER_FACILITIES.map(f => {
+                const cx = toX(f.lon)
+                const cy = toY(f.lat)
+                const color = FACILITY_COLOR[f.type]
+                return (
+                  <g key={f.key} style={{ pointerEvents: 'none' }}>
+                    <circle cx={cx} cy={cy} r={5} fill={color} stroke="white" strokeWidth={1.2} opacity={0.88} />
+                    <circle cx={cx} cy={cy} r={2} fill="white" />
+                  </g>
+                )
+              })}
+
+              {/* Lighthouse Sanctuary pins (confirmed locations) */}
               {[
-                { code: 'NCR',  cx: toX(121.05), cy: toY(14.65) },
-                { code: 'VII',  cx: toX(123.90), cy: toY(10.35) },
-                { code: 'XI',   cx: toX(125.60), cy: toY(7.12)  },
-                { code: 'VI',   cx: toX(122.57), cy: toY(10.73) },
+                { code: 'NCR', cx: toX(121.05), cy: toY(14.65) },
+                { code: 'I',   cx: toX(120.45), cy: toY(17.35) },
               ].map(pin => (
                 <g key={pin.code} style={{ pointerEvents: 'none' }}>
-                  <circle cx={pin.cx} cy={pin.cy} r={6} fill="white" stroke="#2c4a52" strokeWidth={1.5} />
-                  <circle cx={pin.cx} cy={pin.cy} r={3} fill="#2c4a52" />
+                  <circle cx={pin.cx} cy={pin.cy} r={7} fill="white" stroke="#2c4a52" strokeWidth={2} />
+                  <circle cx={pin.cx} cy={pin.cy} r={3.5} fill="#2c4a52" />
                 </g>
               ))}
             </svg>
           )}
 
           {/* Floating tooltip */}
-          {hovered && (
-            <div
-              className="sl-tooltip"
-              style={{ left: tipPos.x, top: tipPos.y }}
-            >
-              <div className="sl-tip-name">{hovered.name}</div>
-              <div className="sl-tip-group">{hovered.group}</div>
-              <div className="sl-tip-rows">
-                <div className="sl-tip-row">
-                  <span>Population</span>
-                  <strong>{hovered.population.toLocaleString()}</strong>
+          {hovered && (() => {
+            const otherHere = OTHER_FACILITIES.filter(f => f.region === hovered.code)
+            return (
+              <div className="sl-tooltip" style={{ left: tipPos.x, top: tipPos.y }}>
+                <div className="sl-tip-name">{hovered.name}</div>
+                <div className="sl-tip-group">{hovered.group}</div>
+                <div className="sl-tip-rows">
+                  <div className="sl-tip-row">
+                    <span>Population</span>
+                    <strong>{hovered.population.toLocaleString()}</strong>
+                  </div>
+                  <div className="sl-tip-row">
+                    <span>Density</span>
+                    <strong>{hovered.density.toLocaleString()} / km²</strong>
+                  </div>
+                  <div className="sl-tip-row">
+                    <span>Avg. Family Income</span>
+                    <strong>₱{hovered.avgIncome.toLocaleString()}/yr</strong>
+                  </div>
+                  <div className="sl-tip-row">
+                    <span>VAWC Rate</span>
+                    <strong>{hovered.vawcPer100k} per 100k</strong>
+                  </div>
                 </div>
-                <div className="sl-tip-row">
-                  <span>Density</span>
-                  <strong>{hovered.density.toLocaleString()} / km²</strong>
-                </div>
-                <div className="sl-tip-row">
-                  <span>Area</span>
-                  <strong>{hovered.area.toLocaleString()} km²</strong>
-                </div>
-                <div className="sl-tip-row">
-                  <span>Avg. Family Income</span>
-                  <strong>₱{hovered.avgIncome.toLocaleString()}/yr</strong>
-                </div>
-                <div className="sl-tip-row">
-                  <span>VAWC Rate</span>
-                  <strong>~{hovered.vawcPer100k} per 100k</strong>
-                </div>
+                {hovered.existingSafehouse && (
+                  <div className="sl-tip-sh">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {hovered.existingSafehouse}
+                  </div>
+                )}
+                {otherHere.length > 0 && (
+                  <div className="sl-tip-others">
+                    {otherHere.map(f => (
+                      <div key={f.key} className="sl-tip-other-row">
+                        <span className="sl-tip-other-dot" style={{ background: FACILITY_COLOR[f.type] }} />
+                        {f.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              {hovered.existingSafehouse && (
-                <div className="sl-tip-sh">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  {hovered.existingSafehouse}
-                </div>
-              )}
-            </div>
-          )}
+            )
+          })()}
         </div>
 
         {/* Sidebar */}
@@ -312,7 +386,23 @@ export default function SafehouseLocationsPage() {
             <div className="sl-legend-pins">
               <div className="sl-legend-pin">
                 <span className="sl-pin-dot" />
-                Existing safehouse
+                Lighthouse Sanctuary
+              </div>
+              <div className="sl-legend-pin">
+                <span className="sl-pin-dot" style={{ background: FACILITY_COLOR.DSWD }} />
+                DSWD / Government
+              </div>
+              <div className="sl-legend-pin">
+                <span className="sl-pin-dot" style={{ background: FACILITY_COLOR.NGO }} />
+                NGO
+              </div>
+              <div className="sl-legend-pin">
+                <span className="sl-pin-dot" style={{ background: FACILITY_COLOR.Church }} />
+                Church / Faith-based
+              </div>
+              <div className="sl-legend-pin">
+                <span className="sl-pin-dot" style={{ background: FACILITY_COLOR.Private }} />
+                Private / Specialist
               </div>
             </div>
           </div>
@@ -385,31 +475,40 @@ export default function SafehouseLocationsPage() {
               </svg>
               Top Unserved Candidates
             </div>
-            {topCandidates.map((r, i) => (
-              <div key={r.code} className="sl-cand-row">
-                <span className="sl-cand-rank">#{i + 1}</span>
-                <div className="sl-cand-info">
-                  <span className="sl-cand-name">{r.name}</span>
-                  <span className="sl-cand-meta">
-                    {fmtPop(r.population)} pop · {r.density.toLocaleString()}/km²
-                  </span>
-                </div>
+            {topCandidates.map((r, i) => {
+              const isActive = selected?.code === r.code
+              return (
                 <div
-                  className="sl-cand-swatch"
-                  style={{ background: densityColor(r.density) }}
-                />
-              </div>
-            ))}
+                  key={r.code}
+                  className={`sl-cand-row sl-cand-row-btn${isActive ? ' sl-cand-row-active' : ''}`}
+                  onClick={() => handleClick(r)}
+                  title={`Select ${r.name} on map`}
+                >
+                  <span className="sl-cand-rank">#{i + 1}</span>
+                  <div className="sl-cand-info">
+                    <span className="sl-cand-name">{r.name}</span>
+                    <span className="sl-cand-meta">
+                      {fmtPop(r.population)} pop · {r.density.toLocaleString()}/km²
+                    </span>
+                  </div>
+                  <div
+                    className="sl-cand-swatch"
+                    style={{ background: densityColor(r.density) }}
+                  />
+                </div>
+              )
+            })}
           </div>
 
           {/* Data sources note */}
           <p className="sl-data-note">
-            Population &amp; density: PSA 2020 Census (verified accurate).
-            Income: PSA FIES 2021 average family income (verified accurate).
-            † VAWC rate: estimated placeholder — actual PNP regional case data
-            should be sourced from <strong>pnp.gov.ph</strong> or the
-            PSA OpenSTAT database before relying on these figures.
-            Future metrics: poverty index, trafficking hotspot data, NGO coverage gaps.
+            Population: PSA estimates (10 key regions updated Apr 2026; remainder PSA 2020 Census).
+            Income: PSA FIES 2021 average family income.
+            † VAWC rate (per 100k): NCR, CAR, I, II, III, IV-A, VI, VII, XI, and BARMM use
+            verified PNP/PSA figures. CAR (65.8) has the highest reporting rate; BARMM (4.3)
+            is likely underreported. Remaining 7 regions use mid-range estimates (~14–17/100k)
+            — replace with official PNP regional data when available.
+            Candidate scoring normalizes VAWC to CAR's rate as the regional maximum.
           </p>
 
         </div>
