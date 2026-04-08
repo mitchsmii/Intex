@@ -16,6 +16,7 @@ import ProcessRecordingsPage from './pages/socialworker/ProcessRecordingsPage'
 import VisitsConferencesPage from './pages/socialworker/VisitsConferencesPage'
 import InterventionPlansPage from './pages/socialworker/InterventionPlansPage'
 import CaseConferencesPage from './pages/socialworker/CaseConferencesPage'
+import AssessmentsPage from './pages/socialworker/AssessmentsPage'
 import DonorHomePage from './pages/donor/DonorHomePage'
 import DonationHistoryPage from './pages/donor/DonationHistoryPage'
 import DonationReportPage from './pages/admin/donationReport/DonationReportPage'
@@ -56,6 +57,7 @@ function App() {
               <Route path="home-visits" element={<VisitsConferencesPage />} />
               <Route path="intervention-plans" element={<InterventionPlansPage />} />
               <Route path="case-conferences" element={<CaseConferencesPage />} />
+              <Route path="assessments" element={<AssessmentsPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
             </Route>
           </Route>

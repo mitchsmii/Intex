@@ -8,6 +8,7 @@ import {
   fetchHomeVisitations,
   fetchProcessRecordings,
   fetchInterventionPlans,
+  fetchAssessments,
 } from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import StatStrip from '../../components/socialworker/dashboard/StatStrip'
@@ -15,6 +16,7 @@ import UpcomingSchedule from '../../components/socialworker/dashboard/UpcomingSc
 import ReadinessPipeline from '../../components/socialworker/dashboard/ReadinessPipeline'
 import ActionItems from '../../components/socialworker/dashboard/ActionItems'
 import CriticalAlerts, { type Alert } from '../../components/socialworker/dashboard/CriticalAlerts'
+import MentalHealthSnapshot from '../../components/socialworker/dashboard/MentalHealthSnapshot'
 import ResidentCard from '../../components/socialworker/dashboard/ResidentCard'
 import type { Resident } from '../../types/Resident'
 import type { ScheduleEvent } from '../../types/ScheduleEvent'
@@ -23,6 +25,7 @@ import type { IncidentReport } from '../../types/IncidentReport'
 import type { HomeVisitation } from '../../types/HomeVisitation'
 import type { ProcessRecording } from '../../types/ProcessRecording'
 import type { InterventionPlan } from '../../types/InterventionPlan'
+import type { Assessment } from '../../types/Assessment'
 import '../../components/socialworker/dashboard/dashboard.css'
 import './SocialWorkerHomePage.css'
 
@@ -37,6 +40,7 @@ function SocialWorkerHomePage() {
   const [visitations, setVisitations] = useState<HomeVisitation[]>([])
   const [recordings, setRecordings] = useState<ProcessRecording[]>([])
   const [plans, setPlans] = useState<InterventionPlan[]>([])
+  const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,13 +48,14 @@ function SocialWorkerHomePage() {
     fetchResidents()
       .then(async (r) => {
         setResidents(r)
-        const [ev, ai, inc, vis, rec, pl] = await Promise.all([
+        const [ev, ai, inc, vis, rec, pl, asm] = await Promise.all([
           fetchUpcomingEvents(r),
           fetchActionItems(r),
           fetchIncidentReports({ unresolvedOnly: true }),
           fetchHomeVisitations({ limit: 500 }),
           fetchProcessRecordings({ limit: 500 }),
           fetchInterventionPlans(),
+          fetchAssessments(),
         ])
         setEvents(ev)
         setActions(ai)
@@ -58,6 +63,7 @@ function SocialWorkerHomePage() {
         setVisitations(vis)
         setRecordings(rec)
         setPlans(pl)
+        setAssessments(asm)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -93,6 +99,7 @@ function SocialWorkerHomePage() {
         incidents={incidents}
         visitations={visitations}
         recordings={recordings}
+        assessments={assessments}
         onAlertClick={(alert: Alert) =>
           navigate(`/socialworker/dashboard/residents/${alert.residentId}`, {
             state: { alert },
@@ -100,11 +107,18 @@ function SocialWorkerHomePage() {
         }
       />
 
+      <MentalHealthSnapshot
+        residents={residents}
+        assessments={assessments}
+        onResidentClick={goToResidentById}
+      />
+
       <ReadinessPipeline
         residents={residents}
         recordings={recordings}
         visitations={visitations}
         plans={plans}
+        assessments={assessments}
         onResidentClick={goToResidentById}
       />
 

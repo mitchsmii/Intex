@@ -225,6 +225,9 @@
 .alert-tag--safety   { background: var(--cove-sand); color: var(--color-warning); }
 .alert-tag--session  { background: var(--cove-seafoam); color: var(--color-success); }
 .alert-tag--risk     { background: #fee2e2; color: var(--color-error); }
+.alert-tag--mh-suicide-bdi    { background: #ede9fe; color: #6d28d9; }
+.alert-tag--mh-suicide-screen { background: #ede9fe; color: #6d28d9; }
+.alert-tag--mh-ptsd           { background: #ede9fe; color: #6d28d9; }
 
 .alert-resident { font-weight: 700; }
 .alert-title { font-weight: 600; }
