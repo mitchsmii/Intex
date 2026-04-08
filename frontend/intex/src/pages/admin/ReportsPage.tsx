@@ -854,7 +854,7 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
   )
 }
 
-// ─── Donation goal presets ─────────────────────────────────────────────────────
+// ─── Donation goal presets (hard-coded; no custom goal in DB or settings UI yet) ─
 
 const DONATION_GOALS = [
   { label: 'Essential Ops',     amount: 11_000,  desc: 'Minimum to keep doors open monthly' },
@@ -884,7 +884,8 @@ function DonationsTab({
   loading: boolean
 }) {
   const [trendRange,   setTrendRange]   = useState<TrendRange>('1Y')
-  const [selectedGoal, setSelectedGoal] = useState(1) // index into DONATION_GOALS
+  /** Default index 1 = "Full Capacity" ($25,000) — users pick other presets via buttons only. */
+  const [selectedGoal, setSelectedGoal] = useState(1)
 
   const now = new Date()
   const curYear = now.getFullYear()
@@ -934,60 +935,18 @@ function DonationsTab({
         ))}
       </div>
 
-      {/* ── Fundraising Goal Progress ── */}
-      <div className="rp-goal-card">
-        <div className="rp-goal-top">
-          <div>
-            <h3 className="rp-goal-heading">Fundraising Goal</h3>
+      {/* ── Fundraising goal + monthly trend (one section; time range applies to both) ── */}
+      <div className="rp-section rp-goal-trend-section">
+        <div className="rp-goal-trend-top">
+          <div className="rp-goal-trend-title-block">
+            <h3 className="rp-goal-trend-main-title">Fundraising goal & monthly trend</h3>
             <p className="rp-goal-period">{RANGE_LABELS[trendRange]}</p>
           </div>
-          <div className="rp-goal-presets">
-            {DONATION_GOALS.map((g, i) => (
-              <button
-                key={g.label}
-                className={`rp-goal-preset${selectedGoal === i ? ' rp-goal-preset-active' : ''}`}
-                onClick={() => setSelectedGoal(i)}
-                title={g.desc}
-              >
-                {g.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="rp-goal-amounts">
-          <span className="rp-goal-raised">{fmtAmt(rangeTotal, currency)}</span>
-          <span className="rp-goal-of"> raised of </span>
-          <span className="rp-goal-target">{fmtAmt(goal.amount, 'USD')}</span>
-          <span className={`rp-goal-pct-badge${goalPct >= 100 ? ' rp-goal-pct-done' : ''}`}>{goalPct}%</span>
-        </div>
-
-        <div className="rp-goal-track">
-          {[25, 50, 75].map(m => (
-            <div key={m} className="rp-goal-milestone" style={{ left: `${m}%` }} />
-          ))}
-          <div
-            className={`rp-goal-fill${goalPct >= 100 ? ' rp-goal-fill-done' : ''}`}
-            style={{ width: `${goalPct}%` }}
-          />
-        </div>
-
-        <div className="rp-goal-footer">
-          <span className="rp-goal-desc">{goal.desc}</span>
-          <span className="rp-goal-remaining">
-            {goalPct >= 100 ? 'Goal reached!' : `${fmtAmt(goalLeft, 'USD')} to go`}
-          </span>
-        </div>
-      </div>
-
-      {/* ── Monthly Trend Chart ── */}
-      <div className="rp-section">
-        <div className="rp-section-header">
-          <h3 className="rp-section-title rp-section-title-inline">Monthly Donation Trend</h3>
-          <div className="rp-range-toggle">
+          <div className="rp-range-toggle" aria-label="Time range for goal and chart">
             {(['1M', '3M', '1Y', 'all'] as const).map(r => (
               <button
                 key={r}
+                type="button"
                 className={`rp-range-btn${trendRange === r ? ' rp-range-active' : ''}`}
                 onClick={() => setTrendRange(r)}
               >
@@ -996,7 +955,54 @@ function DonationsTab({
             ))}
           </div>
         </div>
-        {loading ? <p className="rp-empty">Loading…</p> : <LineChart data={filteredMonthly} />}
+
+        <div className="rp-goal-body">
+          <div className="rp-goal-presets-row">
+            <span className="rp-goal-presets-label">Goal target</span>
+            <div className="rp-goal-presets">
+              {DONATION_GOALS.map((g, i) => (
+                <button
+                  key={g.label}
+                  type="button"
+                  className={`rp-goal-preset${selectedGoal === i ? ' rp-goal-preset-active' : ''}`}
+                  onClick={() => setSelectedGoal(i)}
+                  title={g.desc}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rp-goal-amounts">
+            <span className="rp-goal-raised">{fmtAmt(rangeTotal, currency)}</span>
+            <span className="rp-goal-of"> raised of </span>
+            <span className="rp-goal-target">{fmtAmt(goal.amount, 'USD')}</span>
+            <span className={`rp-goal-pct-badge${goalPct >= 100 ? ' rp-goal-pct-done' : ''}`}>{goalPct}%</span>
+          </div>
+
+          <div className="rp-goal-track">
+            {[25, 50, 75].map(m => (
+              <div key={m} className="rp-goal-milestone" style={{ left: `${m}%` }} />
+            ))}
+            <div
+              className={`rp-goal-fill${goalPct >= 100 ? ' rp-goal-fill-done' : ''}`}
+              style={{ width: `${goalPct}%` }}
+            />
+          </div>
+
+          <div className="rp-goal-footer">
+            <span className="rp-goal-desc">{goal.desc}</span>
+            <span className="rp-goal-remaining">
+              {goalPct >= 100 ? 'Goal reached!' : `${fmtAmt(goalLeft, 'USD')} to go`}
+            </span>
+          </div>
+        </div>
+
+        <div className="rp-goal-trend-chart">
+          <h4 className="rp-goal-chart-heading">Monthly donation volume</h4>
+          {loading ? <p className="rp-empty">Loading…</p> : <LineChart data={filteredMonthly} />}
+        </div>
       </div>
 
       <div className="rp-two-col">
