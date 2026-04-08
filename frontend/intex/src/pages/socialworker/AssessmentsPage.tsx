@@ -42,6 +42,7 @@ function AssessmentsPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showFormFor, setShowFormFor] = useState<Instrument | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [filter, setFilter] = useState<FilterId>('All')
   const [expandedId, setExpandedId] = useState<number | null>(null)
 
@@ -169,21 +170,39 @@ function AssessmentsPage() {
                 </div>
                 {!showFormFor && (
                   <div className="ap-new-wrap">
-                    <select
-                      className="ap-new-select"
-                      defaultValue=""
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          setShowFormFor(e.target.value as Instrument)
-                          e.target.value = ''
-                        }
-                      }}
+                    <button
+                      type="button"
+                      className="ap-new-btn"
+                      onClick={() => setPickerOpen((o) => !o)}
+                      aria-haspopup="menu"
+                      aria-expanded={pickerOpen}
                     >
-                      <option value="">+ New Assessment…</option>
-                      {INSTRUMENTS.map(({ id, name }) => (
-                        <option key={id} value={id}>{name}</option>
-                      ))}
-                    </select>
+                      + New Assessment
+                    </button>
+                    {pickerOpen && (
+                      <>
+                        <div
+                          className="ap-new-backdrop"
+                          onClick={() => setPickerOpen(false)}
+                        />
+                        <div className="ap-new-menu" role="menu">
+                          {INSTRUMENTS.map(({ id, name }) => (
+                            <button
+                              key={id}
+                              type="button"
+                              role="menuitem"
+                              className="ap-new-menu-item"
+                              onClick={() => {
+                                setShowFormFor(id)
+                                setPickerOpen(false)
+                              }}
+                            >
+                              {name}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

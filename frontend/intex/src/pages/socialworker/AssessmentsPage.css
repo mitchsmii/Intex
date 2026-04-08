@@ -123,20 +123,61 @@
 
 .ap-new-wrap { position: relative; }
 
-.ap-new-select {
+.ap-new-btn {
   background: var(--cove-tidal);
   color: white;
   border: none;
   padding: var(--space-sm) var(--space-lg);
   border-radius: var(--radius-md);
+  font-family: var(--font-body);
   font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
   box-shadow: var(--shadow-sm);
-  font-size: 0.9rem;
+  transition: background 0.15s;
 }
 
-.ap-new-select:hover { background: var(--cove-deep); }
-.ap-new-select option { color: var(--cove-deep); background: white; }
+.ap-new-btn:hover { background: var(--cove-deep); }
+
+.ap-new-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.ap-new-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 11;
+  min-width: 180px;
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ap-new-menu-item {
+  text-align: left;
+  background: transparent;
+  border: none;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--cove-deep);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.ap-new-menu-item:hover {
+  background: var(--cove-seafoam);
+}
 
 .ap-empty {
   color: var(--text-muted);
