@@ -363,11 +363,8 @@
 .ip-row-wrap:hover { background: var(--cove-seafoam); }
 
 .ip-row-wrap--overdue {
-  border-left-color: var(--color-error);
-  background: #fef2f2;
+  /* Row no longer fully red — only the Overdue tag in the Target column carries the warning. */
 }
-
-.ip-row-wrap--overdue:hover { background: #fee2e2; }
 
 .ip-row {
   font-size: 0.85rem;
@@ -665,4 +662,31 @@
 .ip-cl-error {
   font-size: 0.82rem;
   color: var(--color-error);
+}
+
+.ip-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-xs) var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--cove-seafoam, #eaf5f1);
+  border: 1px solid var(--cove-seaglass, #d6e8e2);
+  border-radius: var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ip-services-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.8rem;
+  color: var(--cove-deep);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ip-services-option input[type="checkbox"] {
+  accent-color: var(--cove-tidal);
+  cursor: pointer;
 }
