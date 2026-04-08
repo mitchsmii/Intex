@@ -127,6 +127,66 @@ interface LapseRow {
   reasons: string[]
 }
 
+function resolveAcquisitionChannel(raw: unknown): string {
+  const s = raw as {
+    acquisitionChannel?: string | null
+    acquisition_channel?: string | null
+    acq_channel?: string | null
+    channelSource?: string | null
+  }
+  return (
+    s.acquisitionChannel?.trim() ||
+    s.acquisition_channel?.trim() ||
+    s.acq_channel?.trim() ||
+    s.channelSource?.trim() ||
+    'Unknown'
+  )
+}
+
+/** Exclude missing/placeholder segment keys from retention charts (not real segments). */
+function isValidRetentionSegmentKey(key: string | null | undefined): boolean {
+  if (key == null) return false
+  const t = String(key).trim()
+  if (t === '') return false
+  return t.toLowerCase() !== 'unknown'
+}
+
+/** Normalize channel strings for matching (handles WordOfMouth, "Word of Mouth", word_of_mouth). */
+function canonicalAcquisitionChannel(key: string): string {
+  return key.replace(/[\s_-]/g, '').toLowerCase()
+}
+
+/**
+ * Channels the org meaningfully acquired donors through (callout uses these only).
+ * Website is treated as passive like Word of Mouth / Church (donation route, not acquisition source).
+ */
+const ACTIVE_ACQUISITION_CHANNELS = new Set(['socialmedia', 'event', 'partnerreferral'])
+
+function isActiveAcquisitionChannel(key: string): boolean {
+  return ACTIVE_ACQUISITION_CHANNELS.has(canonicalAcquisitionChannel(key))
+}
+
+const ACQUISITION_CHANNEL_DISPLAY: Record<string, string> = {
+  wordofmouth: 'Word of Mouth',
+  socialmedia: 'Social Media',
+  partnerreferral: 'Partner Referral',
+  website: 'Website',
+  event: 'Event',
+  church: 'Church',
+}
+
+/** Human-readable labels for acquisition channel keys (chart + callouts). */
+function formatAcquisitionChannelDisplay(key: string): string {
+  const c = canonicalAcquisitionChannel(key)
+  if (ACQUISITION_CHANNEL_DISPLAY[c]) return ACQUISITION_CHANNEL_DISPLAY[c]
+  return key
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, ch => ch.toUpperCase())
+}
+
 function deriveReasons(input: {
   count: number
   avg: number
@@ -144,7 +204,7 @@ function deriveReasons(input: {
   if (daysSinceLast != null && daysSinceLast > 365) reasons.push(`Silent ${Math.round(daysSinceLast / 30)}+ months`)
   else if (daysSinceLast != null && daysSinceLast > 180) reasons.push('No gift in 6+ months')
   if (input.daysSinceFirst < 90 && input.count <= 2) reasons.push('New donor, few gifts')
-  if (input.count >= 3 && !input.recurring) reasons.push('Never went recurring')
+  if (input.count >= 3 && !input.recurring) reasons.push('Not recurring')
   if (input.variety === 1 && input.count >= 3) reasons.push('Single channel only')
 
   return reasons.slice(0, 2)
@@ -219,7 +279,7 @@ function buildChurnInput(rows: Donation[]): DonorChurnInput {
   }
 }
 
-const LAPSE_PAGE_SIZE = 25
+const LAPSE_PAGE_SIZE = 10
 
 function LapseRiskPanel({ donations, currency }: { donations: Donation[]; currency: string }) {
   const [rows, setRows] = useState<LapseRow[]>([])
@@ -229,6 +289,9 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
   const [filter, setFilter] = useState<RiskFilter>('all')
   const [emailMap, setEmailMap] = useState<Map<number, string | null>>(new Map())
   const [featureImportance, setFeatureImportance] = useState<FeatureImportance[]>([])
+  const [channelMap, setChannelMap] = useState<Map<number, string>>(new Map())
+  const [showModelDrivers, setShowModelDrivers] = useState(false)
+  const [showInsights, setShowInsights] = useState(false)
 
   useEffect(() => {
     fetchDonorChurnFeatureImportance()
@@ -242,8 +305,14 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
       .then(list => {
         if (cancelled) return
         const m = new Map<number, string | null>()
+        const c = new Map<number, string>()
+        if (list.length > 0) {
+          console.log('[RetentionInsights] first donor object:', list[0])
+        }
         for (const s of list) m.set(s.supporterId, s.email)
+        for (const s of list) c.set(s.supporterId, resolveAcquisitionChannel(s))
         setEmailMap(m)
+        setChannelMap(c)
       })
       .catch(() => { /* email column will show — */ })
     return () => { cancelled = true }
@@ -339,56 +408,283 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
       .sort((a, b) => b.total - a.total)
   }, [rows, filter])
 
+  const retentionInsights = useMemo(() => {
+    type Bucket = { group: string; lapseRate: number; count: number; impact: number }
+    const idsWithScores = new Set(rows.map(r => r.supporterId))
+    const scoreById = new Map(rows.map(r => [r.supporterId, r.probability]))
+
+    const bucketFromIds = (group: string, ids: number[]): Bucket | null => {
+      const scored = ids
+        .filter(id => idsWithScores.has(id))
+        .map(id => scoreById.get(id) ?? 0)
+      const lapsed = scored.filter(p => p >= 0.5).length
+      const count = scored.length
+      if (count === 0) return null
+      const lapseRate = (lapsed / count) * 100
+      const impact = lapseRate * count
+      return { group, lapseRate, count, impact }
+    }
+
+    const toCampaignBuckets = (groups: Map<string, number[]>): Bucket[] =>
+      Array.from(groups.entries())
+        .filter(([group]) => isValidRetentionSegmentKey(group))
+        .map(([group, ids]) => bucketFromIds(group, ids))
+        .filter((x): x is Bucket => x != null)
+        .sort((a, b) => b.lapseRate - a.lapseRate)
+
+    const byChannelMap = new Map<string, number[]>()
+    rows.forEach(r => {
+      const key = channelMap.get(r.supporterId) ?? 'Unknown'
+      byChannelMap.set(key, [...(byChannelMap.get(key) ?? []), r.supporterId])
+    })
+
+    const byChannel: Bucket[] = Array.from(byChannelMap.entries())
+      .filter(([group]) => isValidRetentionSegmentKey(group))
+      .map(([group, ids]) => bucketFromIds(group, ids))
+      .filter((x): x is Bucket => x != null && x.count >= 3)
+      .sort((a, b) => b.impact - a.impact)
+
+    const byCampaignMap = new Map<string, number[]>()
+    rows.forEach(r => {
+      const latest = donations
+        .filter(d => d.supporterId === r.supporterId)
+        .slice()
+        .sort((a, b) => {
+          const aTs = a.donationDate ? new Date(a.donationDate).getTime() : 0
+          const bTs = b.donationDate ? new Date(b.donationDate).getTime() : 0
+          return bTs - aTs
+        })[0]
+      const campaign = latest?.campaignName?.trim() || 'Unknown'
+      byCampaignMap.set(campaign, [...(byCampaignMap.get(campaign) ?? []), r.supporterId])
+    })
+
+    return {
+      byChannel,
+      byCampaign: toCampaignBuckets(byCampaignMap),
+    }
+  }, [rows, donations, channelMap])
+
+  const retentionCallouts = useMemo(() => {
+    const formatNames = (names: string[]) => {
+      if (names.length === 0) return ''
+      if (names.length === 1) return names[0]
+      if (names.length === 2) return `${names[0]} and ${names[1]}`
+      return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+    }
+
+    const channelRows = retentionInsights.byChannel
+    const campaignRows = retentionInsights.byCampaign
+
+    const activeChannelRows = channelRows.filter(r => isActiveAcquisitionChannel(r.group))
+    const topActiveImpact = activeChannelRows[0]
+    const channelCallout = topActiveImpact
+      ? `${formatAcquisitionChannelDisplay(topActiveImpact.group)} has the highest retention impact — ${topActiveImpact.lapseRate.toFixed(1)}% of ${topActiveImpact.count} donors lapsed, making it your biggest retention opportunity.`
+      : channelRows.length === 0
+        ? 'Not enough channel data to generate retention guidance yet.'
+        : 'No active acquisition channel (social media, events, or partner referrals) has enough data to highlight yet. Passive channels such as Word of Mouth, Church, and Website are excluded from this recommendation.'
+
+    const fullyLapsedCampaigns = campaignRows
+      .filter(c => Math.round(c.lapseRate) === 100)
+      .map(c => c.group)
+    const bestCampaign = campaignRows.length > 0 ? campaignRows[campaignRows.length - 1].group : null
+
+    let campaignCallout = 'Not enough campaign data to generate retention guidance yet.'
+    if (bestCampaign && fullyLapsedCampaigns.length > 0) {
+      const label = formatNames(fullyLapsedCampaigns)
+      const verb = fullyLapsedCampaigns.length === 1 ? 'never gives' : 'never give'
+      campaignCallout = `${label} donors ${verb} again. ${bestCampaign} retains the most donors — replicate its approach in future campaigns.`
+    } else if (bestCampaign) {
+      campaignCallout = `${bestCampaign} retains the most donors — replicate its approach in future campaigns.`
+    }
+
+    return { channelCallout, campaignCallout }
+  }, [retentionInsights])
+
+  const segBarClass = (rate: number) => {
+    if (rate >= 80) return 'rp-seg-bar-critical'
+    if (rate >= 67) return 'rp-seg-bar-warn'
+    return 'rp-seg-bar-ok'
+  }
+
+  const segCallout = (vals: { group: string; lapseRate: number }[], sortByImpact?: boolean) => {
+    if (vals.length === 0) return 'Not enough scored data yet.'
+    if (sortByImpact) {
+      return 'Bars sorted by retention impact (lapse rate × donor count). Passive channels (e.g. Word of Mouth, Church, Website) may appear but the insight above focuses on channels you control.'
+    }
+    const sorted = vals.slice().sort((a, b) => b.lapseRate - a.lapseRate)
+    const high = sorted[0]
+    const low = sorted[sorted.length - 1]
+    return `Highest lapse rate: ${high.group} (${high.lapseRate.toFixed(1)}%) · Lowest: ${low.group} (${low.lapseRate.toFixed(1)}%)`
+  }
+
   return (
     <div className="rp-section">
-      <h3 className="rp-section-title">Donor Lapse Risk</h3>
-      <p className="rp-empty" style={{ textAlign: 'left', marginBottom: 'var(--space-sm)' }}>
-        Donors most likely to stop giving, ranked from highest to lowest risk.
-      </p>
+      <div className="rp-lapse-header">
+        <div>
+          <h3 className="rp-section-title" style={{ marginBottom: 'var(--space-xs)' }}>Donor Lapse Risk</h3>
+          <p className="rp-empty" style={{ textAlign: 'left', margin: 0, padding: 0 }}>
+            Donors most likely to stop giving, ranked from highest to lowest risk.
+          </p>
+        </div>
+        {status === 'done' && (
+          <button
+            type="button"
+            className="rp-tab-btn rp-refresh-btn"
+            onClick={runPredictions}
+          >
+            Refresh scores
+          </button>
+        )}
+      </div>
       {status === 'loading' && (
         <p className="rp-empty" style={{ textAlign: 'left' }}>
           Scoring {perDonor.size} donors…
         </p>
       )}
-      {status === 'done' && (
-        <button
-          type="button"
-          className="rp-tab-btn"
-          onClick={runPredictions}
-          style={{ marginBottom: 'var(--space-sm)' }}
-        >
-          Refresh scores
-        </button>
-      )}
       {error && <p className="rp-empty" style={{ color: 'var(--color-error)' }}>{error}</p>}
       {featureImportance.length > 0 && (
-        <div className="lapse-importance">
-          <div className="lapse-importance-header">
-            <h4 className="lapse-importance-title">What predicts donor lapse</h4>
-            <span className="lapse-importance-sub">
-              The bigger the bar, the more this factor influences whether a donor is likely to lapse
-            </span>
-          </div>
-          <div className="lapse-importance-list">
-            {featureImportance.map(f => {
-              const pct = f.importance * 100
-              const barWidth = Math.max(2, (f.importance / featureImportance[0].importance) * 100)
+        <div className="rp-collapsible">
+          <button className="rp-collapsible-btn" onClick={() => setShowModelDrivers(v => !v)}>
+            {showModelDrivers ? 'Hide model drivers' : 'Show model drivers'}
+          </button>
+          {showModelDrivers && (
+            <div className="lapse-importance">
+              <div className="lapse-importance-header">
+                <h4 className="lapse-importance-title">What predicts donor lapse</h4>
+                <span className="lapse-importance-sub">
+                  The bigger the bar, the more this factor influences whether a donor is likely to lapse
+                </span>
+              </div>
+              <div className="lapse-importance-list">
+                {featureImportance.map(f => {
+                  const pct = f.importance * 100
+                  const barWidth = Math.max(2, (f.importance / featureImportance[0].importance) * 100)
+                  return (
+                    <div key={f.feature} className="lapse-importance-row">
+                      <span className="lapse-importance-label">{prettifyFeature(f.feature)}</span>
+                      <div className="lapse-importance-track">
+                        <div
+                          className="lapse-importance-fill"
+                          style={{ width: `${barWidth}%` }}
+                        />
+                      </div>
+                      <span className="lapse-importance-value">{pct.toFixed(1)}%</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {status === 'done' && rows.length > 0 && (
+        <div className="rp-collapsible" style={{ marginTop: 'var(--space-md)' }}>
+          <button className="rp-collapsible-btn" onClick={() => setShowInsights(v => !v)}>
+            {showInsights ? 'Hide retention insights' : 'Show retention insights'}
+          </button>
+          {showInsights && (
+        <div className="rp-seg-section">
+          <h4 className="rp-card-title">Retention Insights</h4>
+          <div className="rp-seg-grid">
+            {([
+              { title: 'By Acquisition Channel' as const, rows: retentionInsights.byChannel },
+              { title: 'By Campaign' as const, rows: retentionInsights.byCampaign },
+            ] as const).map(card => {
+              const shown = card.rows.slice(0, 6)
+              const maxDonors =
+                card.title === 'By Acquisition Channel' && shown.length > 0
+                  ? Math.max(...shown.map(r => r.count))
+                  : 0
               return (
-                <div key={f.feature} className="lapse-importance-row">
-                  <span className="lapse-importance-label">{prettifyFeature(f.feature)}</span>
-                  <div className="lapse-importance-track">
-                    <div
-                      className="lapse-importance-fill"
-                      style={{ width: `${barWidth}%` }}
-                    />
-                  </div>
-                  <span className="lapse-importance-value">{pct.toFixed(1)}%</span>
+              <div key={card.title} className="rp-card">
+                <h4 className="rp-seg-title">{card.title}</h4>
+                <div className="rp-seg-rows">
+                  {shown.map(r => (
+                    <div key={r.group} className="rp-seg-row">
+                      {card.title === 'By Acquisition Channel' ? (
+                        <>
+                          <div className="rp-seg-row-head rp-seg-row-head-channel">
+                            <div className="rp-seg-row-labels">
+                              <span className="rp-seg-row-name">
+                                {formatAcquisitionChannelDisplay(r.group)}
+                              </span>
+                              <div className="rp-seg-row-meta">
+                                <span className="rp-seg-row-count">{r.count} donors</span>
+                                <div
+                                  className="rp-seg-count-track"
+                                  aria-hidden
+                                  title="Relative sample size among channels shown"
+                                >
+                                  <div
+                                    className="rp-seg-count-fill"
+                                    style={{
+                                      width: `${maxDonors > 0 ? Math.max(8, (r.count / maxDonors) * 100) : 0}%`,
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <span className="rp-seg-row-pct">{r.lapseRate.toFixed(1)}%</span>
+                          </div>
+                          <div className="rp-seg-track">
+                            <div
+                              className={`rp-seg-bar ${segBarClass(r.lapseRate)}`}
+                              style={{ width: `${Math.max(2, Math.min(100, r.lapseRate))}%` }}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="rp-seg-row-head">
+                            <span>{r.group}</span>
+                            <span>{r.lapseRate.toFixed(1)}%</span>
+                          </div>
+                          <div className="rp-seg-track">
+                            <div
+                              className={`rp-seg-bar ${segBarClass(r.lapseRate)}`}
+                              style={{ width: `${Math.max(2, Math.min(100, r.lapseRate))}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
                 </div>
+                {card.rows.length > 6 && (
+                  <p className="rp-empty" style={{ textAlign: 'left', marginTop: '6px', padding: 0 }}>
+                    {card.title === 'By Acquisition Channel'
+                      ? 'Showing top 6 channels by retention impact.'
+                      : 'Showing top 6 groups by lapse rate.'}
+                  </p>
+                )}
+                <p className="rp-empty" style={{ textAlign: 'left', marginTop: 'var(--space-sm)', padding: 0 }}>
+                  {segCallout(card.rows, card.title === 'By Acquisition Channel')}
+                </p>
+                {card.title === 'By Acquisition Channel' && (
+                  <div className="rp-insight-callout">
+                    <span className="rp-insight-icon">💡</span>
+                    <span>
+                      {retentionCallouts.channelCallout}
+                    </span>
+                  </div>
+                )}
+                {card.title === 'By Campaign' && (
+                  <div className="rp-insight-callout">
+                    <span className="rp-insight-icon">💡</span>
+                    <span>
+                      {retentionCallouts.campaignCallout}
+                    </span>
+                  </div>
+                )}
+              </div>
               )
             })}
           </div>
         </div>
+          )}
+        </div>
       )}
+
       {status === 'done' && rows.length > 0 && (
         <div className="lapse-risk-boxes">
           {([
