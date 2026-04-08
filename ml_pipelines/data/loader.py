@@ -2,14 +2,25 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
-# Supabase pooled Postgres connection string.
-CONNECTION_STRING = "postgresql+psycopg2://postgres.yrfrqkdmpctsnmkvptnt:7yElkqHzICZWlwrx@aws-1-us-east-1.pooler.supabase.com:5432/postgres"
+# Load DATABASE_URL from the .env file in the ml_pipelines directory.
+# Falls back to the environment variable if already set (e.g. in CI/CD).
+_ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
+load_dotenv(_ENV_PATH, override=False)
+
+_CONNECTION_STRING: Optional[str] = os.getenv("DATABASE_URL")
+if not _CONNECTION_STRING:
+    raise EnvironmentError(
+        f"DATABASE_URL not found. Expected it in {_ENV_PATH} or as an environment variable."
+    )
 
 _ENGINE: Optional[Engine] = None
 
@@ -22,7 +33,7 @@ def get_engine() -> Engine:
     """
     global _ENGINE
     if _ENGINE is None:
-        _ENGINE = create_engine(CONNECTION_STRING, future=True)
+        _ENGINE = create_engine(_CONNECTION_STRING, future=True)
     return _ENGINE
 
 
