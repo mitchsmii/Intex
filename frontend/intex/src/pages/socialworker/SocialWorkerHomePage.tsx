@@ -12,7 +12,7 @@ import {
   fetchAssessments,
 } from '../../services/socialWorkerService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import StatStrip from '../../components/socialworker/dashboard/StatStrip'
+import NextUpHero from '../../components/socialworker/dashboard/NextUpHero'
 import UpcomingSchedule from '../../components/socialworker/dashboard/UpcomingSchedule'
 import ReadinessPipeline from '../../components/socialworker/dashboard/ReadinessPipeline'
 import ActionItems from '../../components/socialworker/dashboard/ActionItems'
@@ -95,44 +95,57 @@ function SocialWorkerHomePage() {
 
   return (
     <div className="sw-dash">
-      <header className="sw-dash-masthead">
-        <p className="sw-dash-eyebrow">{today}</p>
-        <h1>
-          {greeting}
-          {firstName ? (
-            <>
-              , <em>{firstName}</em>
-            </>
-          ) : null}
-          .
-        </h1>
-        <p className="sw-dash-dek">
-          <strong>{incidents.length}</strong> open{' '}
-          {incidents.length === 1 ? 'incident' : 'incidents'} ·{' '}
-          <strong>{actions.length}</strong>{' '}
-          {actions.length === 1 ? 'task' : 'tasks'} ·{' '}
-          <strong>{residents.length}</strong> residents on your caseload
-        </p>
+      <header className="sw-dash-masthead sw-dash-masthead--compact">
+        <div className="sw-dash-masthead-line">
+          <h1>
+            {greeting}
+            {firstName ? (
+              <>
+                , <em>{firstName}</em>
+              </>
+            ) : null}
+            .
+          </h1>
+          <div className="sw-dash-chips">
+            <span className="sw-dash-chip">{today}</span>
+            <span className="sw-dash-chip">
+              <strong>{incidents.length}</strong> open{' '}
+              {incidents.length === 1 ? 'incident' : 'incidents'}
+            </span>
+            <span className="sw-dash-chip">
+              <strong>{actions.length}</strong> {actions.length === 1 ? 'task' : 'tasks'}
+            </span>
+            <span className="sw-dash-chip">
+              <strong>{residents.length}</strong> residents
+            </span>
+          </div>
+        </div>
       </header>
 
-      <CriticalAlerts
-        residents={residents}
-        incidents={incidents}
-        visitations={visitations}
-        recordings={recordings}
-        assessments={assessments}
-        onAlertClick={(alert: Alert) =>
-          navigate(`/socialworker/dashboard/residents/${alert.residentId}`, {
-            state: { alert },
-          })
-        }
-      />
+      <NextUpHero events={events} />
 
-      <UpcomingSchedule events={events} />
-
-      <ActionItems items={actions} onItemClick={goToResidentById} />
-
-      <StatStrip residents={residents} actionItems={actions} />
+      <div className="sw-dash-triple">
+        <div className="sw-dash-triple-col">
+          <CriticalAlerts
+            residents={residents}
+            incidents={incidents}
+            visitations={visitations}
+            recordings={recordings}
+            assessments={assessments}
+            onAlertClick={(alert: Alert) =>
+              navigate(`/socialworker/dashboard/residents/${alert.residentId}`, {
+                state: { alert },
+              })
+            }
+          />
+        </div>
+        <div className="sw-dash-triple-col">
+          <ActionItems items={actions} onItemClick={goToResidentById} />
+        </div>
+        <div className="sw-dash-triple-col">
+          <UpcomingSchedule events={events} />
+        </div>
+      </div>
 
       <ReadinessPipeline
         residents={residents}

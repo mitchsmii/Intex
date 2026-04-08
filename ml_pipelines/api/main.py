@@ -9,9 +9,19 @@ import joblib
 import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 # Run locally from ml_pipelines/api with: uvicorn main:app --reload
 app = FastAPI()
+
+# CORS — allow the Vercel-hosted frontend (prod + preview deploys) and local dev.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:5173",
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=False,
+)
 
 
 @app.get("/")
@@ -110,6 +120,63 @@ def health() -> dict[str, str]:
         dict[str, str]: Service status.
     """
     return {"status": "ok"}
+
+
+def _extract_feature_importance(model: Any, feature_names: list[str]) -> list[dict[str, Any]]:
+    """Extract global feature importance from a fitted classifier.
+
+    Supports tree-based models (``feature_importances_``) and linear models
+    (``coef_``). Returns features sorted by descending importance, normalized
+    so the values sum to 1.
+
+    Args:
+        model: Trained classifier.
+        feature_names: Ordered feature names used by the trained model.
+
+    Returns:
+        list[dict[str, Any]]: List of ``{"feature": str, "importance": float}``.
+    """
+    raw: np.ndarray | None = None
+    if hasattr(model, "feature_importances_"):
+        raw = np.asarray(model.feature_importances_, dtype=float)
+    elif hasattr(model, "coef_"):
+        coef = np.asarray(model.coef_, dtype=float)
+        raw = np.abs(coef).mean(axis=0) if coef.ndim > 1 else np.abs(coef)
+
+    if raw is None or raw.size == 0:
+        raise HTTPException(
+            status_code=501,
+            detail="Model does not expose feature importances.",
+        )
+
+    if len(raw) != len(feature_names):
+        raise HTTPException(
+            status_code=500,
+            detail="Feature importance length mismatch with feature names.",
+        )
+
+    total = float(raw.sum())
+    if total > 0:
+        raw = raw / total
+
+    pairs = [
+        {"feature": name, "importance": float(value)}
+        for name, value in zip(feature_names, raw)
+    ]
+    pairs.sort(key=lambda item: item["importance"], reverse=True)
+    return pairs
+
+
+@app.get("/feature-importance/donor-churn")
+def donor_churn_feature_importance() -> dict[str, Any]:
+    """Return global feature importance for the donor churn model.
+
+    Returns:
+        dict[str, Any]: ``{"features": [{feature, importance}, ...]}``.
+    """
+    donor_model = _load_artifact(DONOR_MODEL_PATH)
+    donor_features = list(_load_artifact(DONOR_FEATURES_PATH))
+    return {"features": _extract_feature_importance(donor_model, donor_features)}
 
 
 @app.post("/predict/donor-churn")
