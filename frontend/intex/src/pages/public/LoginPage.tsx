@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useNavigate, useSearchParams, Navigate } from 'react-router-dom'
+import { useSearchParams, Navigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import './LoginPage.css'
 
@@ -12,7 +12,6 @@ function getRoleRedirect(roles: string[]): string {
 
 export default function LoginPage() {
   const { user, login, isLoading } = useAuth()
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
   const [username, setUsername] = useState('')
@@ -61,9 +60,8 @@ export default function LoginPage() {
 
     try {
       await login(username.trim(), password)
-      // login() resolves after setUser() — navigate happens once, cleanly
-      const redirect = searchParams.get('redirect')
-      navigate(redirect ?? getRoleRedirect([]), { replace: true })
+      // login() resolves after setUser() — the `if (user)` Navigate at the top
+      // of this component will fire on the next render and route by role.
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : 'Login failed. Please try again.')
     } finally {
