@@ -3,15 +3,14 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import {
-  predictDonorChurn,
-  fetchDonorChurnFeatureImportance,
-  predictResidentRisk,
-  type ResidentRiskInput,
+  predictDonorChurn, fetchDonorChurnFeatureImportance,
+  predictResidentRisk, fetchResidentRiskFeatureImportance,
 } from '../../services/mlApi'
-import type { DonorChurnInput, FeatureImportance } from '../../services/mlApi'
+import type { DonorChurnInput, ResidentRiskInput, FeatureImportance } from '../../services/mlApi'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
   AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident, ResidentMlFeatures,
+  ProcessRecording, HealthRecord, HomeVisitation, EducationRecord,
 } from '../../services/apiService'
 import './ReportsPage.css'
 
@@ -1085,6 +1084,419 @@ function DonationsTab({
   )
 }
 
+// ─── Resident Risk Predictor ──────────────────────────────────────────────────
+
+const RISK_FINDINGS = [
+  { icon: '📅', title: 'Days in Care is the #1 driver', body: 'Longer time in care strongly predicts risk level — complex cases take longer to resolve.' },
+  { icon: '📋', title: 'Session quality matters more than quantity', body: '% of sessions with concerns flagged and progress noted outweigh total session count.' },
+  { icon: '❤️', title: 'Health trends signal escalation', body: 'A declining health trend slope is a leading indicator of elevated risk — watch for drops.' },
+  { icon: '🏠', title: 'Unresolved incidents are a red flag', body: 'Unresolved incidents are a stronger predictor than total incident count alone.' },
+  { icon: '🎓', title: 'Attendance predicts stability', body: 'Higher education attendance rates correlate with lower risk and better reintegration outcomes.' },
+  { icon: '👁️', title: 'Safety concerns during home visits', body: '% of home visits with safety concerns noted is among the top 5 risk predictors.' },
+]
+
+function riskFeatureName(name: string): string {
+  const map: Record<string, string> = {
+    days_in_care: 'Days in Care',
+    initial_risk_level_enc: 'Initial Risk Level',
+    total_sessions: 'Total Sessions',
+    pct_concerns_flagged: '% Concerns Flagged',
+    pct_progress_noted: '% Progress Noted',
+    pct_referral_made: '% Referrals Made',
+    emotional_improvement_rate: 'Emotional Improvement Rate',
+    avg_general_health_score: 'Avg Health Score',
+    avg_sleep_quality_score: 'Avg Sleep Quality',
+    health_trend_slope: 'Health Trend',
+    avg_attendance_rate: 'Avg Attendance Rate',
+    total_incidents: 'Total Incidents',
+    unresolved_incidents: 'Unresolved Incidents',
+    total_home_visits: 'Total Home Visits',
+    pct_visits_safety_concerns: '% Visits w/ Safety Concerns',
+  }
+  return map[name] ?? name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function riskLevelEnc(level: string | null): number {
+  const map: Record<string, number> = { Low: 0, Medium: 1, High: 2, Critical: 3 }
+  return map[level ?? ''] ?? 1
+}
+
+// ── Emotional state ordinal encoding (matches training pipeline) ──────────────
+const EMOTIONAL_ENC: Record<string, number> = {
+  'very poor': 1, 'very bad': 1, 'critical': 1,
+  'poor': 2, 'bad': 2, 'low': 2, 'sad': 2, 'depressed': 2, 'distressed': 2, 'anxious': 2,
+  'fair': 3, 'moderate': 3, 'neutral': 3, 'okay': 3, 'ok': 3, 'mixed': 3,
+  'good': 4, 'stable': 4, 'positive': 4, 'calm': 4, 'improving': 4, 'hopeful': 4,
+  'very good': 5, 'excellent': 5, 'great': 5, 'happy': 5, 'thriving': 5,
+}
+function encodeEmotional(state: string | null): number {
+  if (!state) return 3
+  return EMOTIONAL_ENC[state.toLowerCase().trim()] ?? 3
+}
+
+// ── Simple linear regression slope ────────────────────────────────────────────
+function linearSlope(values: number[]): number {
+  const n = values.length
+  if (n < 2) return 0
+  const sumX = (n * (n - 1)) / 2
+  const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6
+  const sumY = values.reduce((a, b) => a + b, 0)
+  const sumXY = values.reduce((s, y, i) => s + i * y, 0)
+  const denom = n * sumX2 - sumX * sumX
+  return denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom
+}
+
+function ResidentRiskPredictor({
+  residents,
+}: {
+  residents: Resident[]
+}) {
+  const activeResidents = residents.filter(r => !r.dateClosed)
+
+  // ── Resident selector ──
+  const [selectedId,   setSelectedId]   = useState<number | ''>('')
+  const [dataLoading,  setDataLoading]  = useState(false)
+  const [recordSummary, setRecordSummary] = useState<string | null>(null)
+
+  // ── All 15 ML features as sliders ──
+  const [daysInCare,           setDaysInCare]           = useState(90)
+  const [initialRiskEnc,       setInitialRiskEnc]       = useState(1)
+  const [totalSessions,        setTotalSessions]        = useState(0)
+  const [pctConcerns,          setPctConcerns]          = useState(0.0)
+  const [pctProgress,          setPctProgress]          = useState(0.0)
+  const [pctReferral,          setPctReferral]          = useState(0.0)
+  const [emotionalImprovement, setEmotionalImprovement] = useState(0.0)
+  const [avgHealthScore,       setAvgHealthScore]       = useState(3.0)
+  const [avgSleepQuality,      setAvgSleepQuality]      = useState(3.0)
+  const [healthTrendSlope,     setHealthTrendSlope]     = useState(0.0)
+  const [avgAttendance,        setAvgAttendance]        = useState(0.0)
+  const [totalIncidents,       setTotalIncidents]       = useState(0)
+  const [unresolvedIncidents,  setUnresolvedIncidents]  = useState(0)
+  const [totalHomeVisits,      setTotalHomeVisits]      = useState(0)
+  const [pctVisitsSafety,      setPctVisitsSafety]      = useState(0.0)
+
+  // ── Result & feature importance ──
+  const [result,   setResult]   = useState<{ is_high_risk: boolean; probability: number } | null>(null)
+  const [loading,  setLoading]  = useState(false)
+  const [error,    setError]    = useState<string | null>(null)
+  const [features, setFeatures] = useState<FeatureImportance[]>([])
+
+  useEffect(() => {
+    fetchResidentRiskFeatureImportance()
+      .then(f => setFeatures(f.slice(0, 10)))
+      .catch(() => {})
+  }, [])
+
+  // When a resident is selected, fetch all case records and compute every feature
+  useEffect(() => {
+    if (selectedId === '') return
+    const r = activeResidents.find(x => x.residentId === selectedId)
+    if (!r) return
+
+    setDataLoading(true)
+    setResult(null)
+    setRecordSummary(null)
+
+    // Days in care & initial risk — available immediately from resident record
+    if (r.dateOfAdmission) {
+      const days = Math.floor((Date.now() - new Date(r.dateOfAdmission).getTime()) / 86_400_000)
+      setDaysInCare(Math.max(0, days))
+    }
+    setInitialRiskEnc(riskLevelEnc(r.currentRiskLevel))
+
+    // Fetch all 5 case data sources in parallel
+    Promise.all([
+      api.getProcessRecordingsByResident(selectedId as number).catch(() => [] as ProcessRecording[]),
+      api.getHealthRecordsByResident(selectedId as number).catch(() => [] as HealthRecord[]),
+      api.getHomeVisitationsByResident(selectedId as number).catch(() => [] as HomeVisitation[]),
+      api.getEducationRecordsByResident(selectedId as number).catch(() => [] as EducationRecord[]),
+      api.getIncidentsByResident(selectedId as number).catch(() => []),
+    ]).then(([sessions, healthRecs, homeVisits, eduRecs, incidents]) => {
+
+      // ── Session features ──
+      const n = sessions.length
+      setTotalSessions(n)
+      if (n > 0) {
+        setPctConcerns(sessions.filter(s => s.concernsFlagged).length / n)
+        setPctProgress(sessions.filter(s => s.progressNoted).length / n)
+        setPctReferral(sessions.filter(s => s.referralMade).length / n)
+        const improved = sessions.filter(s =>
+          encodeEmotional(s.emotionalStateEnd) > encodeEmotional(s.emotionalStateObserved)
+        ).length
+        setEmotionalImprovement(improved / n)
+      }
+
+      // ── Health features ──
+      const healthScores = healthRecs
+        .filter(h => h.generalHealthScore != null)
+        .sort((a, b) => new Date(a.recordDate ?? 0).getTime() - new Date(b.recordDate ?? 0).getTime())
+        .map(h => Number(h.generalHealthScore))
+      if (healthScores.length > 0) {
+        setAvgHealthScore(healthScores.reduce((a, b) => a + b, 0) / healthScores.length)
+        setHealthTrendSlope(parseFloat(linearSlope(healthScores).toFixed(3)))
+      }
+      const sleepScores = healthRecs.filter(h => h.sleepQualityScore != null).map(h => Number(h.sleepQualityScore))
+      if (sleepScores.length > 0) {
+        setAvgSleepQuality(sleepScores.reduce((a, b) => a + b, 0) / sleepScores.length)
+      }
+
+      // ── Education features ──
+      const attendRates = eduRecs.filter(e => e.attendanceRate != null).map(e => Number(e.attendanceRate))
+      if (attendRates.length > 0) {
+        setAvgAttendance(attendRates.reduce((a, b) => a + b, 0) / attendRates.length)
+      }
+
+      // ── Incident features ──
+      setTotalIncidents(incidents.length)
+      setUnresolvedIncidents(incidents.filter(i => i.resolved === false).length)
+
+      // ── Home visit features ──
+      setTotalHomeVisits(homeVisits.length)
+      if (homeVisits.length > 0) {
+        setPctVisitsSafety(homeVisits.filter(v => v.safetyConcernsNoted).length / homeVisits.length)
+      }
+
+      setRecordSummary(
+        `Loaded from ${n} sessions · ${healthRecs.length} health records · ` +
+        `${eduRecs.length} edu records · ${incidents.length} incidents · ${homeVisits.length} home visits`
+      )
+      setDataLoading(false)
+    })
+  }, [selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function runPrediction() {
+    setLoading(true)
+    setError(null)
+    setResult(null)
+    try {
+      const input: ResidentRiskInput = {
+        days_in_care:             daysInCare,
+        initial_risk_level_enc:   initialRiskEnc,
+        total_sessions:           totalSessions,
+        pct_concerns_flagged:     pctConcerns,
+        pct_progress_noted:       pctProgress,
+        pct_referral_made:        pctReferral,
+        emotional_improvement_rate: emotionalImprovement,
+        avg_general_health_score: avgHealthScore,
+        avg_sleep_quality_score:  avgSleepQuality,
+        health_trend_slope:       healthTrendSlope,
+        avg_attendance_rate:      avgAttendance,
+        total_incidents:          totalIncidents,
+        unresolved_incidents:     unresolvedIncidents,
+        total_home_visits:        totalHomeVisits,
+        pct_visits_safety_concerns: pctVisitsSafety,
+      }
+      const res = await predictResidentRisk(input)
+      setResult(res)
+    } catch {
+      setError('ML API unavailable — make sure the prediction service is running.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const pct = result ? Math.round(result.probability * 100) : 0
+  const maxImportance = features[0]?.importance ?? 1
+
+  const selectedResident = activeResidents.find(r => r.residentId === selectedId)
+
+  return (
+    <div className="rp-section">
+      <h3 className="rp-section-title">ML Resident Risk Predictor</h3>
+      <p className="rp-section-sub">
+        Select a resident to auto-populate their data, then adjust the sliders and run the model to get
+        a risk prediction from the ML classifier trained on Lighthouse case history.
+      </p>
+
+      <div className="rrp-layout">
+        {/* ── Left: form ── */}
+        <div className="rrp-form-col">
+
+          {/* Resident selector */}
+          <div className="rrp-form-section">
+            <div className="rrp-section-label">Select Resident</div>
+            <select
+              className="rrp-select"
+              value={selectedId}
+              onChange={e => setSelectedId(e.target.value === '' ? '' : Number(e.target.value))}
+            >
+              <option value="">— or fill in manually below —</option>
+              {activeResidents.map(r => (
+                <option key={r.residentId} value={r.residentId}>
+                  {r.internalCode ?? r.caseControlNo ?? `Resident #${r.residentId}`}
+                  {r.currentRiskLevel ? ` · ${r.currentRiskLevel} Risk` : ''}
+                </option>
+              ))}
+            </select>
+            {dataLoading && <p className="rrp-loading">Loading case records…</p>}
+            {selectedResident && !dataLoading && (
+              <div className="rrp-auto-pills">
+                <span className="rrp-auto-pill">📅 {daysInCare} days in care</span>
+                <span className="rrp-auto-pill">⚠️ {['Low','Medium','High','Critical'][initialRiskEnc]} initial risk</span>
+                {recordSummary && <span className="rrp-auto-pill rrp-auto-filled">✓ {recordSummary}</span>}
+              </div>
+            )}
+          </div>
+
+          {/* Case activity */}
+          <div className="rrp-form-section">
+            <div className="rrp-section-label">Case Activity</div>
+            <div className="rrp-slider-grid">
+              <SliderField label="Total Sessions" value={totalSessions} min={0} max={60} step={1}
+                display={String(totalSessions)} onChange={setTotalSessions} />
+              <SliderField label="% Concerns Flagged" value={pctConcerns} min={0} max={1} step={0.05}
+                display={`${Math.round(pctConcerns * 100)}%`} onChange={setPctConcerns} />
+              <SliderField label="% Progress Noted" value={pctProgress} min={0} max={1} step={0.05}
+                display={`${Math.round(pctProgress * 100)}%`} onChange={setPctProgress} />
+              <SliderField label="% Referrals Made" value={pctReferral} min={0} max={1} step={0.05}
+                display={`${Math.round(pctReferral * 100)}%`} onChange={setPctReferral} />
+              <SliderField label="Emotional Improvement Rate" value={emotionalImprovement} min={0} max={1} step={0.05}
+                display={`${Math.round(emotionalImprovement * 100)}%`} onChange={setEmotionalImprovement} />
+            </div>
+          </div>
+
+          {/* Health */}
+          <div className="rrp-form-section">
+            <div className="rrp-section-label">
+              Health & Wellbeing
+              {recordSummary && <span className="rrp-auto-badge">from records</span>}
+            </div>
+            <div className="rrp-slider-grid">
+              <SliderField label="Avg Health Score (/ 5)" value={avgHealthScore} min={1} max={5} step={0.1}
+                display={avgHealthScore.toFixed(1)} onChange={setAvgHealthScore} />
+              <SliderField label="Avg Sleep Quality (/ 5)" value={avgSleepQuality} min={1} max={5} step={0.1}
+                display={avgSleepQuality.toFixed(1)} onChange={setAvgSleepQuality} />
+              <SliderField label="Health Trend" value={healthTrendSlope} min={-1} max={1} step={0.05}
+                display={healthTrendSlope > 0 ? `+${healthTrendSlope.toFixed(2)}` : healthTrendSlope.toFixed(2)}
+                onChange={setHealthTrendSlope} />
+            </div>
+          </div>
+
+          {/* Education */}
+          <div className="rrp-form-section">
+            <div className="rrp-section-label">
+              Education
+              {recordSummary && <span className="rrp-auto-badge">from records</span>}
+            </div>
+            <div className="rrp-slider-grid">
+              <SliderField label="Avg Attendance Rate" value={avgAttendance} min={0} max={1} step={0.05}
+                display={`${Math.round(avgAttendance * 100)}%`} onChange={setAvgAttendance} />
+            </div>
+          </div>
+
+          {/* Incidents & visits */}
+          <div className="rrp-form-section">
+            <div className="rrp-section-label">Incidents & Home Visits</div>
+            <div className="rrp-slider-grid">
+              <SliderField label="Total Incidents" value={totalIncidents} min={0} max={20} step={1}
+                display={String(totalIncidents)} onChange={setTotalIncidents} />
+              <SliderField label="Unresolved Incidents" value={unresolvedIncidents} min={0} max={totalIncidents} step={1}
+                display={String(unresolvedIncidents)} onChange={v => setUnresolvedIncidents(Math.min(v, totalIncidents))} />
+              <SliderField label="Total Home Visits" value={totalHomeVisits} min={0} max={30} step={1}
+                display={String(totalHomeVisits)} onChange={setTotalHomeVisits} />
+              <SliderField label="% Visits w/ Safety Concerns" value={pctVisitsSafety} min={0} max={1} step={0.05}
+                display={`${Math.round(pctVisitsSafety * 100)}%`} onChange={setPctVisitsSafety} />
+            </div>
+          </div>
+
+          <div className="rrp-footer">
+            <button className="rrp-predict-btn" onClick={runPrediction} disabled={loading}>
+              {loading ? 'Predicting…' : 'Predict Risk Level'}
+            </button>
+            {error && <p className="rrp-error">{error}</p>}
+          </div>
+        </div>
+
+        {/* ── Right: result + feature importance ── */}
+        <div className="rrp-result-col">
+          {result ? (
+            <div className={`rrp-result-card ${result.is_high_risk ? 'rrp-high' : 'rrp-low'}`}>
+              <div className="rrp-result-pct">{pct}%</div>
+              <div className="rrp-result-label">{result.is_high_risk ? 'High Risk' : 'Lower Risk'}</div>
+              <div className="rrp-result-track">
+                <div className="rrp-result-fill" style={{
+                  width: `${pct}%`,
+                  background: result.is_high_risk ? 'var(--color-error)' : 'var(--color-success)',
+                }} />
+              </div>
+              <p className="rrp-result-note">
+                {result.is_high_risk
+                  ? 'This resident profile indicates elevated risk. Review case activity and consider immediate intervention planning.'
+                  : 'This resident profile is within expected range. Continue standard monitoring and support.'}
+              </p>
+            </div>
+          ) : (
+            <div className="rrp-result-placeholder">
+              <span className="rrp-placeholder-icon">🔍</span>
+              <p>Fill in the resident's details and click <strong>Predict Risk Level</strong> to see the model's assessment.</p>
+            </div>
+          )}
+
+          {/* Feature importance */}
+          {features.length > 0 && (
+            <div className="rrp-feat-card">
+              <div className="rrp-feat-title">What Drives Risk Predictions</div>
+              <div className="rrp-feat-list">
+                {features.map((f, i) => (
+                  <div key={f.feature} className="rrp-feat-row">
+                    <span className="rrp-feat-rank">#{i + 1}</span>
+                    <span className="rrp-feat-label">{riskFeatureName(f.feature)}</span>
+                    <div className="rrp-feat-track">
+                      <div className="rrp-feat-bar" style={{ width: `${(f.importance / maxImportance) * 100}%` }} />
+                    </div>
+                    <span className="rrp-feat-pct">{Math.round(f.importance * 100)}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Key findings */}
+      <div className="rrp-findings-grid">
+        {RISK_FINDINGS.map(f => (
+          <div key={f.title} className="rrp-finding">
+            <span className="rrp-finding-icon">{f.icon}</span>
+            <div>
+              <div className="rrp-finding-title">{f.title}</div>
+              <div className="rrp-finding-body">{f.body}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Small reusable slider field ───────────────────────────────────────────────
+
+function SliderField({
+  label, value, min, max, step, display, onChange,
+}: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  display: string
+  onChange: (v: number) => void
+}) {
+  return (
+    <div className="rrp-slider-field">
+      <div className="rrp-slider-header">
+        <span className="rrp-slider-label">{label}</span>
+        <span className="rrp-slider-val">{display}</span>
+      </div>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        className="rrp-range"
+      />
+    </div>
+  )
+}
+
 // ─── Tab: Resident Outcomes ────────────────────────────────────────────────────
 
 function OutcomesTab({
@@ -1627,6 +2039,8 @@ function OutcomesTab({
               />
             </div>
           </div>
+
+          <ResidentRiskPredictor residents={residents} />
         </>
       )}
     </div>

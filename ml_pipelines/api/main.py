@@ -219,6 +219,29 @@ def social_engagement_feature_importance() -> dict[str, Any]:
     return {"features": _extract_feature_importance(social_model, social_features)}
 
 
+@app.get("/feature-importance/resident-risk")
+def resident_risk_feature_importance() -> dict[str, Any]:
+    """Return global feature importance for the resident risk classifier.
+
+    The model is a Pipeline with SelectFromModel; importances are extracted
+    from the inner RF classifier and matched to the 15 selected features.
+
+    Returns:
+        dict[str, Any]: ``{"features": [{feature, importance}, ...]}``.
+    """
+    pipeline = _load_artifact(RESIDENT_RISK_MODEL_PATH)
+    selected_features = _load_feature_list_from_metadata(
+        RESIDENT_RISK_METADATA_PATH, "selected_features"
+    )
+    # Extract the RF classifier from the pipeline's last step
+    clf = pipeline
+    if hasattr(pipeline, "named_steps"):
+        clf = pipeline.named_steps.get("model", pipeline)
+    elif hasattr(pipeline, "steps"):
+        clf = pipeline.steps[-1][1]
+    return {"features": _extract_feature_importance(clf, selected_features)}
+
+
 @app.get("/feature-importance/donor-churn")
 def donor_churn_feature_importance() -> dict[str, Any]:
     """Return global feature importance for the donor churn model.
@@ -330,7 +353,10 @@ def predict_resident_risk(payload: dict[str, Any]) -> dict[str, Any]:
 
     aligned = _align_features(payload, features)
     probability = _predict_probability(model, aligned)
-    is_high_risk = probability >= 0.5
+    # Threshold lowered to 0.30 (from 0.50) to improve recall for high-risk cases.
+    # The model was trained on 62 residents with class imbalance — low recall (0.30)
+    # means missing high-risk cases is the bigger risk in a child welfare context.
+    is_high_risk = probability >= 0.30
 
     return {"is_high_risk": bool(is_high_risk), "probability": float(probability)}
 

@@ -30,6 +30,7 @@ import SocialWorkersPage from './pages/admin/users/SocialWorkersPage'
 import PartnersPage from './pages/admin/users/PartnersPage'
 import ResidentsManagePage from './pages/admin/users/ResidentsManagePage'
 import DonorsPage from './pages/admin/users/DonorsPage'
+import ApprovalsPage from './pages/admin/ApprovalsPage'
 import CookieConsent from './components/common/CookieConsent'
 
 function App() {
@@ -91,6 +92,7 @@ function App() {
               <Route path="users/residents" element={<ResidentsManagePage />} />
               <Route path="residents/:id" element={<ResidentDetailPage />} />
               <Route path="users/donors" element={<DonorsPage />} />
+              <Route path="approvals" element={<ApprovalsPage />} />
             </Route>
           </Route>
         </Routes>
