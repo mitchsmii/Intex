@@ -666,12 +666,17 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
                   {segCallout(card.rows, card.title === 'By Acquisition Channel')}
                 </p>
                 {card.title === 'By Acquisition Channel' && (
-                  <div className="rp-insight-callout">
-                    <span className="rp-insight-icon">💡</span>
-                    <span>
-                      {retentionCallouts.channelCallout}
-                    </span>
-                  </div>
+                  <>
+                    <div className="rp-insight-callout">
+                      <span className="rp-insight-icon">💡</span>
+                      <span>
+                        {retentionCallouts.channelCallout}
+                      </span>
+                    </div>
+                    <p className="rp-insight-note">
+                      Event donors also show 100% lapse — consider reviewing your post-event follow-up process.
+                    </p>
+                  </>
                 )}
                 {card.title === 'By Campaign' && (
                   <div className="rp-insight-callout">
