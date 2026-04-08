@@ -118,11 +118,209 @@
   box-shadow: var(--shadow-sm);
 }
 
+.rp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
 .rp-section-title {
   font-size: 1rem;
   font-weight: 600;
   color: var(--cove-deep);
   margin: 0 0 var(--space-lg);
+}
+
+/* When title is inside a flex header, override the bottom margin */
+.rp-section-title-inline {
+  margin: 0;
+}
+
+/* ── Range toggle ── */
+.rp-range-toggle {
+  display: flex;
+  gap: 2px;
+  background: var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+
+.rp-range-btn {
+  background: none;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  padding: 0.28rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+}
+
+.rp-range-btn:hover { color: var(--cove-deep); }
+
+.rp-range-active {
+  background: white;
+  color: var(--cove-tidal) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* ── Fundraising Goal card ── */
+.rp-goal-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.rp-goal-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.rp-goal-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cove-deep);
+  margin: 0 0 0.15rem;
+}
+
+.rp-goal-period {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.rp-goal-presets {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.rp-goal-preset {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+
+.rp-goal-preset:hover {
+  border-color: var(--cove-tidal);
+  color: var(--cove-deep);
+}
+
+.rp-goal-preset-active {
+  background: var(--cove-seafoam);
+  border-color: var(--cove-tidal);
+  color: var(--cove-deep);
+}
+
+.rp-goal-amounts {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.rp-goal-raised {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  line-height: 1;
+}
+
+.rp-goal-of {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.rp-goal-target {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.rp-goal-pct-badge {
+  margin-left: auto;
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.rp-goal-pct-done {
+  background: var(--color-success);
+  color: white;
+}
+
+.rp-goal-track {
+  position: relative;
+  height: 16px;
+  background: var(--border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.rp-goal-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cove-tidal), var(--cove-seaglass));
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease;
+}
+
+.rp-goal-fill-done {
+  background: linear-gradient(90deg, var(--color-success), var(--cove-seaglass));
+}
+
+.rp-goal-milestone {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 100%;
+  background: rgba(255,255,255,0.5);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.rp-goal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.rp-goal-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.rp-goal-remaining {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cove-tidal);
 }
 
 /* ── Two-col layout ── */
@@ -742,4 +940,168 @@
 
 @media (max-width: 900px) {
   .rp-seg-grid { grid-template-columns: 1fr; }
+}
+
+/* ─── ML Risk Predictions ───────────────────────────────────────────────── */
+
+.rp-ml-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+  margin: var(--space-md) 0 var(--space-sm);
+}
+
+.rp-ml-pill {
+  background: white;
+  border: 1px solid var(--border-light, #d1d5db);
+  color: var(--cove-deep);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%231f4d5f' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-sm) center;
+  padding-right: calc(var(--space-md) + 14px);
+}
+.rp-ml-pill:hover { background: var(--cove-seafoam); }
+.rp-ml-pill:focus { outline: 2px solid var(--cove-tidal); outline-offset: 2px; }
+
+.rp-ml-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-light, #d1d5db);
+  background: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cove-deep);
+  cursor: pointer;
+  user-select: none;
+}
+.rp-ml-toggle:hover { background: var(--cove-seafoam); }
+.rp-ml-toggle--on {
+  background: var(--cove-tidal);
+  border-color: var(--cove-tidal);
+  color: white;
+}
+.rp-ml-toggle input { display: none; }
+
+.rp-ml-count {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.rp-ml-link {
+  color: var(--cove-tidal);
+  text-decoration: none;
+  font-weight: 600;
+}
+.rp-ml-link:hover { text-decoration: underline; }
+
+.rp-ml-disagree {
+  display: inline-block;
+  margin-left: var(--space-xs);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--cove-sand, #fdf3e3);
+  color: var(--color-warning);
+  border: 1px solid var(--cove-sand, #f3e3c8);
+}
+
+.rp-ml-flag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+}
+.rp-ml-flag--high { background: #fee2e2; color: var(--color-error); }
+.rp-ml-flag--ok { background: var(--cove-seafoam); color: var(--color-success); }
+
+.rp-ml-action-type {
+  font-weight: 600;
+  color: var(--cove-deep);
+  font-size: 0.8rem;
+}
+.rp-ml-action-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.rp-ml-why-btn {
+  background: transparent;
+  border: none;
+  color: var(--cove-tidal);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+.rp-ml-why-btn:hover { background: var(--cove-seafoam); }
+
+.rp-ml-why-panel {
+  background: var(--cove-seafoam, #eaf5f1);
+  border-left: 3px solid var(--cove-tidal);
+  padding: var(--space-md) var(--space-lg);
+}
+.rp-ml-why-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cove-deep);
+  margin-bottom: var(--space-sm);
+}
+.rp-ml-why-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-sm) var(--space-md);
+}
+.rp-ml-why-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  background: white;
+  border: 1px solid var(--cove-seaglass, #d6e8e2);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+}
+.rp-ml-why-label {
+  font-size: 0.75rem;
+  color: var(--cove-deep);
+  font-weight: 600;
+}
+.rp-ml-why-values {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.rp-ml-why-value {
+  font-weight: 700;
+  color: var(--color-warning);
+}
+.rp-ml-why-median {
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+.rp-ml-why-empty {
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }

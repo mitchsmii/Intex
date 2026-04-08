@@ -1,6 +1,10 @@
+// In dev, route through Vite's proxy (/ml-api) to avoid CORS.
+// In production, call the Azure ML API directly.
 const ML_BASE_URL =
   import.meta.env.VITE_ML_API_URL ??
-  'https://lighthouse-ml-api-intex.azurewebsites.net'
+  (import.meta.env.DEV
+    ? '/ml-api'
+    : 'https://lighthouse-ml-api-intex.azurewebsites.net')
 
 async function mlPost<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${ML_BASE_URL}${path}`, {
@@ -64,4 +68,62 @@ export function predictSocialEngagement(
   input: SocialEngagementInput,
 ): Promise<SocialEngagementResult> {
   return mlPost<SocialEngagementResult>('/predict/social-engagement', input)
+}
+
+export async function fetchSocialEngagementFeatureImportance(): Promise<FeatureImportance[]> {
+  const res = await fetch(`${ML_BASE_URL}/feature-importance/social-engagement`)
+  if (!res.ok) throw new Error(`ML API error ${res.status}: /feature-importance/social-engagement`)
+  const data = (await res.json()) as { features: FeatureImportance[] }
+  return data.features
+}
+
+export interface ResidentRiskInput {
+  days_in_care: number
+  initial_risk_level_enc: number
+  total_sessions: number
+  pct_concerns_flagged: number
+  pct_progress_noted: number
+  pct_referral_made: number
+  emotional_improvement_rate: number
+  avg_general_health_score: number
+  avg_sleep_quality_score: number
+  health_trend_slope: number
+  avg_attendance_rate: number
+  total_incidents: number
+  unresolved_incidents: number
+  total_home_visits: number
+  pct_visits_safety_concerns: number
+  [key: string]: number | boolean | undefined
+}
+
+export interface ResidentRiskResult {
+  is_high_risk: boolean
+  probability: number
+}
+
+export function predictResidentRisk(
+  input: ResidentRiskInput,
+): Promise<ResidentRiskResult> {
+  return mlPost<ResidentRiskResult>('/predict/resident-risk', input)
+}
+
+export interface EducationOutcomeInput {
+  early_health_mean: number
+  early_attendance_mean: number
+  early_progress_mean: number
+  early_emotional_improvement_rate: number
+  early_attendance_slope: number
+  initial_progress: number
+  [key: string]: number | boolean | undefined
+}
+
+export interface EducationOutcomeResult {
+  will_complete: boolean
+  probability: number
+}
+
+export function predictEducationOutcome(
+  input: EducationOutcomeInput,
+): Promise<EducationOutcomeResult> {
+  return mlPost<EducationOutcomeResult>('/predict/education-outcome', input)
 }

@@ -1,11 +1,17 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, Fragment } from 'react'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
-import { predictDonorChurn, fetchDonorChurnFeatureImportance } from '../../services/mlApi'
+import {
+  predictDonorChurn,
+  fetchDonorChurnFeatureImportance,
+  predictResidentRisk,
+  type ResidentRiskInput,
+} from '../../services/mlApi'
 import type { DonorChurnInput, FeatureImportance } from '../../services/mlApi'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
-  AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident,
+  AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident, ResidentMlFeatures,
 } from '../../services/apiService'
 import './ReportsPage.css'
 
@@ -36,17 +42,16 @@ const iH = CH - PAD.top - PAD.bottom
 
 function LineChart({ data }: { data: MonthlyDonationSummary[] }) {
   if (data.length < 2) return <p className="rp-empty">Not enough data for chart.</p>
-  const pts = data.slice(-12)
-  const vals = pts.map(d => d.total)
+  const vals = data.map(d => d.total)
   const maxV = Math.max(...vals, 1)
   const minV = 0
-  const xp = (i: number) => PAD.left + (i / (pts.length - 1)) * iW
+  const xp = (i: number) => PAD.left + (i / (data.length - 1)) * iW
   const yp = (v: number) => PAD.top + iH - ((v - minV) / (maxV - minV)) * iH
   const ticks = [0, 0.25, 0.5, 0.75, 1].map(t => minV + t * (maxV - minV))
-  const polyline = pts.map((p, i) => `${xp(i)},${yp(p.total)}`).join(' ')
-  const area = `M ${xp(0)} ${yp(pts[0].total)} ` +
-    pts.map((p, i) => `L ${xp(i)} ${yp(p.total)}`).join(' ') +
-    ` L ${xp(pts.length - 1)} ${PAD.top + iH} L ${PAD.left} ${PAD.top + iH} Z`
+  const polyline = data.map((p, i) => `${xp(i)},${yp(p.total)}`).join(' ')
+  const area = `M ${xp(0)} ${yp(data[0].total)} ` +
+    data.map((p, i) => `L ${xp(i)} ${yp(p.total)}`).join(' ') +
+    ` L ${xp(data.length - 1)} ${PAD.top + iH} L ${PAD.left} ${PAD.top + iH} Z`
 
   return (
     <svg viewBox={`0 0 ${CW} ${CH}`} className="rp-chart" aria-label="Monthly donation trend">
@@ -60,7 +65,7 @@ function LineChart({ data }: { data: MonthlyDonationSummary[] }) {
         </g>
       ))}
       {/* X labels */}
-      {pts.map((p, i) => (
+      {data.map((p, i) => (
         <text key={i} x={xp(i)} y={CH - 4} textAnchor="middle" fontSize="10" fill="var(--text-muted)">
           {monthLabel(p.month)}
         </text>
@@ -70,7 +75,7 @@ function LineChart({ data }: { data: MonthlyDonationSummary[] }) {
       {/* Line */}
       <polyline points={polyline} fill="none" stroke="var(--cove-tidal)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
       {/* Dots */}
-      {pts.map((p, i) => (
+      {data.map((p, i) => (
         <circle key={i} cx={xp(i)} cy={yp(p.total)} r="5" fill="var(--cove-tidal)" stroke="white" strokeWidth="2" />
       ))}
     </svg>
@@ -839,6 +844,24 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
   )
 }
 
+// ─── Donation goal presets ─────────────────────────────────────────────────────
+
+const DONATION_GOALS = [
+  { label: 'Essential Ops',     amount: 11_000,  desc: 'Minimum to keep doors open monthly' },
+  { label: 'Full Capacity',     amount: 25_000,  desc: 'All programs fully staffed & funded' },
+  { label: 'Wheels of Hope',    amount: 35_000,  desc: 'One-time transportation campaign' },
+  { label: 'Shelter Expansion', amount: 100_000, desc: 'Capital goal — 18 additional beds' },
+]
+
+type TrendRange = '1M' | '3M' | '1Y' | 'all'
+
+const RANGE_LABELS: Record<TrendRange, string> = {
+  '1M':  'This Month',
+  '3M':  'Last 3 Months',
+  '1Y':  'This Year',
+  'all': 'All Time',
+}
+
 // ─── Tab: Donations ────────────────────────────────────────────────────────────
 
 function DonationsTab({
@@ -850,6 +873,9 @@ function DonationsTab({
   allocation: AllocationSummary | null
   loading: boolean
 }) {
+  const [trendRange,   setTrendRange]   = useState<TrendRange>('1Y')
+  const [selectedGoal, setSelectedGoal] = useState(1) // index into DONATION_GOALS
+
   const now = new Date()
   const curYear = now.getFullYear()
   const curMonth = now.getMonth() + 1
@@ -858,7 +884,19 @@ function DonationsTab({
   const total = donations.reduce((s, d) => s + (d.amount ?? 0), 0)
   const avg = donations.length ? total / donations.length : 0
   const recurring = donations.filter(d => d.isRecurring).length
-  const currency = donations[0]?.currencyCode ?? 'PHP'
+  const currency = donations[0]?.currencyCode ?? 'USD'
+
+  const filteredMonthly: MonthlyDonationSummary[] = (() => {
+    if (trendRange === '1M')  return monthly.slice(-1)
+    if (trendRange === '3M')  return monthly.slice(-3)
+    if (trendRange === '1Y')  return monthly.slice(-12)
+    return monthly
+  })()
+
+  const rangeTotal = filteredMonthly.reduce((s, m) => s + m.total, 0)
+  const goal       = DONATION_GOALS[selectedGoal]
+  const goalPct    = Math.min(100, Math.round((rangeTotal / goal.amount) * 100))
+  const goalLeft   = Math.max(0, goal.amount - rangeTotal)
 
   const channelCounts: Record<string, number> = {}
   for (const d of donations) {
@@ -886,9 +924,69 @@ function DonationsTab({
         ))}
       </div>
 
+      {/* ── Fundraising Goal Progress ── */}
+      <div className="rp-goal-card">
+        <div className="rp-goal-top">
+          <div>
+            <h3 className="rp-goal-heading">Fundraising Goal</h3>
+            <p className="rp-goal-period">{RANGE_LABELS[trendRange]}</p>
+          </div>
+          <div className="rp-goal-presets">
+            {DONATION_GOALS.map((g, i) => (
+              <button
+                key={g.label}
+                className={`rp-goal-preset${selectedGoal === i ? ' rp-goal-preset-active' : ''}`}
+                onClick={() => setSelectedGoal(i)}
+                title={g.desc}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rp-goal-amounts">
+          <span className="rp-goal-raised">{fmtAmt(rangeTotal, currency)}</span>
+          <span className="rp-goal-of"> raised of </span>
+          <span className="rp-goal-target">{fmtAmt(goal.amount, 'USD')}</span>
+          <span className={`rp-goal-pct-badge${goalPct >= 100 ? ' rp-goal-pct-done' : ''}`}>{goalPct}%</span>
+        </div>
+
+        <div className="rp-goal-track">
+          {[25, 50, 75].map(m => (
+            <div key={m} className="rp-goal-milestone" style={{ left: `${m}%` }} />
+          ))}
+          <div
+            className={`rp-goal-fill${goalPct >= 100 ? ' rp-goal-fill-done' : ''}`}
+            style={{ width: `${goalPct}%` }}
+          />
+        </div>
+
+        <div className="rp-goal-footer">
+          <span className="rp-goal-desc">{goal.desc}</span>
+          <span className="rp-goal-remaining">
+            {goalPct >= 100 ? 'Goal reached!' : `${fmtAmt(goalLeft, 'USD')} to go`}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Monthly Trend Chart ── */}
       <div className="rp-section">
-        <h3 className="rp-section-title">Monthly Donation Trend (Last 12 Months)</h3>
-        {loading ? <p className="rp-empty">Loading…</p> : <LineChart data={monthly} />}
+        <div className="rp-section-header">
+          <h3 className="rp-section-title rp-section-title-inline">Monthly Donation Trend</h3>
+          <div className="rp-range-toggle">
+            {(['1M', '3M', '1Y', 'all'] as const).map(r => (
+              <button
+                key={r}
+                className={`rp-range-btn${trendRange === r ? ' rp-range-active' : ''}`}
+                onClick={() => setTrendRange(r)}
+              >
+                {r === 'all' ? 'All' : r}
+              </button>
+            ))}
+          </div>
+        </div>
+        {loading ? <p className="rp-empty">Loading…</p> : <LineChart data={filteredMonthly} />}
       </div>
 
       <div className="rp-two-col">
@@ -985,6 +1083,216 @@ function OutcomesTab({
   const reintegrated = residents.filter(r => r.reintegrationStatus && r.reintegrationStatus !== 'Not Started')
   const highRisk = residents.filter(r => r.currentRiskLevel === 'High' || r.currentRiskLevel === 'Critical')
 
+  // ── ML: Resident risk predictions ───────────────────────────────────────────
+  type RiskRow = {
+    resident: Resident
+    features: ResidentMlFeatures
+    probability: number
+    isHighRisk: boolean
+  }
+  const [riskPreds, setRiskPreds] = useState<RiskRow[]>([])
+  const [riskLoading, setRiskLoading] = useState(false)
+  const [riskError, setRiskError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (activeResidents.length === 0) return
+    let cancelled = false
+    setRiskLoading(true)
+    setRiskError(null)
+
+    const activeIds = new Set(activeResidents.map(r => r.residentId))
+
+    api.getResidentMlFeatures()
+      .then(async (allFeatures: ResidentMlFeatures[]) => {
+        const features = allFeatures.filter(f => activeIds.has(f.resident_id))
+        const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
+
+        return Promise.all(
+          features.map(async (f) => {
+            // Strip metadata fields; forward only the model's input columns.
+            const {
+              resident_id: _id,
+              internal_code: _ic,
+              case_control_no: _cc,
+              current_risk_level: _crl,
+              assigned_social_worker: _sw,
+              last_action_date: _lad,
+              last_action_type: _lat,
+              ...input
+            } = f
+            void _id; void _ic; void _cc; void _crl; void _sw; void _lad; void _lat
+            try {
+              const res = await predictResidentRisk(input as unknown as ResidentRiskInput)
+              return {
+                resident: residentById.get(f.resident_id)!,
+                features: f,
+                probability: res.probability,
+                isHighRisk: res.is_high_risk,
+              }
+            } catch {
+              return {
+                resident: residentById.get(f.resident_id)!,
+                features: f,
+                probability: 0,
+                isHighRisk: false,
+              }
+            }
+          }),
+        )
+      })
+      .then((results) => {
+        if (cancelled) return
+        results.sort((a, b) => b.probability - a.probability)
+        setRiskPreds(results)
+      })
+      .catch((err) => {
+        if (!cancelled) setRiskError(err instanceof Error ? err.message : 'Prediction failed')
+      })
+      .finally(() => {
+        if (!cancelled) setRiskLoading(false)
+      })
+
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [residents.length])
+
+  const modelHighRiskCount = riskPreds.filter(p => p.isHighRisk).length
+
+  // ── Filters ────────────────────────────────────────────────────────────────
+  const [filterSafehouse, setFilterSafehouse] = useState<string>('all')
+  const [filterSw, setFilterSw] = useState<string>('all')
+  const [filterCurrentRisk, setFilterCurrentRisk] = useState<string>('all')
+  const [showOnlyDisagreements, setShowOnlyDisagreements] = useState(false)
+
+  const swOptions = useMemo(() => {
+    const set = new Set<string>()
+    riskPreds.forEach(p => {
+      const sw = p.features.assigned_social_worker
+      if (sw) set.add(sw)
+    })
+    return Array.from(set).sort()
+  }, [riskPreds])
+
+  const safehouseOptions = useMemo(() => {
+    const set = new Set<string>()
+    safehouses.forEach(sh => {
+      const code = sh.safehouseCode ?? sh.name ?? `SH${sh.safehouseId}`
+      set.add(code)
+    })
+    return Array.from(set).sort()
+  }, [safehouses])
+
+  const safehouseCodeById = useMemo(() => {
+    const m = new Map<number, string>()
+    safehouses.forEach(sh => {
+      m.set(sh.safehouseId, sh.safehouseCode ?? sh.name ?? `SH${sh.safehouseId}`)
+    })
+    return m
+  }, [safehouses])
+
+  const filteredRiskPreds = useMemo(() => {
+    return riskPreds.filter(p => {
+      if (filterSafehouse !== 'all') {
+        const code = safehouseCodeById.get(p.features.safehouse_id) ?? ''
+        if (code !== filterSafehouse) return false
+      }
+      if (filterSw !== 'all' && p.features.assigned_social_worker !== filterSw) return false
+      if (filterCurrentRisk !== 'all' && (p.resident.currentRiskLevel ?? 'Unknown') !== filterCurrentRisk) {
+        return false
+      }
+      if (showOnlyDisagreements) {
+        const swSaysHigh = p.resident.currentRiskLevel === 'High' || p.resident.currentRiskLevel === 'Critical'
+        if (swSaysHigh === p.isHighRisk) return false
+      }
+      return true
+    })
+  }, [riskPreds, filterSafehouse, filterSw, filterCurrentRisk, showOnlyDisagreements, safehouseCodeById])
+
+  const [riskPage, setRiskPage] = useState(1)
+  const RISK_PAGE_SIZE = 10
+  const riskPageCount = Math.max(1, Math.ceil(filteredRiskPreds.length / RISK_PAGE_SIZE))
+  const riskPageItems = filteredRiskPreds.slice(
+    (riskPage - 1) * RISK_PAGE_SIZE,
+    riskPage * RISK_PAGE_SIZE,
+  )
+  useEffect(() => { setRiskPage(1) }, [filteredRiskPreds.length])
+
+  // ── "Why" expansion ────────────────────────────────────────────────────────
+  // For each resident, compare their values for the model's selected features
+  // against the cohort median. Surface the features where this resident is
+  // notably worse than typical — those drove the high score.
+  const [expandedId, setExpandedId] = useState<number | null>(null)
+
+  // Selected features from resident_risk_metadata.json + display labels and direction.
+  // direction: 'higher' = higher value = more risk; 'lower' = lower value = more risk.
+  const SELECTED_FEATURES: { key: keyof ResidentMlFeatures; label: string; direction: 'higher' | 'lower' }[] = [
+    { key: 'days_in_care',                label: 'Days in care',                  direction: 'higher' },
+    { key: 'initial_risk_level_enc',      label: 'Initial risk level',            direction: 'higher' },
+    { key: 'total_sessions',              label: 'Total counseling sessions',     direction: 'lower'  },
+    { key: 'pct_concerns_flagged',        label: '% sessions w/ concerns',        direction: 'higher' },
+    { key: 'pct_progress_noted',          label: '% sessions w/ progress',        direction: 'lower'  },
+    { key: 'pct_referral_made',           label: '% sessions w/ referral',        direction: 'higher' },
+    { key: 'emotional_improvement_rate',  label: 'Emotional improvement rate',    direction: 'lower'  },
+    { key: 'avg_general_health_score',    label: 'Avg general health',            direction: 'lower'  },
+    { key: 'avg_sleep_quality_score',     label: 'Avg sleep quality',             direction: 'lower'  },
+    { key: 'health_trend_slope',          label: 'Health trend (slope)',          direction: 'lower'  },
+    { key: 'avg_attendance_rate',         label: 'Avg attendance rate',           direction: 'lower'  },
+    { key: 'total_incidents',             label: 'Total incidents',               direction: 'higher' },
+    { key: 'unresolved_incidents',        label: 'Unresolved incidents',          direction: 'higher' },
+    { key: 'total_home_visits',           label: 'Total home visits',             direction: 'lower'  },
+    { key: 'pct_visits_safety_concerns',  label: '% visits w/ safety concerns',   direction: 'higher' },
+  ]
+
+  const cohortMedians = useMemo(() => {
+    const out: Record<string, number> = {}
+    if (riskPreds.length === 0) return out
+    SELECTED_FEATURES.forEach(({ key }) => {
+      const values = riskPreds
+        .map(p => Number(p.features[key] ?? 0))
+        .filter(n => Number.isFinite(n))
+        .sort((a, b) => a - b)
+      const mid = Math.floor(values.length / 2)
+      out[key as string] = values.length === 0
+        ? 0
+        : values.length % 2 === 0
+          ? (values[mid - 1] + values[mid]) / 2
+          : values[mid]
+    })
+    return out
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [riskPreds])
+
+  function topReasons(features: ResidentMlFeatures): { label: string; value: number; median: number; worse: boolean }[] {
+    return SELECTED_FEATURES
+      .map(({ key, label, direction }) => {
+        const value = Number(features[key] ?? 0)
+        const median = cohortMedians[key as string] ?? 0
+        const worse = direction === 'higher' ? value > median : value < median
+        // Score = signed gap from median, normalized so larger = "more anomalous in the bad direction"
+        const gap = direction === 'higher' ? value - median : median - value
+        return { label, value, median, worse, gap }
+      })
+      .filter(r => r.worse && r.gap > 0)
+      .sort((a, b) => b.gap - a.gap)
+      .slice(0, 5)
+      .map(({ label, value, median, worse }) => ({ label, value, median, worse }))
+  }
+
+  function fmt(n: number): string {
+    if (!Number.isFinite(n)) return '—'
+    if (Math.abs(n) >= 10) return n.toFixed(0)
+    if (Math.abs(n) >= 1) return n.toFixed(1)
+    return n.toFixed(2)
+  }
+
+  function daysSince(iso: string | null): string {
+    if (!iso) return '—'
+    const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+    if (days === 0) return 'today'
+    if (days === 1) return '1 day ago'
+    return `${days} days ago`
+  }
+
   const avgHealth = metrics.length
     ? metrics.reduce((s, m) => s + (m.avgHealthScore ?? 0), 0) / metrics.filter(m => m.avgHealthScore != null).length
     : 0
@@ -1012,6 +1320,7 @@ function OutcomesTab({
           { label: 'Avg. Health Score', value: avgHealth ? `${avgHealth.toFixed(1)} / 5` : '—', sub: 'across all safehouses' },
           { label: 'Avg. Education Progress', value: avgEdu ? `${Math.round(avgEdu)}%` : '—', sub: 'across all safehouses' },
           { label: 'Reintegration Pipeline', value: String(reintegrated.length), sub: `${highRisk.length} high-risk residents` },
+          { label: 'ML-Flagged High Risk', value: riskLoading ? '…' : String(modelHighRiskCount), sub: 'predicted by resident risk model' },
         ].map(k => (
           <div key={k.label} className="rp-kpi">
             <div className="rp-kpi-label">{k.label}</div>
@@ -1071,6 +1380,209 @@ function OutcomesTab({
                 ))}
               </tbody>
             </table>
+          </div>
+
+          <div className="rp-section">
+            <h3 className="rp-section-title">
+              ML Risk Predictions — Residents to Prioritize
+            </h3>
+            <p className="rp-empty" style={{ marginTop: 0 }}>
+              Ranked by the resident risk model's predicted probability of High/Critical status.
+              Use as a triage hint, not a verdict — social workers should still review every case.
+            </p>
+            {riskError && <p className="rp-empty" style={{ color: 'var(--color-warning)' }}>{riskError}</p>}
+
+            {/* Filters */}
+            {!riskLoading && riskPreds.length > 0 && (
+              <div className="rp-ml-toolbar">
+                <select
+                  className="rp-ml-pill"
+                  value={filterSafehouse}
+                  onChange={(e) => setFilterSafehouse(e.target.value)}
+                >
+                  <option value="all">All Safehouses</option>
+                  {safehouseOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <select
+                  className="rp-ml-pill"
+                  value={filterSw}
+                  onChange={(e) => setFilterSw(e.target.value)}
+                >
+                  <option value="all">All Social Workers</option>
+                  {swOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <select
+                  className="rp-ml-pill"
+                  value={filterCurrentRisk}
+                  onChange={(e) => setFilterCurrentRisk(e.target.value)}
+                >
+                  <option value="all">All Risk Levels</option>
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+                <label className={`rp-ml-toggle${showOnlyDisagreements ? ' rp-ml-toggle--on' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={showOnlyDisagreements}
+                    onChange={(e) => setShowOnlyDisagreements(e.target.checked)}
+                  />
+                  Disagreements only
+                </label>
+                <span className="rp-ml-count">
+                  {filteredRiskPreds.length} of {riskPreds.length} residents
+                </span>
+              </div>
+            )}
+
+            {riskLoading ? (
+              <p className="rp-empty">Scoring residents…</p>
+            ) : riskPreds.length === 0 ? (
+              <p className="rp-empty">No active residents to score.</p>
+            ) : filteredRiskPreds.length === 0 ? (
+              <p className="rp-empty">No residents match the current filters.</p>
+            ) : (
+              <table className="rp-table rp-table-wide">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Resident</th>
+                    <th>Safehouse</th>
+                    <th>Social Worker</th>
+                    <th>Current Risk</th>
+                    <th>Predicted</th>
+                    <th>Risk Bar</th>
+                    <th>ML Flag</th>
+                    <th>Last Action</th>
+                    <th>Why</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {riskPageItems.map((p, idx) => {
+                    const i = (riskPage - 1) * RISK_PAGE_SIZE + idx
+                    const pct = Math.round(p.probability * 100)
+                    const color = p.probability >= 0.75
+                      ? 'var(--color-warning)'
+                      : p.probability >= 0.5
+                        ? 'var(--cove-tidal)'
+                        : 'var(--cove-seaglass)'
+                    const swSaysHigh = p.resident.currentRiskLevel === 'High' || p.resident.currentRiskLevel === 'Critical'
+                    const disagrees = swSaysHigh !== p.isHighRisk
+                    const isExpanded = expandedId === p.resident.residentId
+                    const reasons = isExpanded ? topReasons(p.features) : []
+                    const safehouseCode = safehouseCodeById.get(p.features.safehouse_id) ?? '—'
+                    return (
+                      <Fragment key={p.resident.residentId}>
+                        <tr>
+                          <td className="rp-td-num">{i + 1}</td>
+                          <td className="rp-td-name">
+                            <Link
+                              className="rp-ml-link"
+                              to={`/admin/residents/${p.resident.residentId}`}
+                            >
+                              {p.resident.internalCode ?? p.resident.caseControlNo ?? `#${p.resident.residentId}`}
+                            </Link>
+                          </td>
+                          <td>{safehouseCode}</td>
+                          <td>{p.features.assigned_social_worker ?? '—'}</td>
+                          <td>
+                            {p.resident.currentRiskLevel ?? '—'}
+                            {disagrees && (
+                              <span className="rp-ml-disagree" title="Model disagrees with current risk level">
+                                Mismatch
+                              </span>
+                            )}
+                          </td>
+                          <td className="rp-td-num">{pct}%</td>
+                          <td>
+                            <div className="rp-mini-track">
+                              <div className="rp-mini-fill" style={{ width: `${pct}%`, background: color }} />
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`rp-ml-flag ${p.isHighRisk ? 'rp-ml-flag--high' : 'rp-ml-flag--ok'}`}>
+                              {p.isHighRisk ? 'High Risk' : 'OK'}
+                            </span>
+                          </td>
+                          <td>
+                            {p.features.last_action_type ? (
+                              <>
+                                <div className="rp-ml-action-type">{p.features.last_action_type}</div>
+                                <div className="rp-ml-action-time">{daysSince(p.features.last_action_date)}</div>
+                              </>
+                            ) : '—'}
+                          </td>
+                          <td>
+                            <button
+                              className="rp-ml-why-btn"
+                              onClick={() => setExpandedId(isExpanded ? null : p.resident.residentId)}
+                            >
+                              {isExpanded ? 'Hide' : 'Why?'}
+                            </button>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={10} className="rp-ml-why-panel">
+                              <div className="rp-ml-why-title">
+                                Top contributing factors (vs. cohort median)
+                              </div>
+                              {reasons.length === 0 ? (
+                                <div className="rp-ml-why-empty">
+                                  This resident is not notably worse than the cohort on any of the model's selected features.
+                                </div>
+                              ) : (
+                                <ul className="rp-ml-why-list">
+                                  {reasons.map(r => (
+                                    <li key={r.label} className="rp-ml-why-row">
+                                      <span className="rp-ml-why-label">{r.label}</span>
+                                      <span className="rp-ml-why-values">
+                                        <span className="rp-ml-why-value">{fmt(r.value)}</span>
+                                        <span className="rp-ml-why-median">vs {fmt(r.median)}</span>
+                                      </span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+            {riskPreds.length > RISK_PAGE_SIZE && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'flex-end',
+                  gap: 'var(--space-sm)',
+                  marginTop: 'var(--space-sm)',
+                }}
+              >
+                <button
+                  className="rp-tab-btn"
+                  disabled={riskPage === 1}
+                  onClick={() => setRiskPage(p => Math.max(1, p - 1))}
+                >
+                  Prev
+                </button>
+                <span style={{ fontSize: '0.875rem' }}>
+                  Page {riskPage} of {riskPageCount}
+                </span>
+                <button
+                  className="rp-tab-btn"
+                  disabled={riskPage === riskPageCount}
+                  onClick={() => setRiskPage(p => Math.min(riskPageCount, p + 1))}
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="rp-two-col">

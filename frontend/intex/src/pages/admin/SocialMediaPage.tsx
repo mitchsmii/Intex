@@ -1,10 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { api } from '../../services/apiService'
+import type { SocialMediaPost as ApiPost } from '../../services/apiService'
+import { predictSocialEngagement, fetchSocialEngagementFeatureImportance } from '../../services/mlApi'
+import type { SocialEngagementInput, SocialEngagementResult, FeatureImportance } from '../../services/mlApi'
 import './SocialMediaPage.css'
+import './ManageUsersPage.css'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = 'analytics' | 'tips' | 'vanessa'
+type Tab = 'analytics' | 'tips' | 'insights' | 'vanessa'
 type Platform = 'Instagram' | 'Facebook' | 'Email'
 type FilterPlatform = 'All' | Platform
 
@@ -31,7 +35,28 @@ interface ChatMessage {
   text: string
 }
 
-// ─── Mock post data ───────────────────────────────────────────────────────────
+// ─── Map API response → local Post type ──────────────────────────────────────
+
+function fromApi(p: ApiPost): Post {
+  return {
+    id:             p.postId,
+    platform:       p.platform as Post['platform'],
+    date:           p.postDate,
+    caption:        p.caption ?? '',
+    hashtags:       p.hashtags ?? undefined,
+    reach:          p.reach ?? undefined,
+    likes:          p.likes ?? undefined,
+    comments:       p.comments ?? undefined,
+    secondary:      p.secondaryMetric ?? undefined,
+    secondaryLabel: p.secondaryLabel ?? undefined,
+    sent:           p.emailsSent ?? undefined,
+    opened:         p.emailsOpened ?? undefined,
+    clicked:        p.emailsClicked ?? undefined,
+    openRate:       p.openRate ?? undefined,
+  }
+}
+
+// ─── Fallback mock data (shown when DB table is empty) ────────────────────────
 
 const MOCK_POSTS: Post[] = [
   {
@@ -139,19 +164,57 @@ function engClass(rate: number, platform: Platform): string {
   return rate >= 15 ? 'sm-eng-excellent' : rate >= 10 ? 'sm-eng-good' : rate >= 5 ? 'sm-eng-avg' : 'sm-eng-low'
 }
 
+type SortKey = 'date' | 'platform' | 'reach' | 'engagement'
+type SortDir = 'asc' | 'desc'
+
+function SortTh({ label, col, sort, dir, onSort }: {
+  label: string; col: SortKey; sort: SortKey; dir: SortDir; onSort: (c: SortKey) => void
+}) {
+  const active = sort === col
+  return (
+    <th className={`mu-th-sort${active ? ' mu-th-active' : ''}`} onClick={() => onSort(col)}>
+      {label}<span className="mu-sort-icon">{active ? (dir === 'asc' ? ' ↑' : ' ↓') : ' ↕'}</span>
+    </th>
+  )
+}
+
 // ─── Analytics Tab ────────────────────────────────────────────────────────────
 
-function AnalyticsTab() {
-  const [filter, setFilter] = useState<FilterPlatform>('All')
+function AnalyticsTab({ posts, loading }: { posts: Post[]; loading: boolean }) {
+  const [filter,  setFilter]  = useState<FilterPlatform>('All')
+  const [sortCol, setSortCol] = useState<SortKey>('date')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [search,  setSearch]  = useState('')
 
-  const socialPosts = MOCK_POSTS.filter(p => p.platform !== 'Email')
+  const socialPosts = posts.filter(p => p.platform !== 'Email')
   const totalReach  = socialPosts.reduce((s, p) => s + (p.reach ?? 0), 0)
-  const avgEng      = socialPosts.reduce((s, p) => s + engRate(p), 0) / socialPosts.length
-  const emailPosts  = MOCK_POSTS.filter(p => p.platform === 'Email')
-  const emailAvg    = emailPosts.reduce((s, p) => s + (p.openRate ?? 0), 0) / emailPosts.length
-  const bestPost    = [...MOCK_POSTS].filter(p => p.platform !== 'Email').sort((a, b) => engRate(b) - engRate(a))[0]
+  const avgEng      = socialPosts.length ? socialPosts.reduce((s, p) => s + engRate(p), 0) / socialPosts.length : 0
+  const emailPosts  = posts.filter(p => p.platform === 'Email')
+  const emailAvg    = emailPosts.length ? emailPosts.reduce((s, p) => s + (p.openRate ?? 0), 0) / emailPosts.length : 0
+  const bestPost    = [...socialPosts].sort((a, b) => engRate(b) - engRate(a))[0]
 
-  const filtered = filter === 'All' ? MOCK_POSTS : MOCK_POSTS.filter(p => p.platform === filter)
+  function toggleSort(col: SortKey) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('desc') }
+  }
+
+  const displayed = posts
+    .filter(p => {
+      if (filter !== 'All' && p.platform !== filter) return false
+      if (!search) return true
+      return (p.caption ?? '').toLowerCase().includes(search.toLowerCase()) ||
+             p.platform.toLowerCase().includes(search.toLowerCase())
+    })
+    .sort((a, b) => {
+      let cmp = 0
+      if      (sortCol === 'date')       cmp = a.date.localeCompare(b.date)
+      else if (sortCol === 'platform')   cmp = a.platform.localeCompare(b.platform)
+      else if (sortCol === 'reach')      cmp = (a.reach ?? a.sent ?? 0) - (b.reach ?? b.sent ?? 0)
+      else if (sortCol === 'engagement') cmp = engRate(a) - engRate(b)
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+
+  if (loading) return <p className="sm-empty">Loading posts…</p>
 
   return (
     <>
@@ -166,7 +229,7 @@ function AnalyticsTab() {
               <line x1="8" y1="16" x2="12" y2="16"/>
             </svg>
           </div>
-          <div className="sm-stat-number">{MOCK_POSTS.length}</div>
+          <div className="sm-stat-number">{posts.length}</div>
           <div className="sm-stat-label">Total Posts</div>
           <div className="sm-stat-sub">across all platforms</div>
         </div>
@@ -206,90 +269,120 @@ function AnalyticsTab() {
       </div>
 
       {/* Top post banner */}
-      <div className="sm-top-banner">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-        </svg>
-        <span className="sm-top-banner-eyebrow">Top performing post</span>
-        <span className="sm-top-banner-caption">"{bestPost.caption.slice(0, 90)}…"</span>
-        <div className="sm-top-banner-meta">
-          <span className={`sm-badge sm-badge-${bestPost.platform.toLowerCase()}`}>{bestPost.platform}</span>
-          <span>{fmtDate(bestPost.date)}</span>
-          <span className="sm-eng-excellent">{engRate(bestPost).toFixed(1)}% engagement rate</span>
+      {bestPost && (
+        <div className="sm-top-banner">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span className="sm-top-banner-eyebrow">Top performing post</span>
+          <span className="sm-top-banner-caption">"{bestPost.caption.slice(0, 90)}…"</span>
+          <div className="sm-top-banner-meta">
+            <span className={`sm-badge sm-badge-${bestPost.platform.toLowerCase()}`}>{bestPost.platform}</span>
+            <span>{fmtDate(bestPost.date)}</span>
+            <span className="sm-eng-excellent">{engRate(bestPost).toFixed(1)}% engagement rate</span>
+          </div>
+        </div>
+      )}
+
+      {/* Header row: filter pills + search */}
+      <div className="mu-header" style={{ marginBottom: 0 }}>
+        <div className="sm-filter-row" style={{ margin: 0 }}>
+          {(['All', 'Instagram', 'Facebook', 'Email'] as FilterPlatform[]).map(p => (
+            <button
+              key={p}
+              className={`sm-filter-pill${filter === p ? ' sm-filter-active' : ''}`}
+              onClick={() => setFilter(p)}
+            >
+              {p}
+            </button>
+          ))}
+          <span className="sm-filter-count">{displayed.length} post{displayed.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div className="mu-header-actions">
+          <input
+            className="mu-search"
+            type="search"
+            placeholder="Search posts…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
         </div>
       </div>
 
-      {/* Platform filter */}
-      <div className="sm-filter-row">
-        {(['All', 'Instagram', 'Facebook', 'Email'] as FilterPlatform[]).map(p => (
-          <button
-            key={p}
-            className={`sm-filter-pill${filter === p ? ' sm-filter-active' : ''}`}
-            onClick={() => setFilter(p)}
-          >
-            {p}
-          </button>
-        ))}
-        <span className="sm-filter-count">{filtered.length} post{filtered.length !== 1 ? 's' : ''}</span>
+      {/* Sort bar */}
+      <div className="mu-sort-bar">
+        <span className="mu-sort-bar-label">Sort by</span>
+        <select className="mu-sort-select" value={sortCol} onChange={e => setSortCol(e.target.value as SortKey)}>
+          <option value="date">Date</option>
+          <option value="platform">Platform</option>
+          <option value="reach">Reach / Sent</option>
+          <option value="engagement">Engagement %</option>
+        </select>
+        <button className="mu-sort-dir-btn" onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}>
+          {sortDir === 'asc' ? '↑ Asc' : '↓ Desc'}
+        </button>
       </div>
 
-      {/* Post grid */}
-      <div className="sm-post-grid">
-        {filtered.map(post => {
-          const rate = engRate(post)
-          return (
-            <div key={post.id} className="sm-post-card">
-              <div className="sm-post-header">
-                <span className={`sm-badge sm-badge-${post.platform.toLowerCase()}`}>{post.platform}</span>
-                <span className="sm-post-date">{fmtDate(post.date)}</span>
-              </div>
-              <p className="sm-post-caption">{post.caption}</p>
-              {post.hashtags && <p className="sm-post-hashtags">{post.hashtags}</p>}
-
-              {post.platform !== 'Email' ? (
-                <div className="sm-post-stats">
-                  <div className="sm-post-stat">
-                    <span className="sm-pstat-val">{(post.reach ?? 0).toLocaleString()}</span>
-                    <span className="sm-pstat-lbl">Reach</span>
-                  </div>
-                  <div className="sm-post-stat">
-                    <span className="sm-pstat-val">{post.likes ?? 0}</span>
-                    <span className="sm-pstat-lbl">Likes</span>
-                  </div>
-                  <div className="sm-post-stat">
-                    <span className="sm-pstat-val">{post.comments ?? 0}</span>
-                    <span className="sm-pstat-lbl">Comments</span>
-                  </div>
-                  <div className="sm-post-stat">
-                    <span className="sm-pstat-val">{post.secondary ?? 0}</span>
-                    <span className="sm-pstat-lbl">{post.secondaryLabel}</span>
-                  </div>
-                  <span className={`sm-eng-badge ${engClass(rate, post.platform)}`}>
-                    {rate.toFixed(1)}% eng.
-                  </span>
-                </div>
-              ) : (
-                <div className="sm-post-stats">
-                  <div className="sm-post-stat">
-                    <span className="sm-pstat-val">{post.sent?.toLocaleString()}</span>
-                    <span className="sm-pstat-lbl">Sent</span>
-                  </div>
-                  <div className="sm-post-stat">
-                    <span className="sm-pstat-val">{post.opened?.toLocaleString()}</span>
-                    <span className="sm-pstat-lbl">Opened</span>
-                  </div>
-                  <div className="sm-post-stat">
-                    <span className="sm-pstat-val">{post.clicked?.toLocaleString()}</span>
-                    <span className="sm-pstat-lbl">Clicked</span>
-                  </div>
-                  <span className={`sm-eng-badge ${engClass(rate, post.platform)}`}>
-                    {rate.toFixed(1)}% open
-                  </span>
-                </div>
-              )}
-            </div>
-          )
-        })}
+      {/* Table */}
+      <div className="mu-card">
+        <table className="mu-table">
+          <thead>
+            <tr>
+              <SortTh label="Platform"   col="platform"   sort={sortCol} dir={sortDir} onSort={toggleSort} />
+              <SortTh label="Date"       col="date"       sort={sortCol} dir={sortDir} onSort={toggleSort} />
+              <th>Caption / Subject</th>
+              <SortTh label="Reach / Sent" col="reach"   sort={sortCol} dir={sortDir} onSort={toggleSort} />
+              <th>Likes / Opened</th>
+              <th>Comments / Clicked</th>
+              <th>Saves / Open Rate</th>
+              <SortTh label="Eng. %" col="engagement"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
+            </tr>
+          </thead>
+          <tbody>
+            {displayed.length === 0 && (
+              <tr><td colSpan={8} className="mu-empty-cell">No posts found.</td></tr>
+            )}
+            {displayed.map(post => {
+              const rate = engRate(post)
+              const isEmail = post.platform === 'Email'
+              return (
+                <tr key={post.id}>
+                  <td>
+                    <span className={`sm-badge sm-badge-${post.platform.toLowerCase()}`}>
+                      {post.platform}
+                    </span>
+                  </td>
+                  <td className="mu-muted">{fmtDate(post.date)}</td>
+                  <td className="sm-td-caption" title={post.caption}>
+                    {post.caption.length > 72 ? post.caption.slice(0, 72) + '…' : post.caption}
+                    {!isEmail && post.hashtags && (
+                      <div className="sm-td-hashtags">{post.hashtags.slice(0, 60)}{(post.hashtags.length > 60) ? '…' : ''}</div>
+                    )}
+                  </td>
+                  <td className="mu-td-num">{isEmail ? (post.sent?.toLocaleString() ?? '—') : (post.reach?.toLocaleString() ?? '—')}</td>
+                  <td className="mu-td-num">{isEmail ? (post.opened?.toLocaleString() ?? '—') : (post.likes?.toLocaleString() ?? '—')}</td>
+                  <td className="mu-td-num">{isEmail ? (post.clicked?.toLocaleString() ?? '—') : (post.comments?.toLocaleString() ?? '—')}</td>
+                  <td className="mu-td-num">
+                    {isEmail
+                      ? (post.openRate != null ? `${post.openRate.toFixed(1)}%` : '—')
+                      : (post.secondary?.toLocaleString() ?? '—')}
+                    {!isEmail && post.secondaryLabel && (
+                      <span className="mu-muted" style={{ fontSize: '0.7rem', marginLeft: '0.25rem' }}>{post.secondaryLabel}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={`mu-badge ${
+                      engClass(rate, post.platform) === 'sm-eng-excellent' ? 'mu-badge-ok' :
+                      engClass(rate, post.platform) === 'sm-eng-good'      ? 'mu-badge-type' : 'mu-badge-off'
+                    }`}>
+                      {rate.toFixed(1)}%
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </>
   )
@@ -408,7 +501,7 @@ function VanessaTab() {
             <div className="sm-vanessa-name">Vanessa</div>
             <div className="sm-vanessa-role">Social Media AI Advisor</div>
           </div>
-          <span className="sm-ai-badge">AI · Coming Soon</span>
+          <span className="sm-ai-badge">AI · Active</span>
         </div>
 
         <div className="sm-chat-messages">
@@ -478,10 +571,361 @@ function VanessaTab() {
         <div className="sm-vanessa-bio">
           <div className="sm-bio-title">About Vanessa</div>
           <p>Vanessa is your dedicated AI social media advisor, trained on best practices for nonprofit communications, donor engagement, and digital outreach in the Philippines.</p>
-          <p>Full AI capabilities are coming soon. Until then, check the <strong>Best Practices</strong> tab for proven strategies.</p>
+          <p>Ask her anything about content strategy, captions, hashtags, donor engagement, or platform growth — she's ready to help.</p>
         </div>
       </div>
 
+    </div>
+  )
+}
+
+// ─── ML Insights Tab ─────────────────────────────────────────────────────────
+
+const ML_INSIGHTS = [
+  {
+    icon: '📖',
+    title: 'Resident Stories Convert Best',
+    body: 'The model\'s #1 predictor of donation referrals. A privacy-safe, anonymized resident journey post drives conversions at dramatically higher rates than any other content type.',
+  },
+  {
+    icon: '⏰',
+    title: 'Tuesday–Thursday 9 AM–1 PM',
+    body: 'Posts during this window generate ~40% more donation referrals. Timing is the second strongest model predictor — avoid posting key asks on weekends.',
+  },
+  {
+    icon: '🎯',
+    title: '"Donate Now" Beats "Learn More"',
+    body: 'DonateNow CTAs outperform LearnMore by ~28 percentage points in referral rate. When asking for a gift, say so directly — ambiguous CTAs hurt conversions.',
+  },
+  {
+    icon: '📝',
+    title: 'Longer Captions Win',
+    body: 'Posts over 180 characters show significantly higher donation rates. Donors want narrative context, not a tagline. Tell the story — then ask.',
+  },
+  {
+    icon: '💡',
+    title: 'Viral ≠ Donations',
+    body: 'High-engagement posts don\'t always drive referrals. Milestone celebrations get likes. Impact Stories get donations. Optimize both goals intentionally.',
+  },
+  {
+    icon: '🙏',
+    title: 'Grateful Tone Outlasts Urgent',
+    body: 'Grateful and Hopeful tones convert better than Urgent. Urgency causes donor fatigue; gratitude and hope build the long-term relationships that sustain giving.',
+  },
+]
+
+function formatFeatureName(name: string): string {
+  const prefixes: [string, string][] = [
+    ['platform_',           'Platform: '],
+    ['post_type_',          'Post Type: '],
+    ['media_type_',         'Media: '],
+    ['day_of_week_',        'Day: '],
+    ['call_to_action_type_','CTA: '],
+    ['content_topic_',      'Topic: '],
+    ['sentiment_tone_',     'Tone: '],
+    ['campaign_name_',      'Campaign: '],
+  ]
+  for (const [prefix, label] of prefixes) {
+    if (name.startsWith(prefix)) {
+      return label + name.slice(prefix.length).replace(/_/g, ' ')
+    }
+  }
+  return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+}
+
+function InsightsTab() {
+  // ── Predictor state ──
+  const [captionMode,   setCaptionMode]   = useState<'paste' | 'manual'>('paste')
+  const [caption,       setCaption]       = useState('')
+  const [manualChars,   setManualChars]   = useState(200)
+  const [manualTags,    setManualTags]    = useState(0)
+  const [platform,      setPlatform]      = useState('Instagram')
+  const [postType,      setPostType]      = useState('ImpactStory')
+  const [mediaType,     setMediaType]     = useState('Photo')
+  const [dayOfWeek,     setDayOfWeek]     = useState('Tuesday')
+  const [postHour,      setPostHour]      = useState(10)
+  const [residentStory, setResidentStory] = useState(false)
+  const [hasCta,        setHasCta]        = useState(true)
+  const [ctaType,       setCtaType]       = useState('DonateNow')
+  const [contentTopic,  setContentTopic]  = useState('DonorImpact')
+  const [sentimentTone, setSentimentTone] = useState('Grateful')
+  const [isBoosted,     setIsBoosted]     = useState(false)
+  const [result,        setResult]        = useState<SocialEngagementResult | null>(null)
+  const [predLoading,   setPredLoading]   = useState(false)
+  const [predError,     setPredError]     = useState<string | null>(null)
+
+  // ── Feature importance ──
+  const [features, setFeatures] = useState<FeatureImportance[]>([])
+
+  useEffect(() => {
+    fetchSocialEngagementFeatureImportance()
+      .then(f => setFeatures(f.slice(0, 12)))
+      .catch(() => {/* non-fatal — ML API may not be running */})
+  }, [])
+
+  // Derive caption length and hashtag count — from pasted text or manual entry
+  const captionLength = captionMode === 'paste' ? caption.length : manualChars
+  const numHashtags   = captionMode === 'paste' ? (caption.match(/#\w+/g) ?? []).length : manualTags
+
+  async function runPrediction() {
+    setPredLoading(true)
+    setPredError(null)
+    setResult(null)
+    try {
+      const input: SocialEngagementInput = {
+        post_hour:                postHour,
+        caption_length:           captionLength || 200,
+        num_hashtags:             numHashtags,
+        mentions_count:           0,
+        boost_budget_php:         isBoosted ? 500 : 0,
+        is_boosted:               isBoosted,
+        features_resident_story:  residentStory,
+        has_call_to_action:       hasCta,
+        [`platform_${platform}`]:              1,
+        [`post_type_${postType}`]:             1,
+        [`media_type_${mediaType}`]:           1,
+        [`day_of_week_${dayOfWeek}`]:          1,
+        [`call_to_action_type_${ctaType}`]:    hasCta ? 1 : 0,
+        [`content_topic_${contentTopic}`]:     1,
+        [`sentiment_tone_${sentimentTone}`]:   1,
+      }
+      const res = await predictSocialEngagement(input)
+      setResult(res)
+    } catch (err) {
+      const isCors = err instanceof TypeError && String(err).includes('fetch')
+      setPredError(
+        isCors
+          ? 'ML API is blocked by CORS in local dev. This works in production once the API is redeployed.'
+          : 'ML API unavailable — make sure the prediction service is running.'
+      )
+    } finally {
+      setPredLoading(false)
+    }
+  }
+
+  const pct = result ? Math.round(result.probability * 100) : 0
+  const maxImportance = features[0]?.importance ?? 1
+
+  return (
+    <div className="sm-insights-page">
+
+      {/* ── Post Predictor ── */}
+      <div className="sm-predictor-card">
+
+        {/* Header */}
+        <div className="sm-predictor-header">
+          <div>
+            <h3 className="sm-predictor-title">Post Score Predictor</h3>
+            <p className="sm-predictor-sub">Paste your draft caption and fill in the post details to predict its donation referral likelihood before you publish.</p>
+          </div>
+          {result && (
+            <div className="sm-pred-result">
+              <div className={`sm-pred-score ${result.will_generate_donation ? 'sm-pred-yes' : 'sm-pred-no'}`}>
+                {pct}%
+              </div>
+              <div className={`sm-pred-verdict ${result.will_generate_donation ? 'sm-pred-verdict-yes' : 'sm-pred-verdict-no'}`}>
+                {result.will_generate_donation ? 'Likely to drive donations' : 'Low donation potential'}
+              </div>
+              <div className="sm-pred-track">
+                <div className="sm-pred-fill" style={{ width: `${pct}%`, background: result.will_generate_donation ? 'var(--color-success)' : 'var(--color-warning)' }} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Caption section */}
+        <div className="sm-pf-section">
+          <div className="sm-pf-section-header">
+            <div className="sm-pf-section-label">Caption</div>
+            <div className="sm-pf-mode-toggle">
+              <button
+                className={`sm-pf-mode-btn${captionMode === 'paste' ? ' active' : ''}`}
+                onClick={() => setCaptionMode('paste')}
+              >Paste text</button>
+              <button
+                className={`sm-pf-mode-btn${captionMode === 'manual' ? ' active' : ''}`}
+                onClick={() => setCaptionMode('manual')}
+              >Enter manually</button>
+            </div>
+          </div>
+
+          {captionMode === 'paste' ? (
+            <div className="sm-pf-caption-wrap">
+              <textarea
+                className="sm-pf-caption"
+                placeholder="Paste or type your caption here — character count and hashtags are detected automatically…"
+                value={caption}
+                onChange={e => setCaption(e.target.value)}
+                rows={4}
+              />
+              <div className="sm-pf-caption-meta">
+                <span className={captionLength > 400 ? 'sm-pf-hint' : 'sm-pf-meta-neutral'}>
+                  {captionLength} characters
+                </span>
+                {numHashtags > 0 && (
+                  <span className="sm-pf-hint">{numHashtags} hashtag{numHashtags !== 1 ? 's' : ''} detected</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="sm-pf-grid">
+              <div className="mu-form-row">
+                <label className="mu-form-label">Character Count</label>
+                <input
+                  type="number"
+                  className="mu-select"
+                  min={0}
+                  max={2200}
+                  value={manualChars}
+                  onChange={e => setManualChars(Math.max(0, Number(e.target.value)))}
+                />
+              </div>
+              <div className="mu-form-row">
+                <label className="mu-form-label">Number of Hashtags</label>
+                <input
+                  type="number"
+                  className="mu-select"
+                  min={0}
+                  max={30}
+                  value={manualTags}
+                  onChange={e => setManualTags(Math.max(0, Number(e.target.value)))}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Post details grid */}
+        <div className="sm-pf-section">
+          <div className="sm-pf-section-label">Post Details</div>
+          <div className="sm-pf-grid">
+            <div className="mu-form-row">
+              <label className="mu-form-label">Platform</label>
+              <select className="mu-select" value={platform} onChange={e => setPlatform(e.target.value)}>
+                {['Instagram','Facebook','TikTok','LinkedIn','Twitter','YouTube','WhatsApp'].map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="mu-form-row">
+              <label className="mu-form-label">Post Type</label>
+              <select className="mu-select" value={postType} onChange={e => setPostType(e.target.value)}>
+                {['ImpactStory','FundraisingAppeal','EventPromotion','EducationalContent','ThankYou','Campaign'].map(p => <option key={p} value={p}>{p.replace(/([A-Z])/g,' $1').trim()}</option>)}
+              </select>
+            </div>
+            <div className="mu-form-row">
+              <label className="mu-form-label">Media Type</label>
+              <select className="mu-select" value={mediaType} onChange={e => setMediaType(e.target.value)}>
+                {['Photo','Video','Reel','Carousel','Text'].map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="mu-form-row">
+              <label className="mu-form-label">Day of Week</label>
+              <select className="mu-select" value={dayOfWeek} onChange={e => setDayOfWeek(e.target.value)}>
+                {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="mu-form-row">
+              <label className="mu-form-label">Post Hour <span className="sm-pf-hint">{postHour}:00</span></label>
+              <input type="range" min={0} max={23} value={postHour} onChange={e => setPostHour(Number(e.target.value))} className="sm-pf-range" />
+            </div>
+          </div>
+        </div>
+
+        {/* Content details grid */}
+        <div className="sm-pf-section">
+          <div className="sm-pf-section-label">Content Details</div>
+          <div className="sm-pf-grid">
+            <div className="mu-form-row">
+              <label className="mu-form-label">Content Topic</label>
+              <select className="mu-select" value={contentTopic} onChange={e => setContentTopic(e.target.value)}>
+                {['DonorImpact','AwarenessRaising','Education','Health','Reintegration','SafehouseLife','Gratitude','EventRecap','CampaignLaunch'].map(p => <option key={p} value={p}>{p.replace(/([A-Z])/g,' $1').trim()}</option>)}
+              </select>
+            </div>
+            <div className="mu-form-row">
+              <label className="mu-form-label">Sentiment Tone</label>
+              <select className="mu-select" value={sentimentTone} onChange={e => setSentimentTone(e.target.value)}>
+                {['Grateful','Hopeful','Emotional','Celebratory','Informative','Urgent'].map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+            <div className="mu-form-row">
+              <label className="mu-form-label">Call to Action</label>
+              <select className="mu-select" value={ctaType} onChange={e => setCtaType(e.target.value)} disabled={!hasCta}>
+                {['DonateNow','LearnMore','ShareStory','SignUp'].map(p => <option key={p} value={p}>{p.replace(/([A-Z])/g,' $1').trim()}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Toggles */}
+        <div className="sm-pf-section">
+          <div className="sm-pf-section-label">Options</div>
+          <div className="sm-pf-toggles">
+            <label className="sm-pf-toggle">
+              <input type="checkbox" checked={residentStory} onChange={e => setResidentStory(e.target.checked)} />
+              <span>Features Resident Story</span>
+            </label>
+            <label className="sm-pf-toggle">
+              <input type="checkbox" checked={hasCta} onChange={e => setHasCta(e.target.checked)} />
+              <span>Has Call to Action</span>
+            </label>
+            <label className="sm-pf-toggle">
+              <input type="checkbox" checked={isBoosted} onChange={e => setIsBoosted(e.target.checked)} />
+              <span>Boosted Post</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="sm-predictor-footer">
+          <button className="sm-pred-btn" onClick={runPrediction} disabled={predLoading}>
+            {predLoading ? 'Scoring…' : 'Predict Donation Impact'}
+          </button>
+          {predError && <p className="sm-pred-error">{predError}</p>}
+        </div>
+      </div>
+
+      {/* ── Bottom section: feature importance + key insights ── */}
+      <div className="sm-insights-grid">
+
+        {/* Feature Importance */}
+        <div className="sm-insights-card">
+          <h3 className="sm-insights-card-title">What Drives Donations</h3>
+          <p className="sm-insights-card-sub">Top predictors from the ML model trained on 812 Lighthouse posts</p>
+          {features.length === 0 ? (
+            <p className="sm-empty" style={{ fontSize: '0.82rem' }}>Connect the ML API to load live feature importances.</p>
+          ) : (
+            <div className="sm-feat-list">
+              {features.map((f, i) => (
+                <div key={f.feature} className="sm-feat-row">
+                  <span className="sm-feat-rank">#{i + 1}</span>
+                  <span className="sm-feat-label">{formatFeatureName(f.feature)}</span>
+                  <div className="sm-feat-track">
+                    <div className="sm-feat-bar" style={{ width: `${(f.importance / maxImportance) * 100}%` }} />
+                  </div>
+                  <span className="sm-feat-pct">{(f.importance * 100).toFixed(1)}%</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Key Insights */}
+        <div className="sm-key-insights">
+          <h3 className="sm-insights-card-title">Key Findings</h3>
+          <p className="sm-insights-card-sub">Evidence-based rules from Lighthouse's own post history</p>
+          <div className="sm-insight-chips">
+            {ML_INSIGHTS.map(ins => (
+              <div key={ins.title} className="sm-insight-chip">
+                <span className="sm-insight-icon">{ins.icon}</span>
+                <div>
+                  <div className="sm-insight-title">{ins.title}</div>
+                  <div className="sm-insight-body">{ins.body}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
     </div>
   )
 }
@@ -491,11 +935,24 @@ function VanessaTab() {
 const TABS: { key: Tab; label: string }[] = [
   { key: 'analytics', label: 'Post Analytics' },
   { key: 'tips',      label: 'Best Practices' },
+  { key: 'insights',  label: 'ML Insights' },
   { key: 'vanessa',   label: 'Chat with Vanessa' },
 ]
 
 export default function SocialMediaPage() {
-  const [tab, setTab] = useState<Tab>('analytics')
+  const [tab,     setTab]     = useState<Tab>('analytics')
+  const [posts,   setPosts]   = useState<Post[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.getSocialMediaPosts()
+      .then(data => {
+        const mapped = data.map(fromApi)
+        setPosts(mapped.length > 0 ? mapped : MOCK_POSTS)
+      })
+      .catch(() => setPosts(MOCK_POSTS))
+      .finally(() => setLoading(false))
+  }, [])
 
   return (
     <div className="sm-page">
@@ -519,8 +976,9 @@ export default function SocialMediaPage() {
       </div>
 
       <div className="sm-tab-content">
-        {tab === 'analytics' && <AnalyticsTab />}
+        {tab === 'analytics' && <AnalyticsTab posts={posts} loading={loading} />}
         {tab === 'tips'      && <TipsTab />}
+        {tab === 'insights'  && <InsightsTab />}
         {tab === 'vanessa'   && <VanessaTab />}
       </div>
     </div>
