@@ -5,6 +5,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
+  font-family: var(--font-body);
+}
+
+.sw-dash h2,
+.sw-dash h3 {
+  font-family: var(--font-body);
 }
 
 .sw-dash-header {
@@ -25,6 +31,52 @@
 .sw-dash-header-meta {
   color: var(--text-muted);
   font-size: 0.9rem;
+}
+
+/* ---------- Masthead ---------- */
+.sw-dash-masthead {
+  padding: var(--space-xl) 0 var(--space-lg);
+  border-bottom: 1px solid var(--cove-seaglass);
+  font-family: var(--font-body);
+}
+
+.sw-dash-eyebrow {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--cove-tidal);
+  margin: 0 0 var(--space-md);
+}
+
+.sw-dash-masthead h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-md);
+  letter-spacing: -0.015em;
+}
+
+.sw-dash-masthead h1 em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--cove-tidal);
+}
+
+.sw-dash-dek {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.sw-dash-dek strong {
+  color: var(--cove-deep);
+  font-weight: 600;
 }
 
 .sw-dash-add-btn {
@@ -291,10 +343,12 @@
 }
 
 .sw-dash-stat-value {
-  font-size: 2rem;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 400;
   color: var(--cove-deep);
   line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .sw-dash-stat-label {

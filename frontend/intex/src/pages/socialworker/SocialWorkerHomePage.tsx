@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 import {
   fetchResidents,
   fetchUpcomingEvents,
@@ -32,6 +33,7 @@ import './SocialWorkerHomePage.css'
 function SocialWorkerHomePage() {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { user } = useAuth()
   const base = pathname.startsWith('/admin') ? '/admin/sw' : '/socialworker/dashboard'
   const [residents, setResidents] = useState<Resident[]>([])
   const [events, setEvents] = useState<ScheduleEvent[]>([])
@@ -83,16 +85,35 @@ function SocialWorkerHomePage() {
     day: 'numeric',
   })
 
+  const rawName = user?.username ?? ''
+  const firstName = rawName
+    ? rawName.charAt(0).toUpperCase() + rawName.slice(1).split(/[@.\s]/)[0]
+    : ''
+  const hour = new Date().getHours()
+  const greeting =
+    hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening'
+
   return (
     <div className="sw-dash">
-      <div className="sw-dash-header">
-        <div>
-          <h1>Welcome back</h1>
-          <div className="sw-dash-header-meta">{today}</div>
-        </div>
-      </div>
-
-      <StatStrip residents={residents} actionItems={actions} />
+      <header className="sw-dash-masthead">
+        <p className="sw-dash-eyebrow">{today}</p>
+        <h1>
+          {greeting}
+          {firstName ? (
+            <>
+              , <em>{firstName}</em>
+            </>
+          ) : null}
+          .
+        </h1>
+        <p className="sw-dash-dek">
+          <strong>{incidents.length}</strong> open{' '}
+          {incidents.length === 1 ? 'incident' : 'incidents'} ·{' '}
+          <strong>{actions.length}</strong>{' '}
+          {actions.length === 1 ? 'task' : 'tasks'} ·{' '}
+          <strong>{residents.length}</strong> residents on your caseload
+        </p>
+      </header>
 
       <CriticalAlerts
         residents={residents}
@@ -107,11 +128,11 @@ function SocialWorkerHomePage() {
         }
       />
 
-      <MentalHealthSnapshot
-        residents={residents}
-        assessments={assessments}
-        onResidentClick={goToResidentById}
-      />
+      <UpcomingSchedule events={events} />
+
+      <ActionItems items={actions} onItemClick={goToResidentById} />
+
+      <StatStrip residents={residents} actionItems={actions} />
 
       <ReadinessPipeline
         residents={residents}
@@ -122,9 +143,11 @@ function SocialWorkerHomePage() {
         onResidentClick={goToResidentById}
       />
 
-      <UpcomingSchedule events={events} />
-
-      <ActionItems items={actions} onItemClick={goToResidentById} />
+      <MentalHealthSnapshot
+        residents={residents}
+        assessments={assessments}
+        onResidentClick={goToResidentById}
+      />
 
       <section className="sw-dash-section">
         <header className="sw-dash-section-header">
