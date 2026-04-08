@@ -225,6 +225,9 @@ public class ResidentsController : ControllerBase
         public string? internal_code { get; set; }
         public string? case_control_no { get; set; }
         public string? current_risk_level { get; set; }
+        public string? assigned_social_worker { get; set; }
+        public DateOnly? last_action_date { get; set; }
+        public string? last_action_type { get; set; }
 
         // Demographic / case (one-hot + ordinal)
         public double safehouse_id { get; set; }
@@ -336,6 +339,7 @@ public class ResidentsController : ControllerBase
                 internal_code = r.InternalCode,
                 case_control_no = r.CaseControlNo,
                 current_risk_level = r.CurrentRiskLevel,
+                assigned_social_worker = r.AssignedSocialWorker,
                 safehouse_id = r.SafehouseId ?? 0,
                 sub_cat_trafficked = (r.SubCatTrafficked ?? false) ? 1 : 0,
                 sub_cat_child_labor = (r.SubCatChildLabor ?? false) ? 1 : 0,
@@ -463,6 +467,36 @@ public class ResidentsController : ControllerBase
                 f.active_interventions = plans.Count(p =>
                     string.Equals((p.Status ?? "").Trim(), "active", StringComparison.OrdinalIgnoreCase));
             }
+
+            // ── Last action: most recent activity touching this resident ──
+            (DateOnly?, string?) latestAction = (null, null);
+            if (procByRes.TryGetValue(r.ResidentId, out var pl))
+            {
+                var d = pl.Where(p => p.SessionDate.HasValue).Max(p => (DateOnly?)p.SessionDate);
+                if (d.HasValue && (latestAction.Item1 == null || d > latestAction.Item1))
+                    latestAction = (d, "Counseling session");
+            }
+            if (hvByRes.TryGetValue(r.ResidentId, out var vl))
+            {
+                var d = vl.Where(v => v.VisitDate.HasValue).Max(v => (DateOnly?)v.VisitDate);
+                if (d.HasValue && (latestAction.Item1 == null || d > latestAction.Item1))
+                    latestAction = (d, "Home visit");
+            }
+            if (incByRes.TryGetValue(r.ResidentId, out var il))
+            {
+                var d = il.Where(i => i.IncidentDate.HasValue).Max(i => (DateOnly?)i.IncidentDate);
+                if (d.HasValue && (latestAction.Item1 == null || d > latestAction.Item1))
+                    latestAction = (d, "Incident report");
+            }
+            if (ivByRes.TryGetValue(r.ResidentId, out var ipl))
+            {
+                var d = ipl.Where(p => p.UpdatedAt.HasValue)
+                    .Max(p => (DateOnly?)DateOnly.FromDateTime(p.UpdatedAt!.Value));
+                if (d.HasValue && (latestAction.Item1 == null || d > latestAction.Item1))
+                    latestAction = (d, "Intervention plan update");
+            }
+            f.last_action_date = latestAction.Item1;
+            f.last_action_type = latestAction.Item2;
 
             results.Add(f);
         }

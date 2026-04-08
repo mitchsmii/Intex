@@ -59,6 +59,9 @@ export interface ResidentMlFeatures {
   internal_code: string | null
   case_control_no: string | null
   current_risk_level: string | null
+  assigned_social_worker: string | null
+  last_action_date: string | null
+  last_action_type: string | null
   safehouse_id: number
   sub_cat_trafficked: number
   sub_cat_child_labor: number
