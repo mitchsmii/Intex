@@ -93,6 +93,7 @@ export default function PartnersPage() {
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [kpiFilter,  setKpiFilter]  = useState<string | null>(null)
   const [sortCol,    setSortCol]    = useState<SortKey>('name')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
   const [showAdd,    setShowAdd]    = useState(false)
@@ -120,6 +121,8 @@ export default function PartnersPage() {
 
   const filtered = partners
     .filter(p => {
+      if (kpiFilter === 'active'  && p.status !== 'Active') return false
+      if (kpiFilter === 'donated' && !donations.some(d => d.supporterId === p.supporterId)) return false
       const matchSearch = !search ||
         (p.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
         (p.organizationName ?? '').toLowerCase().includes(search.toLowerCase()) ||
@@ -166,13 +169,17 @@ export default function PartnersPage() {
       </div>
 
       <div className="mu-kpi-row">
-        {[
-          { label: 'Total Partners', value: String(partners.length) },
-          { label: 'Active', value: String(partners.filter(p => p.status === 'Active').length) },
-          { label: 'With Donations', value: String(partners.filter(p => donations.some(d => d.supporterId === p.supporterId)).length) },
-          { label: 'Unique Types', value: String(types.length) },
-        ].map(k => (
-          <div key={k.label} className="mu-kpi">
+        {([
+          { label: 'Total Partners',  value: String(partners.length),                                                                           key: null },
+          { label: 'Active',          value: String(partners.filter(p => p.status === 'Active').length),                                        key: 'active' },
+          { label: 'With Donations',  value: String(partners.filter(p => donations.some(d => d.supporterId === p.supporterId)).length),         key: 'donated' },
+          { label: 'Unique Types',    value: String(types.length),                                                                              key: null },
+        ] as { label: string; value: string; key: string | null }[]).map(k => (
+          <div
+            key={k.label}
+            className={`mu-kpi${k.key ? ' mu-kpi-clickable' : ''}${kpiFilter === k.key && k.key ? ' mu-kpi-active' : ''}`}
+            onClick={k.key ? () => setKpiFilter(f => f === k.key ? null : k.key) : undefined}
+          >
             <div className="mu-kpi-value">{k.value}</div>
             <div className="mu-kpi-label">{k.label}</div>
           </div>

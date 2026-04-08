@@ -89,6 +89,7 @@ function App() {
               <Route path="users/social-workers" element={<SocialWorkersPage />} />
               <Route path="users/partners" element={<PartnersPage />} />
               <Route path="users/residents" element={<ResidentsManagePage />} />
+              <Route path="residents/:id" element={<ResidentDetailPage />} />
               <Route path="users/donors" element={<DonorsPage />} />
             </Route>
           </Route>

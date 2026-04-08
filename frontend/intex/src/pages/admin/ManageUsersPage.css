@@ -69,6 +69,22 @@
   border-color: var(--cove-tidal);
 }
 
+.mu-td-link {
+  color: var(--cove-tidal);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mu-td-link:hover {
+  text-decoration: underline;
+  color: var(--cove-deep);
+}
+
+.mu-badge-archived {
+  background: #f3f0ff;
+  color: #6d28d9;
+}
+
 /* ── KPI row ── */
 .mu-kpi-row {
   display: grid;
@@ -88,6 +104,36 @@
 .mu-kpi-warn {
   border-color: var(--color-warning);
   background: #fffdf0;
+}
+
+.mu-kpi-clickable {
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+.mu-kpi-clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--cove-tidal);
+}
+
+.mu-kpi-clickable:active {
+  transform: translateY(0);
+}
+
+.mu-kpi-active {
+  border-color: var(--cove-tidal) !important;
+  background: #edf7f7 !important;
+  box-shadow: 0 0 0 2px var(--cove-tidal) !important;
+}
+
+.mu-kpi-active .mu-kpi-value {
+  color: var(--cove-tidal);
+}
+
+.mu-kpi-active .mu-kpi-label {
+  color: var(--cove-deep);
+  font-weight: 600;
 }
 
 .mu-kpi-value {
