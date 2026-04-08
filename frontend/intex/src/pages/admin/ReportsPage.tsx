@@ -580,11 +580,16 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
       {status === 'done' && rows.length > 0 && (
         <div className="rp-collapsible" style={{ marginTop: 'var(--space-md)' }}>
           <button className="rp-collapsible-btn" onClick={() => setShowInsights(v => !v)}>
-            {showInsights ? 'Hide retention insights' : 'Show retention insights'}
+            {showInsights ? 'Hide why donors stop giving' : 'Show why donors stop giving'}
           </button>
           {showInsights && (
         <div className="rp-seg-section">
-          <h4 className="rp-card-title">Retention Insights</h4>
+          <div className="rp-seg-head">
+            <h4 className="rp-card-title">Why Donors Stop Giving</h4>
+            <p className="rp-seg-lede">
+              Every bar shows the percentage of donors from that source who eventually stopped giving. Lower is better.
+            </p>
+          </div>
           <div className="rp-seg-grid">
             {([
               { title: 'By Acquisition Channel' as const, rows: retentionInsights.byChannel },
