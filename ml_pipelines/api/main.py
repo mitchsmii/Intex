@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import json
 from pathlib import Path
 from typing import Any
 
@@ -37,6 +39,33 @@ DONOR_MODEL_PATH = SAVED_MODELS_DIR / "donor_churn_model.pkl"
 DONOR_FEATURES_PATH = SAVED_MODELS_DIR / "donor_churn_features.pkl"
 SOCIAL_MODEL_PATH = SAVED_MODELS_DIR / "social_engagement_classifier.pkl"
 SOCIAL_FEATURES_PATH = SAVED_MODELS_DIR / "social_engagement_features.pkl"
+RESIDENT_RISK_MODEL_PATH = SAVED_MODELS_DIR / "resident_risk_model.pkl"
+RESIDENT_RISK_METADATA_PATH = SAVED_MODELS_DIR / "resident_risk_metadata.json"
+EDUCATION_OUTCOME_MODEL_PATH = SAVED_MODELS_DIR / "education_outcome_model.pkl"
+EDUCATION_OUTCOME_METADATA_PATH = SAVED_MODELS_DIR / "education_outcome_metadata.json"
+
+
+def _load_feature_list_from_metadata(path: Path, key: str) -> list[str]:
+    """Load an ordered feature name list from a metadata JSON file.
+
+    Args:
+        path: Path to the metadata JSON.
+        key: Top-level key whose value is the feature list.
+
+    Returns:
+        list[str]: Ordered feature names.
+    """
+    if not path.exists():
+        raise HTTPException(status_code=500, detail=f"Missing metadata file: {path.name}")
+    with path.open("r", encoding="utf-8") as fh:
+        meta = json.load(fh)
+    features = meta.get(key)
+    if not isinstance(features, list) or not features:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Metadata {path.name} missing feature list under '{key}'.",
+        )
+    return [str(f) for f in features]
 
 
 def _load_artifact(path: Path) -> Any:
@@ -259,3 +288,47 @@ def predict_social_engagement(payload: dict[str, Any]) -> dict[str, Any]:
         "will_generate_donation": bool(will_generate_donation),
         "probability": float(probability),
     }
+
+
+@app.post("/predict/resident-risk")
+def predict_resident_risk(payload: dict[str, Any]) -> dict[str, Any]:
+    """Predict whether a resident is high-risk (High or Critical).
+
+    Args:
+        payload: JSON payload with resident case, health, and engagement features.
+
+    Returns:
+        dict[str, Any]: Predicted high-risk label and probability.
+    """
+    model = _load_artifact(RESIDENT_RISK_MODEL_PATH)
+    features = _load_feature_list_from_metadata(
+        RESIDENT_RISK_METADATA_PATH, "input_features"
+    )
+
+    aligned = _align_features(payload, features)
+    probability = _predict_probability(model, aligned)
+    is_high_risk = probability >= 0.5
+
+    return {"is_high_risk": bool(is_high_risk), "probability": float(probability)}
+
+
+@app.post("/predict/education-outcome")
+def predict_education_outcome(payload: dict[str, Any]) -> dict[str, Any]:
+    """Predict whether a resident will complete their education program.
+
+    Args:
+        payload: JSON payload with early-window education engagement features.
+
+    Returns:
+        dict[str, Any]: Predicted completion label and probability.
+    """
+    model = _load_artifact(EDUCATION_OUTCOME_MODEL_PATH)
+    features = _load_feature_list_from_metadata(
+        EDUCATION_OUTCOME_METADATA_PATH, "recommended_features"
+    )
+
+    aligned = _align_features(payload, features)
+    probability = _predict_probability(model, aligned)
+    will_complete = probability >= 0.5
+
+    return {"will_complete": bool(will_complete), "probability": float(probability)}

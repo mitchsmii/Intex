@@ -32,8 +32,14 @@ export default function LoginPage() {
     )
   }
 
-  // Already logged in — redirect immediately
+  // Already logged in — redirect immediately.
+  // Admins always go to the admin dashboard, even if a stale `?redirect=`
+  // query param (e.g. left over from a prior social-worker session) points
+  // elsewhere. Otherwise honor the redirect param if present.
   if (user) {
+    if (user.roles.includes('Admin')) {
+      return <Navigate to="/admin" replace />
+    }
     const redirect = searchParams.get('redirect')
     return <Navigate to={redirect ?? getRoleRedirect(user.roles)} replace />
   }

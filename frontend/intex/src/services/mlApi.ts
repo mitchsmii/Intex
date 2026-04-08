@@ -65,3 +65,54 @@ export function predictSocialEngagement(
 ): Promise<SocialEngagementResult> {
   return mlPost<SocialEngagementResult>('/predict/social-engagement', input)
 }
+
+export interface ResidentRiskInput {
+  days_in_care: number
+  initial_risk_level_enc: number
+  total_sessions: number
+  pct_concerns_flagged: number
+  pct_progress_noted: number
+  pct_referral_made: number
+  emotional_improvement_rate: number
+  avg_general_health_score: number
+  avg_sleep_quality_score: number
+  health_trend_slope: number
+  avg_attendance_rate: number
+  total_incidents: number
+  unresolved_incidents: number
+  total_home_visits: number
+  pct_visits_safety_concerns: number
+  [key: string]: number | boolean | undefined
+}
+
+export interface ResidentRiskResult {
+  is_high_risk: boolean
+  probability: number
+}
+
+export function predictResidentRisk(
+  input: ResidentRiskInput,
+): Promise<ResidentRiskResult> {
+  return mlPost<ResidentRiskResult>('/predict/resident-risk', input)
+}
+
+export interface EducationOutcomeInput {
+  early_health_mean: number
+  early_attendance_mean: number
+  early_progress_mean: number
+  early_emotional_improvement_rate: number
+  early_attendance_slope: number
+  initial_progress: number
+  [key: string]: number | boolean | undefined
+}
+
+export interface EducationOutcomeResult {
+  will_complete: boolean
+  probability: number
+}
+
+export function predictEducationOutcome(
+  input: EducationOutcomeInput,
+): Promise<EducationOutcomeResult> {
+  return mlPost<EducationOutcomeResult>('/predict/education-outcome', input)
+}
