@@ -102,6 +102,7 @@ export default function SocialWorkersPage() {
   const [residents,  setResidents]  = useState<Resident[]>([])
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
+  const [kpiFilter,  setKpiFilter]  = useState<string | null>(null)
   const [sortCol,    setSortCol]    = useState<SortKey>('fullName')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
   const [showAdd,    setShowAdd]    = useState(false)
@@ -159,10 +160,12 @@ export default function SocialWorkersPage() {
   }
 
   const filtered = workers
-    .filter(w =>
-      !search || w.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      (w.email ?? '').toLowerCase().includes(search.toLowerCase())
-    )
+    .filter(w => {
+      if (kpiFilter === 'active'   && w.status !== 'Active') return false
+      if (kpiFilter === 'assigned' && !w.safehouseId)        return false
+      return !search || w.fullName.toLowerCase().includes(search.toLowerCase()) ||
+        (w.email ?? '').toLowerCase().includes(search.toLowerCase())
+    })
     .sort((a, b) => {
       let va = '', vb = ''
       if (sortCol === 'fullName')    { va = a.fullName; vb = b.fullName }
@@ -205,13 +208,17 @@ export default function SocialWorkersPage() {
       </div>
 
       <div className="mu-kpi-row">
-        {[
-          { label: 'Total Social Workers', value: String(workers.length) },
-          { label: 'Active', value: String(active) },
-          { label: 'Assigned to Safehouses', value: String(workers.filter(w => w.safehouseId).length) },
-          { label: 'Safehouses with Staff', value: String(new Set(workers.filter(w => w.safehouseId).map(w => w.safehouseId)).size) },
-        ].map(k => (
-          <div key={k.label} className="mu-kpi">
+        {([
+          { label: 'Total Social Workers',   value: String(workers.length),                                                              key: null },
+          { label: 'Active',                 value: String(active),                                                                      key: 'active' },
+          { label: 'Assigned to Safehouses', value: String(workers.filter(w => w.safehouseId).length),                                  key: 'assigned' },
+          { label: 'Safehouses with Staff',  value: String(new Set(workers.filter(w => w.safehouseId).map(w => w.safehouseId)).size),   key: null },
+        ] as { label: string; value: string; key: string | null }[]).map(k => (
+          <div
+            key={k.label}
+            className={`mu-kpi${k.key ? ' mu-kpi-clickable' : ''}${kpiFilter === k.key && k.key ? ' mu-kpi-active' : ''}`}
+            onClick={k.key ? () => setKpiFilter(f => f === k.key ? null : k.key) : undefined}
+          >
             <div className="mu-kpi-value">{k.value}</div>
             <div className="mu-kpi-label">{k.label}</div>
           </div>

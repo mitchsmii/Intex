@@ -94,6 +94,7 @@ export default function DonorsPage() {
   const [loading,    setLoading]    = useState(true)
   const [search,     setSearch]     = useState('')
   const [chanFilter, setChanFilter] = useState('')
+  const [kpiFilter,  setKpiFilter]  = useState<string | null>(null)
   const [sortCol,    setSortCol]    = useState<SortKey>('name')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
   const [showAdd,    setShowAdd]    = useState(false)
@@ -123,6 +124,8 @@ export default function DonorsPage() {
 
   const filtered = donors
     .filter(d => {
+      if (kpiFilter === 'recurring' && !isRecurring(d.supporterId))    return false
+      if (kpiFilter === 'active'    && d.status !== 'Active')           return false
       const matchSearch = !search ||
         (d.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
         (`${d.firstName ?? ''} ${d.lastName ?? ''}`).toLowerCase().includes(search.toLowerCase()) ||
@@ -175,13 +178,17 @@ export default function DonorsPage() {
       </div>
 
       <div className="mu-kpi-row">
-        {[
-          { label: 'Total Donors',     value: String(donors.length) },
-          { label: 'Recurring Donors', value: String(recurring) },
-          { label: 'Active Status',    value: String(donors.filter(d => d.status === 'Active').length) },
-          { label: 'Total Raised',     value: fmtAmt(totalRaised, currency) },
-        ].map(k => (
-          <div key={k.label} className="mu-kpi">
+        {([
+          { label: 'Total Donors',     value: String(donors.length),                                     key: null },
+          { label: 'Recurring Donors', value: String(recurring),                                          key: 'recurring' },
+          { label: 'Active Status',    value: String(donors.filter(d => d.status === 'Active').length),   key: 'active' },
+          { label: 'Total Raised',     value: fmtAmt(totalRaised, currency),                              key: null },
+        ] as { label: string; value: string; key: string | null }[]).map(k => (
+          <div
+            key={k.label}
+            className={`mu-kpi${k.key ? ' mu-kpi-clickable' : ''}${kpiFilter === k.key && k.key ? ' mu-kpi-active' : ''}`}
+            onClick={k.key ? () => setKpiFilter(f => f === k.key ? null : k.key) : undefined}
+          >
             <div className="mu-kpi-value">{k.value}</div>
             <div className="mu-kpi-label">{k.label}</div>
           </div>

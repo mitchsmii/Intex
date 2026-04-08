@@ -11,6 +11,7 @@ import {
   fetchIncidentReports,
   fetchAssessments,
 } from '../../services/socialWorkerService'
+import { api } from '../../services/apiService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import IncidentBanner from '../../components/socialworker/IncidentBanner'
 import type { Resident } from '../../types/Resident'
@@ -53,7 +54,12 @@ function ResidentDetailPage() {
   const [alertDismissed, setAlertDismissed] = useState(false)
   const residentId = id ? Number(id) : null
 
+  // Detect admin context from URL
+  const isAdmin = location.pathname.startsWith('/admin')
+  const backPath = isAdmin ? '/admin/users/residents' : '/socialworker/dashboard/residents'
+
   const [resident, setResident] = useState<Resident | null>(null)
+  const [safehouses, setSafehouses] = useState<Safehouse[]>([])
   const [safehouseName, setSafehouseName] = useState<string | null>(null)
   const [education, setEducation] = useState<EducationRecord[]>([])
   const [health, setHealth] = useState<HealthWellbeingRecord[]>([])
@@ -63,6 +69,12 @@ function ResidentDetailPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Admin-only state
+  const [showEdit, setShowEdit] = useState(false)
+  const [editForm, setEditForm] = useState({ safehouseId: '', assignedSocialWorker: '', currentRiskLevel: '' })
+  const [saving, setSaving] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   useEffect(() => {
     if (residentId == null) return
@@ -79,6 +91,7 @@ function ResidentDetailPage() {
     ])
       .then(([r, sh, edu, hw, rec, vis, inc, asm]) => {
         setResident(r)
+        setSafehouses(sh)
         const matched = sh.find((s) => s.safehouseId === r.safehouseId)
         setSafehouseName(matched?.name ?? null)
         setEducation(edu)
@@ -212,17 +225,107 @@ function ResidentDetailPage() {
       .slice(0, 12)
   }, [recordings, visits, assessments, incidents])
 
+  // ── Admin actions ──────────────────────────────────────────────────────────
+
+  function openEditModal() {
+    if (!resident) return
+    setEditForm({
+      safehouseId: String(resident.safehouseId ?? ''),
+      assignedSocialWorker: resident.assignedSocialWorker ?? '',
+      currentRiskLevel: resident.currentRiskLevel ?? '',
+    })
+    setActionError(null)
+    setShowEdit(true)
+  }
+
+  async function handleSaveEdit() {
+    if (!residentId) return
+    setSaving(true)
+    setActionError(null)
+    try {
+      await api.updateResident(residentId, {
+        ...(editForm.safehouseId ? { safehouseId: Number(editForm.safehouseId) } : {}),
+        ...(editForm.assignedSocialWorker ? { assignedSocialWorker: editForm.assignedSocialWorker } : {}),
+        ...(editForm.currentRiskLevel ? { currentRiskLevel: editForm.currentRiskLevel } : {}),
+      })
+      // Re-fetch full resident to get updated data
+      const updated = await fetchResident(residentId)
+      setResident(updated)
+      const matched = safehouses.find(s => s.safehouseId === updated.safehouseId)
+      setSafehouseName(matched?.name ?? null)
+      setShowEdit(false)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to save changes.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleStatusChange(newStatus: string) {
+    if (!residentId || !resident || newStatus === resident.caseStatus) return
+    setSaving(true)
+    setActionError(null)
+    try {
+      await api.updateResident(residentId, { caseStatus: newStatus })
+      setResident(prev => prev ? { ...prev, caseStatus: newStatus } : prev)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to update status.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleArchiveToggle() {
+    if (!residentId || !resident) return
+    setSaving(true)
+    setActionError(null)
+    const newStatus = resident.caseStatus === 'Archived' ? 'In Progress' : 'Archived'
+    try {
+      await api.updateResident(residentId, { caseStatus: newStatus })
+      const updated = await fetchResident(residentId)
+      setResident(updated)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to update status.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   if (loading) return <LoadingSpinner size="lg" />
   if (error) return <p className="rd-error">Error: {error}</p>
   if (!resident) return <p className="rd-error">Resident not found.</p>
 
   const subCats = SUB_CAT_LABELS.filter(([key]) => resident[key] === true).map(([, label]) => label)
+  const isArchived = resident.caseStatus === 'Archived'
 
   return (
     <div className="rd-page">
-      <Link to="/socialworker/dashboard/residents" className="rd-back">
-        ← Back to Residents
-      </Link>
+      <div className="rd-top-bar">
+        <Link to={backPath} className="rd-back">
+          ← Back to Residents
+        </Link>
+
+        {isAdmin && (
+          <div className="rd-admin-actions">
+            <button className="rd-btn rd-btn-edit" onClick={openEditModal}>
+              Edit Profile
+            </button>
+            <button
+              className={`rd-btn ${isArchived ? 'rd-btn-reactivate' : 'rd-btn-archive'}`}
+              onClick={handleArchiveToggle}
+              disabled={saving}
+            >
+              {isArchived ? 'Reactivate' : 'Archive'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {actionError && (
+        <div className="rd-action-error">{actionError}</div>
+      )}
 
       {unresolvedIncidents.length > 0 && (
         <section className="rd-incidents">
@@ -306,7 +409,7 @@ function ResidentDetailPage() {
         </div>
       </header>
 
-      {/* Status strip — the "are they okay / am I behind" answer */}
+      {/* Status strip */}
       <section className="rd-status-strip">
         <div className="rd-status-cell">
           <div className="rd-status-label">Last contact</div>
@@ -354,7 +457,7 @@ function ResidentDetailPage() {
       </section>
 
       <div className="rd-grid">
-        {/* Activity Timeline — chronological narrative, the primary view */}
+        {/* Activity Timeline */}
         <section className="rd-card rd-card--timeline">
           <h2>Activity</h2>
           {timeline.length === 0 ? (
@@ -377,9 +480,8 @@ function ResidentDetailPage() {
           )}
         </section>
 
-        {/* Right column: Mental Health + compact Case Info */}
+        {/* Right column */}
         <div className="rd-side">
-          {/* Mental Health Snapshot */}
           <section className="rd-card">
             <h2>Mental Health</h2>
             {assessments.length === 0 ? (
@@ -411,10 +513,26 @@ function ResidentDetailPage() {
             )}
           </section>
 
-          {/* Case Information — reference, compact */}
           <section className="rd-card">
             <h2>Case Information</h2>
             <dl className="rd-dl">
+              <dt>Case Status</dt>
+              <dd>
+                <select
+                  className="rd-status-select"
+                  value={resident.caseStatus ?? ''}
+                  onChange={e => handleStatusChange(e.target.value)}
+                  disabled={saving || isArchived}
+                >
+                  <option value="Not Started">Not Started</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="On Hold">On Hold</option>
+                  <option value="Completed">Completed</option>
+                  {resident.caseStatus && !['Not Started','In Progress','On Hold','Completed'].includes(resident.caseStatus) && (
+                    <option value={resident.caseStatus}>{resident.caseStatus}</option>
+                  )}
+                </select>
+              </dd>
               <dt>Category</dt>
               <dd>{resident.caseCategory ?? '—'}</dd>
               {subCats.length > 0 && (
@@ -445,7 +563,7 @@ function ResidentDetailPage() {
         </div>
       </div>
 
-      {/* Reference cards — only render if data exists */}
+      {/* Reference cards */}
       {(latestHealth || latestEducation) && (
         <div className="rd-grid rd-grid--refs">
           {latestHealth && (
@@ -510,6 +628,69 @@ function ResidentDetailPage() {
               ? 'No health records on file.'
               : 'No education records on file.'}
         </p>
+      )}
+
+      {/* ── Edit Profile Modal (admin only) ── */}
+      {isAdmin && showEdit && (
+        <div className="rd-modal-backdrop" onClick={() => setShowEdit(false)}>
+          <div className="rd-modal" onClick={e => e.stopPropagation()}>
+            <div className="rd-modal-header">
+              <h2>Edit Profile</h2>
+              <button className="rd-modal-close" onClick={() => setShowEdit(false)} aria-label="Close">×</button>
+            </div>
+
+            {actionError && <div className="rd-action-error">{actionError}</div>}
+
+            <div className="rd-modal-field">
+              <label className="rd-modal-label">Safehouse</label>
+              <select
+                className="rd-modal-input"
+                value={editForm.safehouseId}
+                onChange={e => setEditForm(f => ({ ...f, safehouseId: e.target.value }))}
+              >
+                <option value="">— Unchanged —</option>
+                {safehouses.map(sh => (
+                  <option key={sh.safehouseId} value={sh.safehouseId}>
+                    {sh.name ?? sh.safehouseCode ?? `SH${sh.safehouseId}`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="rd-modal-field">
+              <label className="rd-modal-label">Assigned Social Worker</label>
+              <input
+                type="text"
+                className="rd-modal-input"
+                value={editForm.assignedSocialWorker}
+                onChange={e => setEditForm(f => ({ ...f, assignedSocialWorker: e.target.value }))}
+                placeholder="Full name"
+              />
+            </div>
+
+            <div className="rd-modal-field">
+              <label className="rd-modal-label">Risk Level</label>
+              <select
+                className="rd-modal-input"
+                value={editForm.currentRiskLevel}
+                onChange={e => setEditForm(f => ({ ...f, currentRiskLevel: e.target.value }))}
+              >
+                <option value="">— Unchanged —</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+
+            <div className="rd-modal-actions">
+              <button className="rd-modal-cancel" onClick={() => setShowEdit(false)}>Cancel</button>
+              <button className="rd-modal-save" onClick={handleSaveEdit} disabled={saving}>
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

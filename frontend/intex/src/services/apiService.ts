@@ -43,6 +43,7 @@ export interface Resident {
   caseStatus: string | null
   sex: string | null
   dateOfBirth: string | null
+  ageUponAdmission: string | null
   dateOfAdmission: string | null
   assignedSocialWorker: string | null
   reintegrationStatus: string | null
@@ -232,6 +233,20 @@ async function authPatch(path: string): Promise<void> {
   })
 }
 
+async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
+  const token = localStorage.getItem('cove_token')
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+  return res.json() as Promise<T>
+}
+
 // ── API calls ──────────────────────────────────────────────────────────────
 
 export const api = {
@@ -261,7 +276,7 @@ export const api = {
   getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
   getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
   getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
-  createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string }) =>
+  createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string; caseStatus?: string }) =>
     authPost<Resident>('/api/residents', body),
   createSocialWorker:         (body: { fullName: string; email?: string; phone?: string; safehouseId?: number | null; status?: string }) =>
     authPost<SocialWorker>('/api/socialworkers', body),
@@ -270,4 +285,6 @@ export const api = {
   getUnreadNotificationCount: () => authGet<number>('/api/notifications/unread-count'),
   getNotifications:           () => authGet<SwNotification[]>('/api/notifications'),
   markAllNotificationsRead:   () => authPatch('/api/notifications/mark-all-read'),
+  updateResident:             (id: number, body: Partial<{ safehouseId: number; assignedSocialWorker: string; currentRiskLevel: string; caseStatus: string }>) =>
+    authPatchWithBody<Resident>(`/api/residents/${id}`, body),
 }

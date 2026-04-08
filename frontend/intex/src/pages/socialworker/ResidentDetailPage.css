@@ -6,6 +6,14 @@
   gap: var(--space-lg);
 }
 
+.rd-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
 .rd-back {
   font-size: 0.85rem;
   color: var(--cove-tidal);
@@ -14,6 +22,189 @@
 }
 
 .rd-back:hover { text-decoration: underline; }
+
+/* ── Admin action buttons ── */
+.rd-admin-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.rd-btn {
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  font-size: 0.83rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  font-family: inherit;
+}
+
+.rd-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.rd-btn-edit {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+  border: 1px solid var(--cove-seaglass);
+}
+
+.rd-btn-edit:hover:not(:disabled) { background: var(--cove-seaglass); }
+
+.rd-btn-archive {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.rd-btn-archive:hover:not(:disabled) { background: #fde68a; }
+
+.rd-btn-reactivate {
+  background: var(--cove-seafoam);
+  color: var(--cove-deep);
+  border: 1px solid var(--cove-seaglass);
+}
+
+.rd-btn-reactivate:hover:not(:disabled) { background: var(--cove-seaglass); }
+
+/* ── Action error ── */
+.rd-action-error {
+  background: rgba(201, 74, 74, 0.1);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--color-error);
+  font-size: 0.85rem;
+}
+
+/* ── Edit modal ── */
+.rd-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+}
+
+.rd-modal {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 440px;
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.rd-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rd-modal-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  margin: 0;
+}
+
+.rd-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.rd-modal-close:hover { color: var(--text-primary); }
+
+.rd-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.rd-modal-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.rd-modal-input {
+  padding: 9px var(--space-md);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-family: inherit;
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.rd-modal-input:focus { border-color: var(--cove-tidal); }
+
+.rd-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-light);
+}
+
+.rd-modal-cancel {
+  padding: 8px 20px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-medium);
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.rd-modal-cancel:hover { background: var(--bg-page); }
+
+.rd-modal-save {
+  padding: 8px 20px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--cove-tidal);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.rd-modal-save:hover:not(:disabled) { background: var(--cove-deep); }
+.rd-modal-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Inline status select ── */
+.rd-status-select {
+  padding: 4px 10px;
+  border: 1px solid var(--border-medium);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: white;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.rd-status-select:focus { border-color: var(--cove-tidal); }
+.rd-status-select:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ---------- Incidents stack ---------- */
 .rd-incidents {

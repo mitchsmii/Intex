@@ -79,6 +79,7 @@ export default function AddResidentWizard({ safehouses, residents, onClose, onCr
         assignedSocialWorker: form.swFullName,
         swEmail: form.swEmail || undefined,
         riskLevel: form.riskLevel,
+        caseStatus: 'Not Started',
       })
       onCreated(resident)
     } catch (e) {
