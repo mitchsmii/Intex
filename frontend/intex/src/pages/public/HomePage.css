@@ -120,7 +120,7 @@
 
 /* ─────── Four Pillars ─────── */
 .hp-pillars {
-  background: var(--bg-page);
+  background: #f0f7f4;
   padding: var(--space-2xl) var(--space-lg);
 }
 

@@ -27,9 +27,6 @@ const pillars = [
 ]
 
 
-const CAMPAIGN_GOAL = 25000
-const CAMPAIGN_RAISED = 12450
-const CAMPAIGN_PCT = Math.round((CAMPAIGN_RAISED / CAMPAIGN_GOAL) * 100)
 
 function HomePage() {
   return (
@@ -105,31 +102,7 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ── Active Campaign ── */}
-      <section className="hp-campaign">
-        <div className="hp-campaign-inner">
-          <span className="hp-campaign-badge">Active Campaign</span>
-          <h2>Wheels of Hope</h2>
-          <p>
-            Transportation is a critical barrier for survivors escaping dangerous
-            situations. Help us provide reliable vehicles for our outreach team
-            and safe transit for those who need it most.
-          </p>
-          <div className="hp-progress-wrap">
-            <div className="hp-progress-labels">
-              <span>${CAMPAIGN_RAISED.toLocaleString()} raised</span>
-              <span>Goal: ${CAMPAIGN_GOAL.toLocaleString()}</span>
-            </div>
-            <div className="hp-progress-bar" role="progressbar" aria-valuenow={CAMPAIGN_PCT} aria-valuemin={0} aria-valuemax={100}>
-              <div className="hp-progress-fill" style={{ width: `${CAMPAIGN_PCT}%` }} />
-            </div>
-            <p className="hp-progress-pct">{CAMPAIGN_PCT}% funded</p>
-          </div>
-          <Link to="/donate" className="hp-btn-secondary">Support This Campaign</Link>
-        </div>
-      </section>
-
-      {/* ── Impact Banner ── */}
+{/* ── Impact Banner ── */}
       <section className="hp-impact-banner">
         <div className="hp-impact-inner">
           <div className="hp-impact-text">
