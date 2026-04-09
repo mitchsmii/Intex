@@ -335,38 +335,55 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
     setError(null)
     try {
       const entries = Array.from(perDonor.entries())
-      const results = await Promise.all(
-        entries.map(async ([supporterId, { name, rows }]) => {
-          const input = buildChurnInput(rows)
-          const res = await predictDonorChurn(input)
-          const lastTs = rows
-            .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
-            .filter(n => !Number.isNaN(n))
-          const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
-          const reasons = deriveReasons({
-            count: input.total_donation_count,
-            avg: input.avg_donation_amount,
-            lastDonation,
-            daysSinceFirst: input.days_since_first_donation,
-            variety: input.donation_type_variety,
-            recurring: input.is_recurring_donor,
-          })
-          return {
-            supporterId,
-            name,
-            email: emailMap.get(supporterId) ?? null,
-            total: input.total_amount,
-            count: input.total_donation_count,
-            avg: input.avg_donation_amount,
-            lastDonation,
-            daysSinceFirst: input.days_since_first_donation,
-            variety: input.donation_type_variety,
-            recurring: input.is_recurring_donor,
-            probability: res.probability,
-            reasons,
-          }
-        }),
-      )
+
+      // Batch into groups of 8 to avoid overwhelming the ML API on cold starts
+      const BATCH = 8
+      const results: LapseRow[] = []
+      for (let i = 0; i < entries.length; i += BATCH) {
+        const batch = entries.slice(i, i + BATCH)
+        const settled = await Promise.allSettled(
+          batch.map(async ([supporterId, { name, rows }]) => {
+            const input = buildChurnInput(rows)
+            const res = await predictDonorChurn(input)
+            const lastTs = rows
+              .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
+              .filter(n => !Number.isNaN(n))
+            const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
+            const reasons = deriveReasons({
+              count: input.total_donation_count,
+              avg: input.avg_donation_amount,
+              lastDonation,
+              daysSinceFirst: input.days_since_first_donation,
+              variety: input.donation_type_variety,
+              recurring: input.is_recurring_donor,
+            })
+            return {
+              supporterId,
+              name,
+              email: emailMap.get(supporterId) ?? null,
+              total: input.total_amount,
+              count: input.total_donation_count,
+              avg: input.avg_donation_amount,
+              lastDonation,
+              daysSinceFirst: input.days_since_first_donation,
+              variety: input.donation_type_variety,
+              recurring: input.is_recurring_donor,
+              probability: res.probability,
+              reasons,
+            }
+          }),
+        )
+        for (const r of settled) {
+          if (r.status === 'fulfilled') results.push(r.value)
+        }
+      }
+
+      if (results.length === 0) {
+        setError('No predictions returned — the ML API may be warming up. Try again in a moment.')
+        setStatus('error')
+        return
+      }
+
       results.sort((a, b) => b.probability - a.probability)
       setRows(results)
       setPage(0)

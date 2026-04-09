@@ -22,6 +22,7 @@ public class SupportersController : ControllerBase
 
     // Find supporter by email, or create one if they don't exist yet.
     // Returns the supporter record (existing or newly created).
+    [AllowAnonymous]
     [HttpPost("upsert")]
     public async Task<IActionResult> Upsert([FromBody] UpsertSupporterDto dto)
     {
@@ -51,6 +52,7 @@ public class SupportersController : ControllerBase
         return Ok(supporter);
     }
 
+    [AllowAnonymous]
     [HttpGet("lookup")]
     public async Task<IActionResult> Lookup(
         [FromQuery] string firstName,
