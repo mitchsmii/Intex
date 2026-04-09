@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { api } from '../../services/apiService'
 import shelterImg from '../../assets/shelter.webp'
 import handsImg from '../../assets/hands.png'
+import girlsJumpingFieldImg from '../../assets/girls-jumping-field.png'
 import './HomePage.css'
 
 const pillars = [
@@ -29,6 +32,16 @@ const pillars = [
 
 
 function HomePage() {
+  const [totalServed, setTotalServed] = useState(0)
+  const [activeSafehouses, setActiveSafehouses] = useState(0)
+  const [totalRaised, setTotalRaised] = useState(0)
+
+  useEffect(() => {
+    api.getResidentPublicCounts().then(c => setTotalServed(c.totalServed))
+    api.getSafehouses().then(s => setActiveSafehouses(s.filter(h => h.status === 'Active').length))
+    api.getDonationsTotal().then(({ total }) => setTotalRaised(Number(total)))
+  }, [])
+
   return (
     <>
       {/* ── Hero ── */}
@@ -87,6 +100,42 @@ function HomePage() {
         </div>
       </section>
 
+      {/* ── Impact Banner ── */}
+      <section className="hp-impact-banner">
+        <div className="hp-impact-inner">
+          <div className="hp-impact-image">
+            <img src={girlsJumpingFieldImg} alt="Girls jumping in a field" />
+          </div>
+          <div className="hp-impact-content">
+            <div className="hp-impact-text">
+              <p className="hp-impact-eyebrow">Transparency &amp; Trust</p>
+              <h2>See the Real Impact</h2>
+              <p>
+                Curious where your donation goes? View our live impact dashboard —
+                real numbers, real outcomes, updated from our case management system.
+              </p>
+            </div>
+            <div className="hp-impact-stats" aria-label="Impact highlights">
+              <div className="hp-impact-stat">
+                <p className="hp-impact-stat-value">{totalServed}+</p>
+                <p className="hp-impact-stat-label">Survivors Served</p>
+              </div>
+              <div className="hp-impact-stat">
+                <p className="hp-impact-stat-value">{activeSafehouses}</p>
+                <p className="hp-impact-stat-label">Active Safe Homes</p>
+              </div>
+              <div className="hp-impact-stat">
+                <p className="hp-impact-stat-value">${totalRaised.toLocaleString()}</p>
+                <p className="hp-impact-stat-label">Total Raised</p>
+              </div>
+            </div>
+            <div className="hp-impact-cta-row">
+              <Link to="/impact" className="hp-btn-secondary">View Our Impact</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Mission Banner ── */}
       <section className="hp-mission">
         <div className="hp-mission-inner">
@@ -98,22 +147,6 @@ function HomePage() {
             leadership. Here, survivors become part of a community where every
             person is seen, heard, and loved like family."
           </blockquote>
-          <p className="hp-mission-motto">Family · Progress · Holistic Love</p>
-        </div>
-      </section>
-
-{/* ── Impact Banner ── */}
-      <section className="hp-impact-banner">
-        <div className="hp-impact-inner">
-          <div className="hp-impact-text">
-            <p className="hp-impact-eyebrow">Transparency &amp; Trust</p>
-            <h2>See the Real Impact</h2>
-            <p>
-              Curious where your donation goes? View our live impact dashboard —
-              real numbers, real outcomes, updated from our case management system.
-            </p>
-          </div>
-          <Link to="/impact" className="hp-btn-secondary">View Our Impact</Link>
         </div>
       </section>
     </>
