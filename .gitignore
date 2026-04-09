@@ -39,4 +39,3 @@ SECURITY_AUDIT_REPORT.md
 # Log files
 *.err.log
 *.out.log
-appsettings.json
