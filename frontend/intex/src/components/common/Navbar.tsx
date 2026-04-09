@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import logoImg from '../../assets/intex_logo.png'
+import ThemeToggle from './ThemeToggle'
 import './Navbar.css'
 
 function Navbar() {
@@ -15,6 +16,7 @@ function Navbar() {
           <Link to="/donate" className="navbar-donate-link">Donate</Link>
         </div>
         <div className="navbar-links">
+          <ThemeToggle />
           <Link to="/login" className="navbar-signin">Sign In</Link>
         </div>
       </div>
