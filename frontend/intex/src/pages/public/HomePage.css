@@ -28,7 +28,7 @@
 }
 
 .hp-hero-eyebrow {
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -37,7 +37,7 @@
 }
 
 .hp-hero-title {
-  font-size: clamp(2.4rem, 5vw, 3.8rem);
+  font-size: clamp(3rem, 6.2vw, 4.9rem);
   font-weight: 800;
   color: #ffffff;
   margin: 0 0 var(--space-md);
@@ -45,7 +45,7 @@
 }
 
 .hp-hero-tagline {
-  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-size: clamp(1.45rem, 3.4vw, 2.35rem);
   font-weight: 500;
   color: var(--cove-seaglass);
   margin: 0 0 var(--space-md);
@@ -53,7 +53,7 @@
 }
 
 .hp-hero-sub {
-  font-size: 1.1rem;
+  font-size: clamp(1.2rem, 2vw, 1.45rem);
   color: rgba(255, 255, 255, 0.88);
   line-height: 1.75;
   margin: 0 0 var(--space-xl);
@@ -65,9 +65,9 @@
   display: inline-block;
   background: var(--cove-seaglass);
   color: var(--cove-deep);
-  font-size: 1rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  padding: 14px 40px;
+  padding: 18px 48px;
   border-radius: var(--radius-full);
   text-decoration: none;
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
@@ -84,9 +84,9 @@
   display: inline-block;
   background: var(--cove-tidal);
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  padding: 14px 40px;
+  padding: 16px 42px;
   border-radius: var(--radius-full);
   text-decoration: none;
   transition: background 0.2s, transform 0.15s;
@@ -105,7 +105,7 @@
 }
 
 .hp-section-header h2 {
-  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-size: clamp(1.9rem, 3.3vw, 2.5rem);
   color: var(--cove-deep);
   margin: 0 0 var(--space-sm);
   font-weight: 700;
@@ -113,14 +113,14 @@
 
 .hp-section-header p {
   color: var(--text-secondary);
-  font-size: 1.05rem;
+  font-size: 1.16rem;
   line-height: 1.65;
   margin: 0;
 }
 
 /* ─────── Four Pillars ─────── */
 .hp-pillars {
-  background: #f0f7f4;
+  background: var(--bg-page);
   padding: var(--space-2xl) var(--space-lg);
 }
 
@@ -149,7 +149,7 @@
 
 
 .hp-pillar-card h3 {
-  font-size: 1.15rem;
+  font-size: 1.3rem;
   color: var(--cove-deep);
   font-weight: 700;
   margin: 0 0 var(--space-sm);
@@ -157,14 +157,14 @@
 
 .hp-pillar-card p {
   color: var(--text-secondary);
-  font-size: 0.92rem;
+  font-size: 1.02rem;
   line-height: 1.7;
   margin: 0;
 }
 
 /* ─────── Holistic Needs ─────── */
 .hp-holistic {
-  background: var(--cove-sand);
+  background: #f7f3e8;
   padding: var(--space-2xl) var(--space-lg);
 }
 
@@ -186,7 +186,7 @@
 }
 
 .hp-holistic-content h2 {
-  font-size: clamp(1.5rem, 2.5vw, 1.9rem);
+  font-size: clamp(1.8rem, 3vw, 2.2rem);
   color: var(--cove-deep);
   font-weight: 700;
   margin: 0 0 var(--space-md);
@@ -195,7 +195,7 @@
 
 .hp-holistic-intro {
   color: var(--text-secondary);
-  font-size: 1rem;
+  font-size: 1.1rem;
   line-height: 1.75;
   margin: 0 0 var(--space-lg);
 }
@@ -203,7 +203,7 @@
 
 /* ─────── Mission Banner ─────── */
 .hp-mission {
-  background: var(--cove-deep);
+  background: var(--bg-page);
   padding: var(--space-2xl) var(--space-lg);
 }
 
@@ -211,31 +211,35 @@
   max-width: 820px;
   margin: 0 auto;
   text-align: center;
+  background: #ffffff;
+  border: 1px solid var(--border-light);
+  border-radius: 24px;
+  padding: clamp(var(--space-xl), 4.5vw, 56px);
+  box-shadow: 0 12px 24px rgba(44, 74, 82, 0.08);
 }
 
 .hp-mission-label {
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--cove-seaglass);
+  color: var(--cove-tidal);
   margin: 0 0 var(--space-lg);
 }
 
 .hp-mission-text {
-  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
-  color: #ffffff;
-  line-height: 1.8;
-  font-style: italic;
-  font-weight: 500;
-  margin: 0 0 var(--space-xl);
+  font-size: clamp(1.35rem, 2.7vw, 1.85rem);
+  color: var(--cove-deep);
+  line-height: 1.72;
+  font-style: normal;
+  font-weight: 600;
+  margin: 0;
   padding: 0;
   border: none;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
 .hp-mission-motto {
-  font-size: 0.88rem;
+  font-size: 0.98rem;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -322,27 +326,47 @@
 
 /* ─────── Impact Banner ─────── */
 .hp-impact-banner {
-  background: var(--cove-seafoam);
-  padding: var(--space-2xl) var(--space-lg);
+  background: var(--bg-page);
+  padding: 0;
 }
 
 .hp-impact-inner {
-  max-width: 1000px;
-  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 500px;
+  width: 100%;
+}
+
+.hp-impact-image {
+  min-height: 100%;
+  overflow: hidden;
+  border-radius: 0 24px 24px 0;
+  box-shadow: inset 0 0 0 1px rgba(44, 74, 82, 0.08);
+}
+
+.hp-impact-image img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transform: scale(1.01);
+}
+
+.hp-impact-content {
+  background: #ecf6f2;
+  padding: clamp(var(--space-xl), 6vw, 72px);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-xl);
-  flex-wrap: wrap;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-lg);
 }
 
 .hp-impact-text {
-  flex: 1;
-  min-width: 260px;
+  max-width: 520px;
 }
 
 .hp-impact-eyebrow {
-  font-size: 0.75rem;
+  font-size: 0.86rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -351,7 +375,7 @@
 }
 
 .hp-impact-inner h2 {
-  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  font-size: clamp(1.7rem, 3vw, 2.25rem);
   font-weight: 700;
   color: var(--cove-deep);
   margin: 0 0 var(--space-sm);
@@ -359,10 +383,67 @@
 
 .hp-impact-inner p {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 1.08rem;
   line-height: 1.7;
   margin: 0;
   max-width: 480px;
+}
+
+.hp-impact-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: var(--space-md);
+  max-width: 560px;
+}
+
+.hp-impact-stat {
+  margin: 0;
+  background: #ffffff;
+  border: 1px solid rgba(94, 158, 160, 0.25);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 18px rgba(44, 74, 82, 0.12);
+  padding: var(--space-md);
+  text-align: center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.hp-impact-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 22px rgba(44, 74, 82, 0.14);
+}
+
+.hp-impact-stat-value {
+  margin: 0;
+  color: var(--cove-tidal);
+  font-size: clamp(2rem, 3.8vw, 2.9rem);
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.hp-impact-stat-label {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.hp-impact-content .hp-btn-secondary {
+  font-size: 1.2rem;
+  padding: 16px 30px;
+  white-space: nowrap;
+}
+
+.hp-impact-cta-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: var(--space-md);
+  max-width: 560px;
+}
+
+.hp-impact-cta-row .hp-btn-secondary {
+  grid-column: 1;
+  justify-self: center;
 }
 
 /* ─────── Responsive ─────── */
@@ -391,5 +472,36 @@
 
   .hp-hero-overlay {
     padding: var(--space-xl) var(--space-md);
+  }
+}
+
+@media (max-width: 768px) {
+  .hp-impact-inner {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .hp-impact-image {
+    height: 240px;
+    min-height: 240px;
+    border-radius: 0 0 24px 24px;
+  }
+
+  .hp-impact-content {
+    padding: var(--space-xl) var(--space-lg);
+  }
+
+  .hp-impact-stats {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .hp-impact-cta-row {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+
+  .hp-impact-cta-row .hp-btn-secondary {
+    grid-column: auto;
   }
 }

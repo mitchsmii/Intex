@@ -6,12 +6,15 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-inner">
-        <Link to="/" className="navbar-logo">
-          <img src={logoImg} alt="Cove" className="navbar-logo-img" />
-        </Link>
-        <div className="navbar-links">
+        <div className="navbar-left">
+          <Link to="/" className="navbar-logo">
+            <img src={logoImg} alt="Cove" className="navbar-logo-img" />
+          </Link>
+          <Link to="/" className="navbar-home">Home</Link>
           <Link to="/impact" className="navbar-impact">Our Impact</Link>
-          <Link to="/donate" className="navbar-donate">Donate</Link>
+          <Link to="/donate" className="navbar-donate-link">Donate</Link>
+        </div>
+        <div className="navbar-links">
           <Link to="/login" className="navbar-signin">Sign In</Link>
         </div>
       </div>

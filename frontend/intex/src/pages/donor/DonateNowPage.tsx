@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import { useAuth } from '../../hooks/useAuth'
-import girlsHandsRaised from '../../assets/girls-hands-raised.png'
 import './DonateNowPage.css'
 
 // Goal is stored in USD; all display converts from USD
@@ -185,8 +184,9 @@ export default function DonateNowPage() {
 
   return (
     <>
-    <main className="donate-page">
-      <div className="donate-layout">
+    <div className="donate-page-wrap">
+      <main className="donate-page">
+        <div className="donate-layout">
 
         {/* ===== LEFT: Story + progress ===== */}
         <section className="story-card">
@@ -478,13 +478,13 @@ export default function DonateNowPage() {
           </form>
         </section>
 
-      </div>
-    </main>
+        </div>
+      </main>
 
-    <div className="donate-hero-banner">
-      <img src={girlsHandsRaised} alt="Girls with hands raised together in front of a Philippine church" className="donate-hero-img" />
-      <div className="donate-hero-overlay">
-        <p className="donate-hero-quote">"Together, we rise."</p>
+      <div className="donate-hero-banner">
+        <div className="donate-hero-overlay">
+          <p className="donate-hero-quote">"Together, we rise."</p>
+        </div>
       </div>
     </div>
     </>

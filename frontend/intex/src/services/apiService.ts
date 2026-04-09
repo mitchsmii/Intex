@@ -390,6 +390,7 @@ export const api = {
   createDonation:             (body: { supporterId: number; amount: number; currencyCode: string; isRecurring: boolean; donationType?: string; channelSource?: string; notes?: string }) =>
     post<DonationRaw>('/api/donations', body),
   getAllocationSummary:       () => get<AllocationSummary>('/api/donationallocations/summary'),
+  getSafehouseMonthlyMetrics: () => get<SafehouseMonthlyMetric[]>('/api/safehousemonthlymetrics'),
   getLatestMetrics:           () => get<SafehouseMonthlyMetric[]>('/api/safehousemonthlymetrics/latest'),
   getIncidentReports:         () => authGet<IncidentReport[]>('/api/incidentreports'),
   getUpcomingPlans:           () => authGet<UpcomingPlan[]>('/api/interventionplans/upcoming'),
