@@ -493,6 +493,31 @@
   color: var(--text-muted);
 }
 
+.mu-chip-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mu-chip-link:hover {
+  background: var(--cove-tidal);
+  color: #fff;
+}
+
+.mu-chip-expand {
+  cursor: pointer;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.mu-chip-expand:hover {
+  background: var(--cove-deep);
+  color: #fff;
+}
+
 /* ── Modal overlay ── */
 .mu-modal-overlay {
   position: fixed;
