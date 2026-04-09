@@ -109,9 +109,29 @@ public class ProcessRecordingsController : ControllerBase
     [Authorize(Roles = "Admin,SocialWorker")]
     public async Task<ActionResult<ProcessRecording>> CreateProcessRecording(ProcessRecording recording)
     {
-        _context.ProcessRecordings.Add(recording);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetProcessRecording), new { id = recording.RecordingId }, recording);
+        try
+        {
+            // Let the database assign the primary key
+            recording.RecordingId = 0;
+
+            // If a social_worker username was provided but no social_worker_id,
+            // try to resolve the ID from the SocialWorkers table.
+            if (recording.SocialWorkerId == null && !string.IsNullOrEmpty(recording.SocialWorker))
+            {
+                var sw = await _context.SocialWorkers
+                    .FirstOrDefaultAsync(s => s.FullName == recording.SocialWorker);
+                if (sw != null) recording.SocialWorkerId = sw.SocialWorkerId;
+            }
+
+            _context.ProcessRecordings.Add(recording);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetProcessRecording), new { id = recording.RecordingId }, recording);
+        }
+        catch (Exception ex)
+        {
+            var inner = ex.InnerException?.Message ?? "none";
+            return StatusCode(500, new { error = ex.Message, inner });
+        }
     }
 
     [HttpPut("{id}")]

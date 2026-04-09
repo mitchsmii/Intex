@@ -3,17 +3,20 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import {
-  predictDonorChurn, fetchDonorChurnFeatureImportance,
-  predictResidentRisk, fetchResidentRiskFeatureImportance,
+  fetchDonorChurnFeatureImportance,
+  predictResidentRisk,
+  fetchResidentRiskFeatureImportance,
   predictEducationOutcome,
 } from '../../services/mlApi'
 import type { DonorChurnInput, ResidentRiskInput, FeatureImportance, EducationOutcomeInput } from '../../services/mlApi'
+import type { MlCachedPrediction } from '../../services/apiService'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
   AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident, ResidentMlFeatures,
   ProcessRecording, HealthRecord, HomeVisitation, EducationRecord,
 } from '../../services/apiService'
 import './ReportsPage.css'
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -460,50 +463,46 @@ function LapseRiskPanel({
       setError(null)
     }
     try {
+      const cached = await api.getMlPredictions('donor-churn') as MlCachedPrediction[]
+      const predMap = new Map(cached.map(p => [p.entityId, p.probability]))
       const entries = Array.from(perDonor.entries())
-      // Batch into groups of 8 to avoid overwhelming the ML API on cold starts
-      const BATCH = 8
       const results: LapseRow[] = []
-      for (let i = 0; i < entries.length; i += BATCH) {
-        const batch = entries.slice(i, i + BATCH)
-        const settled = await Promise.allSettled(
-          batch.map(async ([supporterId, { name, rows: dRows }]) => {
-            const input = buildChurnInput(dRows)
-            const res = await predictDonorChurn(input)
-            const lastTs = dRows
-              .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
-              .filter(n => !Number.isNaN(n))
-            const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
-            const reasons = deriveReasons({
-              count: input.total_donation_count,
-              avg: input.avg_donation_amount,
-              lastDonation,
-              daysSinceFirst: input.days_since_first_donation,
-              variety: input.donation_type_variety,
-              recurring: input.is_recurring_donor,
-            })
-            return {
-              supporterId,
-              name,
-              email: emailMap.get(supporterId) ?? null,
-              total: input.total_amount,
-              count: input.total_donation_count,
-              avg: input.avg_donation_amount,
-              lastDonation,
-              daysSinceFirst: input.days_since_first_donation,
-              variety: input.donation_type_variety,
-              recurring: input.is_recurring_donor,
-              probability: res.probability,
-              reasons,
-            }
-          }),
-        )
-        for (const r of settled) {
-          if (r.status === 'fulfilled') results.push(r.value)
-        }
+
+      for (const [supporterId, { name, rows: dRows }] of entries) {
+        const input = buildChurnInput(dRows)
+        const probability = predMap.get(supporterId)
+        if (probability === undefined) continue
+
+        const lastTs = dRows
+          .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
+          .filter(n => !Number.isNaN(n))
+        const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
+        const reasons = deriveReasons({
+          count: input.total_donation_count,
+          avg: input.avg_donation_amount,
+          lastDonation,
+          daysSinceFirst: input.days_since_first_donation,
+          variety: input.donation_type_variety,
+          recurring: input.is_recurring_donor,
+        })
+        results.push({
+          supporterId,
+          name,
+          email: emailMap.get(supporterId) ?? null,
+          total: input.total_amount,
+          count: input.total_donation_count,
+          avg: input.avg_donation_amount,
+          lastDonation,
+          daysSinceFirst: input.days_since_first_donation,
+          variety: input.donation_type_variety,
+          recurring: input.is_recurring_donor,
+          probability,
+          reasons,
+        })
       }
+
       if (results.length === 0 && !background) {
-        setError('No predictions returned — the ML API may be warming up. Try again in a moment.')
+        setError('No cached predictions available — an admin can trigger a refresh from the dashboard.')
         setStatus('error')
         return
       }
@@ -1698,53 +1697,38 @@ function OutcomesTab({
     setRiskLoading(true)
     setRiskError(null)
 
-    const activeIds = new Set(activeResidents.map(r => r.residentId))
+    const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
 
-    api.getResidentMlFeatures()
-      .then(async (allFeatures: ResidentMlFeatures[]) => {
-        const features = allFeatures.filter(f => activeIds.has(f.resident_id))
-        const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
-
-        return Promise.all(
-          features.map(async (f) => {
-            // Strip metadata fields; forward only the model's input columns.
-            const {
-              resident_id: _id,
-              internal_code: _ic,
-              case_control_no: _cc,
-              current_risk_level: _crl,
-              assigned_social_worker: _sw,
-              last_action_date: _lad,
-              last_action_type: _lat,
-              ...input
-            } = f
-            void _id; void _ic; void _cc; void _crl; void _sw; void _lad; void _lat
-            try {
-              const res = await predictResidentRisk(input as unknown as ResidentRiskInput)
-              return {
-                resident: residentById.get(f.resident_id)!,
-                features: f,
-                probability: res.probability,
-                isHighRisk: res.is_high_risk,
-              }
-            } catch {
-              return {
-                resident: residentById.get(f.resident_id)!,
-                features: f,
-                probability: 0,
-                isHighRisk: false,
-              }
-            }
-          }),
-        )
-      })
-      .then((results) => {
+    // Load cached predictions + ML features in parallel
+    Promise.all([
+      api.getMlPredictions('resident-risk') as Promise<MlCachedPrediction[]>,
+      api.getResidentMlFeatures(),
+    ])
+      .then(([cached, allFeatures]) => {
         if (cancelled) return
+        const predMap = new Map(cached.map(p => [p.entityId, p]))
+        const activeIds = new Set(activeResidents.map(r => r.residentId))
+        const features = allFeatures.filter(f => activeIds.has(f.resident_id))
+
+        const results: RiskRow[] = features
+          .map(f => {
+            const pred = predMap.get(f.resident_id)
+            const resident = residentById.get(f.resident_id)
+            if (!resident) return null
+            return {
+              resident,
+              features: f,
+              probability: pred?.probability ?? 0,
+              isHighRisk: pred?.isPositive ?? false,
+            }
+          })
+          .filter((r): r is RiskRow => r !== null)
+
         results.sort((a, b) => b.probability - a.probability)
         setRiskPreds(results)
       })
       .catch((err) => {
-        if (!cancelled) setRiskError(err instanceof Error ? err.message : 'Prediction failed')
+        if (!cancelled) setRiskError(err instanceof Error ? err.message : 'Failed to load predictions')
       })
       .finally(() => {
         if (!cancelled) setRiskLoading(false)

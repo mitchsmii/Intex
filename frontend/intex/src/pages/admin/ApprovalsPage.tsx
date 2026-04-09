@@ -8,7 +8,8 @@ type Section = 'checklists' | 'conferences'
 
 function formatDate(iso: string | null) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function parseItems(json: string): string[] {
@@ -369,8 +370,8 @@ export default function ApprovalsPage() {
                     <div className="ap-items-section">
                       <p className="ap-items-label">Agenda</p>
                       <ul className="ap-items-list">
-                        {agenda.map((a) => (
-                          <li key={a.residentId} className="ap-item">
+                        {agenda.map((a, i) => (
+                          <li key={`${a.residentId}-${i}`} className="ap-item">
                             <strong>#{a.residentId}:</strong> {a.notes || '—'}
                           </li>
                         ))}

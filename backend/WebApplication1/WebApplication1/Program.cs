@@ -12,6 +12,9 @@ builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddOpenApi();
 
+// Background service: refresh ML predictions daily at 3 AM UTC
+builder.Services.AddHostedService<WebApplication1.Services.MlRefreshService>();
+
 // EF Core + Npgsql
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

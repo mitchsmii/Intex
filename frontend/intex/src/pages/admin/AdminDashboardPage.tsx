@@ -34,7 +34,8 @@ function fmtAmount(amount: number | null, currencyCode: string | null) {
 
 function fmtDate(iso: string | null) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function thisMonth() {
@@ -58,7 +59,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     Promise.allSettled([
-      api.getSafehouses().then(setSafehouses),
+      api.getSafehousesAdmin().then(setSafehouses),
       api.getResidents().then(r => setResidentCount(r.filter(x => x.caseStatus === 'Active').length)),
       api.getSupporters().then(s => setSupporterCount(s.length)),
       api.getDonations().then(setDonations),

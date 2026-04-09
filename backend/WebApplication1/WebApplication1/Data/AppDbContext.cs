@@ -33,6 +33,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<Assessment> Assessments { get; set; }
     public DbSet<AdmissionChecklist> AdmissionChecklists { get; set; }
     public DbSet<CaseConferenceRequest> CaseConferenceRequests { get; set; }
+    public DbSet<MlPrediction> MlPredictions { get; set; }
     public DbSet<Partner> Partners { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -49,9 +50,19 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             .Property(n => n.NotificationId)
             .ValueGeneratedOnAdd();
 
+        // process_recordings.recording_id uses a sequence — let DB auto-generate
+        modelBuilder.Entity<ProcessRecording>()
+            .Property(p => p.RecordingId)
+            .ValueGeneratedOnAdd();
+
         modelBuilder.Entity<ProcessRecording>()
             .HasIndex(p => p.SocialWorkerId)
             .HasDatabaseName("IX_process_recordings_social_worker_id");
+
+        // home_visitations.visitation_id uses a sequence — let DB auto-generate
+        modelBuilder.Entity<HomeVisitation>()
+            .Property(h => h.VisitationId)
+            .ValueGeneratedOnAdd();
 
         modelBuilder.Entity<HomeVisitation>()
             .HasIndex(h => h.SocialWorkerId)

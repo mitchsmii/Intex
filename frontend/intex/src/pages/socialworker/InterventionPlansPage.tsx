@@ -60,7 +60,8 @@ const NOT_IN_FACILITY_ITEMS = [
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -363,14 +364,6 @@ function InterventionPlansPage() {
                             type="date"
                             value={form.targetDate}
                             onChange={(e) => updateField('targetDate', e.target.value)}
-                          />
-                        </label>
-                        <label className="ip-field">
-                          <span>Case Conference Date</span>
-                          <input
-                            type="date"
-                            value={form.caseConferenceDate}
-                            onChange={(e) => updateField('caseConferenceDate', e.target.value)}
                           />
                         </label>
                       </div>

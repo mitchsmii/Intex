@@ -409,8 +409,16 @@ export interface CaseConferenceRequest {
   submittedAt: string
 }
 
+export interface MlCachedPrediction {
+  entityId: number
+  isPositive: boolean
+  probability: number
+  computedAt: string
+}
+
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
+  getSafehousesAdmin:         () => authGet<Safehouse[]>('/api/safehouses/admin'),
   getResidents:               () => authGet<Resident[]>('/api/residents'),
   getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
   getPartners:                () => authGet<Partner[]>('/api/partners'),
@@ -495,4 +503,10 @@ export const api = {
     authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/counter-propose`, body),
   acceptCaseConferenceRequest:   (id: number) =>
     authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/accept`, {}),
+
+  // ML predictions (cached)
+  getMlPredictions:             (model: string) =>
+    authGet<MlCachedPrediction[]>(`/api/ml-predictions/${model}`),
+  refreshMlPredictions:         (model: string) =>
+    authPost<{ refreshed: number; model: string }>(`/api/ml-predictions/${model}/refresh`, {}),
 }
