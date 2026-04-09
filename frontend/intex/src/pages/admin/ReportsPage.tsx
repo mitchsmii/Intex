@@ -126,6 +126,32 @@ interface LapseRow {
   reasons: string[]
 }
 
+// ── Lapse-risk localStorage cache ────────────────────────────────────────────
+const LAPSE_CACHE_KEY = 'cove_lapse_risk_v1'
+
+function loadLapseCache(): { rows: LapseRow[]; ts: number } | null {
+  try {
+    const raw = localStorage.getItem(LAPSE_CACHE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as { rows: LapseRow[]; ts: number }
+  } catch { return null }
+}
+
+function saveLapseCache(rows: LapseRow[]) {
+  try {
+    localStorage.setItem(LAPSE_CACHE_KEY, JSON.stringify({ rows, ts: Date.now() }))
+  } catch { /* storage quota / private mode */ }
+}
+
+function cacheAgeLabel(ts: number): string {
+  const mins = Math.round((Date.now() - ts) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.round(hrs / 24)}d ago`
+}
+
 function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapseRows: LapseRow[] }) {
   const { retentionRate, priorYearCount, highRiskCount } = useMemo(() => {
     const now = new Date()
@@ -366,8 +392,14 @@ function LapseRiskPanel({
   currency: string
   onRowsChange?: (rows: LapseRow[]) => void
 }) {
-  const [rows, setRows] = useState<LapseRow[]>([])
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  // Seed state from cache immediately so the table is visible on first render
+  const initialCache = loadLapseCache()
+  const [rows, setRows] = useState<LapseRow[]>(initialCache?.rows ?? [])
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>(
+    initialCache ? 'done' : 'idle',
+  )
+  const [cacheTs, setCacheTs] = useState<number | null>(initialCache?.ts ?? null)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [filter, setFilter] = useState<RiskFilter>('all')
@@ -419,22 +451,25 @@ function LapseRiskPanel({
     return map
   }, [donations])
 
-  async function runPredictions() {
-    setStatus('loading')
-    setError(null)
+  async function runPredictions(background = false) {
+    if (background) {
+      setRefreshing(true)
+    } else {
+      setStatus('loading')
+      setError(null)
+    }
     try {
       const entries = Array.from(perDonor.entries())
-
       // Batch into groups of 8 to avoid overwhelming the ML API on cold starts
       const BATCH = 8
       const results: LapseRow[] = []
       for (let i = 0; i < entries.length; i += BATCH) {
         const batch = entries.slice(i, i + BATCH)
         const settled = await Promise.allSettled(
-          batch.map(async ([supporterId, { name, rows }]) => {
-            const input = buildChurnInput(rows)
+          batch.map(async ([supporterId, { name, rows: dRows }]) => {
+            const input = buildChurnInput(dRows)
             const res = await predictDonorChurn(input)
-            const lastTs = rows
+            const lastTs = dRows
               .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
               .filter(n => !Number.isNaN(n))
             const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
@@ -466,33 +501,39 @@ function LapseRiskPanel({
           if (r.status === 'fulfilled') results.push(r.value)
         }
       }
-
-      if (results.length === 0) {
+      if (results.length === 0 && !background) {
         setError('No predictions returned — the ML API may be warming up. Try again in a moment.')
         setStatus('error')
         return
       }
-
       results.sort((a, b) => b.probability - a.probability)
+      saveLapseCache(results)
+      setCacheTs(null)
       setRows(results)
       setPage(0)
       setFilter('all')
       setStatus('done')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Prediction failed')
-      setStatus('error')
+      if (!background) {
+        setError(e instanceof Error ? e.message : 'Prediction failed')
+        setStatus('error')
+      }
+      // background failure: keep showing cached rows silently
+    } finally {
+      setRefreshing(false)
     }
   }
 
   // Auto-run scoring once donor data is available.
+  // If we have cached rows, run a silent background refresh instead of blocking.
   useEffect(() => {
     if (hasAutoRun.current) return
     if (perDonor.size === 0) return
-    if (status !== 'idle') return
     hasAutoRun.current = true
-    void runPredictions()
+    const hasCached = rows.length > 0
+    void runPredictions(hasCached)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [perDonor, status])
+  }, [perDonor])
 
   const counts = useMemo(() => {
     let high = 0, medium = 0, low = 0
@@ -630,15 +671,31 @@ function LapseRiskPanel({
           <p className="rp-empty" style={{ textAlign: 'left', margin: 0, padding: 0 }}>
             Donors most likely to stop giving, ranked from highest to lowest risk.
           </p>
+          {cacheTs && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Showing cached scores from {cacheAgeLabel(cacheTs)}
+              {refreshing ? ' · Updating in background…' : ''}
+            </p>
+          )}
+          {!cacheTs && refreshing && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Refreshing scores…
+            </p>
+          )}
         </div>
-        {status === 'done' && (
+        {status === 'done' && !refreshing && (
           <button
             type="button"
             className="rp-tab-btn rp-refresh-btn"
-            onClick={runPredictions}
+            onClick={() => runPredictions(false)}
           >
             Refresh scores
           </button>
+        )}
+        {refreshing && (
+          <span style={{ fontSize: '0.8rem', color: 'var(--cove-tidal)', fontWeight: 600 }}>
+            Updating…
+          </span>
         )}
       </div>
       {status === 'loading' && (
