@@ -91,7 +91,7 @@ public class SupportersController : ControllerBase
     }
 
     [HttpPatch("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Donor")]
     public async Task<IActionResult> UpdatePartial(int id, [FromBody] UpdateSupporterDto dto)
     {
         var supporter = await _context.Supporters.FindAsync(id);

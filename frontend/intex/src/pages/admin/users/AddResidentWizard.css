@@ -401,6 +401,56 @@
   cursor: not-allowed;
 }
 
+@media (max-width: 480px) {
+  .wizard-modal {
+    max-height: 100vh;
+    border-radius: var(--radius-md);
+  }
+
+  .wizard-header {
+    padding: var(--space-md);
+  }
+
+  .wizard-steps {
+    padding: var(--space-sm) var(--space-md);
+    gap: 0;
+  }
+
+  .wizard-step {
+    font-size: 0.72rem;
+  }
+
+  /* Shrink connectors between steps */
+  .wizard-step + .wizard-step::before {
+    width: 16px;
+    margin: 0 3px;
+  }
+
+  .wizard-body {
+    padding: var(--space-md);
+  }
+
+  .wizard-footer {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  /* 2-col code row → 1 col */
+  .wizard-code-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Fixed-width input → full width */
+  .wizard-input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 3-col risk grid → 1 col */
+  .wizard-risk-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* SW email notification field */
 .wizard-sw-email {
   margin-top: var(--space-md);

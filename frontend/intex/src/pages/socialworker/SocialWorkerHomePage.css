@@ -110,3 +110,22 @@
   color: var(--color-error);
   padding: var(--space-lg);
 }
+
+@media (max-width: 480px) {
+  .sw-home-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.6rem;
+  }
+
+  .case-card {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .case-card-top {
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+}

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -26,6 +27,7 @@ public class SocialMediaPostsController : ControllerBase
 
     // POST /api/socialmediaposts
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<SocialMediaPost>> CreatePost([FromBody] SocialMediaPost post)
     {
         _context.SocialMediaPosts.Add(post);
@@ -35,6 +37,7 @@ public class SocialMediaPostsController : ControllerBase
 
     // DELETE /api/socialmediaposts/{id}
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeletePost(int id)
     {
         var post = await _context.SocialMediaPosts.FindAsync(id);

@@ -459,6 +459,7 @@ export const api = {
   getProcessRecordingsByResident: (id: number) => authGet<ProcessRecording[]>(`/api/processrecordings?residentId=${id}`),
   getHealthRecordsByResident:     (id: number) => authGet<HealthRecord[]>(`/api/healthwellbeingrecords?residentId=${id}`),
   getHomeVisitationsByResident:   (id: number) => authGet<HomeVisitation[]>(`/api/homevisitations?residentId=${id}`),
+  getEducationRecords:             () => authGet<EducationRecord[]>('/api/educationrecords'),
   getEducationRecordsByResident:  (id: number) => authGet<EducationRecord[]>(`/api/educationrecords?residentId=${id}`),
   getIncidentsByResident:         (id: number) => authGet<IncidentReport[]>(`/api/incidentreports?residentId=${id}`),
   getSocialMediaPosts:        () => get<SocialMediaPost[]>('/api/socialmediaposts'),

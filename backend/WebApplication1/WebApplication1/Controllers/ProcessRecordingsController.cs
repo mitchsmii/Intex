@@ -106,6 +106,7 @@ public class ProcessRecordingsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,SocialWorker")]
     public async Task<ActionResult<ProcessRecording>> CreateProcessRecording(ProcessRecording recording)
     {
         try
@@ -134,6 +135,7 @@ public class ProcessRecordingsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,SocialWorker")]
     public async Task<IActionResult> UpdateProcessRecording(int id, ProcessRecording recording)
     {
         if (id != recording.RecordingId) return BadRequest();

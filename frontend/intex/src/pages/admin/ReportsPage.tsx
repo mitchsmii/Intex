@@ -4,9 +4,11 @@ import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import {
   fetchDonorChurnFeatureImportance,
+  predictResidentRisk,
   fetchResidentRiskFeatureImportance,
+  predictEducationOutcome,
 } from '../../services/mlApi'
-import type { DonorChurnInput, FeatureImportance } from '../../services/mlApi'
+import type { DonorChurnInput, ResidentRiskInput, FeatureImportance, EducationOutcomeInput } from '../../services/mlApi'
 import type { MlCachedPrediction } from '../../services/apiService'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
@@ -14,6 +16,7 @@ import type {
   ProcessRecording, HealthRecord, HomeVisitation, EducationRecord,
 } from '../../services/apiService'
 import './ReportsPage.css'
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -125,6 +128,32 @@ interface LapseRow {
   recurring: boolean
   probability: number
   reasons: string[]
+}
+
+// ── Lapse-risk localStorage cache ────────────────────────────────────────────
+const LAPSE_CACHE_KEY = 'cove_lapse_risk_v1'
+
+function loadLapseCache(): { rows: LapseRow[]; ts: number } | null {
+  try {
+    const raw = localStorage.getItem(LAPSE_CACHE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as { rows: LapseRow[]; ts: number }
+  } catch { return null }
+}
+
+function saveLapseCache(rows: LapseRow[]) {
+  try {
+    localStorage.setItem(LAPSE_CACHE_KEY, JSON.stringify({ rows, ts: Date.now() }))
+  } catch { /* storage quota / private mode */ }
+}
+
+function cacheAgeLabel(ts: number): string {
+  const mins = Math.round((Date.now() - ts) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.round(hrs / 24)}d ago`
 }
 
 function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapseRows: LapseRow[] }) {
@@ -367,8 +396,14 @@ function LapseRiskPanel({
   currency: string
   onRowsChange?: (rows: LapseRow[]) => void
 }) {
-  const [rows, setRows] = useState<LapseRow[]>([])
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  // Seed state from cache immediately so the table is visible on first render
+  const initialCache = loadLapseCache()
+  const [rows, setRows] = useState<LapseRow[]>(initialCache?.rows ?? [])
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>(
+    initialCache ? 'done' : 'idle',
+  )
+  const [cacheTs, setCacheTs] = useState<number | null>(initialCache?.ts ?? null)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [filter, setFilter] = useState<RiskFilter>('all')
@@ -420,21 +455,25 @@ function LapseRiskPanel({
     return map
   }, [donations])
 
-  async function runPredictions() {
-    setStatus('loading')
-    setError(null)
+  async function runPredictions(background = false) {
+    if (background) {
+      setRefreshing(true)
+    } else {
+      setStatus('loading')
+      setError(null)
+    }
     try {
       const cached = await api.getMlPredictions('donor-churn') as MlCachedPrediction[]
       const predMap = new Map(cached.map(p => [p.entityId, p.probability]))
       const entries = Array.from(perDonor.entries())
       const results: LapseRow[] = []
 
-      for (const [supporterId, { name, rows }] of entries) {
-        const input = buildChurnInput(rows)
+      for (const [supporterId, { name, rows: dRows }] of entries) {
+        const input = buildChurnInput(dRows)
         const probability = predMap.get(supporterId)
         if (probability === undefined) continue
 
-        const lastTs = rows
+        const lastTs = dRows
           .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
           .filter(n => !Number.isNaN(n))
         const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
@@ -462,32 +501,39 @@ function LapseRiskPanel({
         })
       }
 
-      if (results.length === 0) {
+      if (results.length === 0 && !background) {
         setError('No cached predictions available — an admin can trigger a refresh from the dashboard.')
         setStatus('error')
         return
       }
-
       results.sort((a, b) => b.probability - a.probability)
+      saveLapseCache(results)
+      setCacheTs(null)
       setRows(results)
       setPage(0)
       setFilter('all')
       setStatus('done')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load predictions')
-      setStatus('error')
+      if (!background) {
+        setError(e instanceof Error ? e.message : 'Prediction failed')
+        setStatus('error')
+      }
+      // background failure: keep showing cached rows silently
+    } finally {
+      setRefreshing(false)
     }
   }
 
   // Auto-run scoring once donor data is available.
+  // If we have cached rows, run a silent background refresh instead of blocking.
   useEffect(() => {
     if (hasAutoRun.current) return
     if (perDonor.size === 0) return
-    if (status !== 'idle') return
     hasAutoRun.current = true
-    void runPredictions()
+    const hasCached = rows.length > 0
+    void runPredictions(hasCached)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [perDonor, status])
+  }, [perDonor])
 
   const counts = useMemo(() => {
     let high = 0, medium = 0, low = 0
@@ -625,15 +671,31 @@ function LapseRiskPanel({
           <p className="rp-empty" style={{ textAlign: 'left', margin: 0, padding: 0 }}>
             Donors most likely to stop giving, ranked from highest to lowest risk.
           </p>
+          {cacheTs && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Showing cached scores from {cacheAgeLabel(cacheTs)}
+              {refreshing ? ' · Updating in background…' : ''}
+            </p>
+          )}
+          {!cacheTs && refreshing && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Refreshing scores…
+            </p>
+          )}
         </div>
-        {status === 'done' && (
+        {status === 'done' && !refreshing && (
           <button
             type="button"
             className="rp-tab-btn rp-refresh-btn"
-            onClick={runPredictions}
+            onClick={() => runPredictions(false)}
           >
             Refresh scores
           </button>
+        )}
+        {refreshing && (
+          <span style={{ fontSize: '0.8rem', color: 'var(--cove-tidal)', fontWeight: 600 }}>
+            Updating…
+          </span>
         )}
       </div>
       {status === 'loading' && (
@@ -1678,6 +1740,76 @@ function OutcomesTab({
 
   const modelHighRiskCount = riskPreds.filter(p => p.isHighRisk).length
 
+  // ── ML: Education outcome predictions ──────────────────────────────────────
+  type EduRow = { resident: Resident; probability: number; willComplete: boolean }
+  const [eduPreds, setEduPreds] = useState<EduRow[]>([])
+  const [eduLoading, setEduLoading] = useState(false)
+  const [eduError, setEduError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (activeResidents.length === 0) return
+    let cancelled = false
+    setEduLoading(true)
+    setEduError(null)
+
+    api.getEducationRecords()
+      .then(async (allRecords) => {
+        // Group records by resident, sorted earliest first
+        const byResident = new Map<number, typeof allRecords>()
+        allRecords.forEach(r => {
+          if (r.residentId == null) return
+          const arr = byResident.get(r.residentId) ?? []
+          arr.push(r)
+          byResident.set(r.residentId, arr)
+        })
+        byResident.forEach((recs, id) =>
+          byResident.set(id, recs.sort((a, b) =>
+            new Date(a.recordDate ?? 0).getTime() - new Date(b.recordDate ?? 0).getTime()
+          ))
+        )
+
+        const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
+        const rows = await Promise.all(
+          activeResidents
+            .filter(r => (byResident.get(r.residentId)?.length ?? 0) > 0)
+            .map(async (r) => {
+              const recs = (byResident.get(r.residentId) ?? []).slice(0, 3)
+              const attRates = recs.map(rec => rec.attendanceRate ?? 0.8)
+              const progPcts  = recs.map(rec => (rec.progressPercent ?? 50) / 100)
+              const early_attendance_mean = attRates.reduce((s, v) => s + v, 0) / attRates.length
+              const early_progress_mean   = progPcts.reduce((s, v) => s + v, 0) / progPcts.length
+              const initial_progress      = progPcts[0]
+              const early_attendance_slope = attRates.length >= 2
+                ? (attRates[attRates.length - 1] - attRates[0]) / (attRates.length - 1)
+                : 0
+              const input: EducationOutcomeInput = {
+                early_health_mean: 3.5,               // approximated — health records fetched separately
+                early_attendance_mean,
+                early_progress_mean,
+                early_emotional_improvement_rate: 0.5, // approximated — process recordings fetched separately
+                early_attendance_slope,
+                initial_progress,
+              }
+              try {
+                const res = await predictEducationOutcome(input)
+                return { resident: residentById.get(r.residentId)!, probability: res.probability, willComplete: res.will_complete }
+              } catch {
+                return { resident: residentById.get(r.residentId)!, probability: 0.5, willComplete: false }
+              }
+            })
+        )
+        return rows.sort((a, b) => b.probability - a.probability)
+      })
+      .then(rows => { if (!cancelled) setEduPreds(rows) })
+      .catch(err => { if (!cancelled) setEduError(err instanceof Error ? err.message : 'Prediction failed') })
+      .finally(() => { if (!cancelled) setEduLoading(false) })
+
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [residents.length])
+
+  const eduCompleteCount = eduPreds.filter(p => p.willComplete).length
+
   // ── Filters ────────────────────────────────────────────────────────────────
   const [filterSafehouse, setFilterSafehouse] = useState<string>('all')
   const [filterSw, setFilterSw] = useState<string>('all')
@@ -1841,6 +1973,7 @@ function OutcomesTab({
           { label: 'Avg. Education Progress', value: avgEdu ? `${Math.round(avgEdu)}%` : '—', sub: 'across all safehouses' },
           { label: 'Reintegration Pipeline', value: String(reintegrated.length), sub: `${highRisk.length} high-risk residents` },
           { label: 'ML-Flagged High Risk', value: riskLoading ? '…' : String(modelHighRiskCount), sub: 'predicted by resident risk model' },
+          { label: 'ML: Predicted to Complete Edu.', value: eduLoading ? '…' : String(eduCompleteCount), sub: `of ${eduPreds.length} scored residents` },
         ].map(k => (
           <div key={k.label} className="rp-kpi">
             <div className="rp-kpi-label">{k.label}</div>
@@ -2102,6 +2235,70 @@ function OutcomesTab({
                   Next
                 </button>
               </div>
+            )}
+          </div>
+
+          <div className="rp-section">
+            <h3 className="rp-section-title">ML Education Outcome Predictions</h3>
+            <p className="rp-empty" style={{ marginTop: 0 }}>
+              Predicts whether each active resident is on track to complete their education program,
+              based on early attendance and progress trends. Use as a guidance tool — social workers
+              should review individual case context.
+            </p>
+            {eduError && <p className="rp-empty" style={{ color: 'var(--color-warning)' }}>{eduError}</p>}
+            {eduLoading ? (
+              <p className="rp-empty">Scoring residents…</p>
+            ) : eduPreds.length === 0 ? (
+              <p className="rp-empty">No education records available to score.</p>
+            ) : (
+              <table className="rp-table rp-table-wide">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Resident</th>
+                    <th>Safehouse</th>
+                    <th>Completion Probability</th>
+                    <th>Progress Bar</th>
+                    <th>Prediction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {eduPreds.map((p, idx) => {
+                    const pct = Math.round(p.probability * 100)
+                    const color = p.willComplete
+                      ? 'var(--color-success)'
+                      : p.probability >= 0.4
+                        ? 'var(--cove-tidal)'
+                        : 'var(--color-warning)'
+                    const safehouseCode = safehouseCodeById.get(p.resident.safehouseId ?? -1) ?? '—'
+                    return (
+                      <tr key={p.resident.residentId}>
+                        <td className="rp-td-num">{idx + 1}</td>
+                        <td className="rp-td-name">
+                          <Link
+                            className="rp-ml-link"
+                            to={`/admin/residents/${p.resident.residentId}`}
+                          >
+                            {p.resident.internalCode ?? p.resident.caseControlNo ?? `#${p.resident.residentId}`}
+                          </Link>
+                        </td>
+                        <td>{safehouseCode}</td>
+                        <td className="rp-td-num">{pct}%</td>
+                        <td>
+                          <div className="rp-mini-track">
+                            <div className="rp-mini-fill" style={{ width: `${pct}%`, background: color }} />
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`rp-ml-flag ${p.willComplete ? 'rp-ml-flag--ok' : 'rp-ml-flag--high'}`}>
+                            {p.willComplete ? 'On Track' : 'Needs Support'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
 
