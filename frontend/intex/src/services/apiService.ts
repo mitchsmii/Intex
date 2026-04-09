@@ -287,6 +287,21 @@ export interface AdmissionChecklist {
   adminNotes: string | null
 }
 
+export interface Partner {
+  partnerId: number
+  partnerName: string | null
+  partnerType: string | null
+  roleType: string | null
+  contactName: string | null
+  email: string | null
+  phone: string | null
+  region: string | null
+  status: string | null
+  startDate: string | null
+  endDate: string | null
+  notes: string | null
+}
+
 export interface SocialMediaPost {
   postId: number
   platform: string
@@ -378,21 +393,38 @@ async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
 
 // ── API calls ──────────────────────────────────────────────────────────────
 
+export interface CaseConferenceRequest {
+  requestId: number
+  residentIds: string // JSON array of ints
+  requestedBy: string | null
+  requestedDate: string | null
+  requestedTime: string | null
+  agenda: string // JSON array of { residentId, notes }
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Counter-Proposed' | 'Accepted'
+  adminNotes: string | null
+  counterDate: string | null
+  counterTime: string | null
+  reviewedBy: string | null
+  reviewedAt: string | null
+  submittedAt: string
+}
+
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
   getResidents:               () => authGet<Resident[]>('/api/residents'),
   getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
-  getSupporters:              () => get<Supporter[]>('/api/supporters'),
+  getPartners:                () => authGet<Partner[]>('/api/partners'),
+  getSupporters:              () => authGet<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
   lookupSupporterByEmail:     (email: string) =>
     authGet<Supporter>(`/api/supporters/lookup-by-email?email=${encodeURIComponent(email)}`),
   chatWithVanessa:            (messages: { role: 'vanessa' | 'user'; content: string }[]) =>
     authPost<{ reply: string }>('/api/vanessa/chat', { messages }),
-  getDonations:               () => get<Donation[]>('/api/donations'),
-  getDonationsBySupporter:    (id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
-  getDonationsMonthlySummary: () => get<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
-  getTopSupporters:           (top = 5) => get<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
+  getDonations:               () => authGet<Donation[]>('/api/donations'),
+  getDonationsBySupporter:    (id: number) => authGet<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
+  getDonationsMonthlySummary: () => authGet<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
+  getTopSupporters:           (top = 5) => authGet<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
   getDonationsTotal:          () => get<{ total: number }>('/api/donations/total'),
   upsertSupporter:            (body: { firstName: string; lastName: string; email: string; phone?: string; displayName?: string }) =>
     post<Supporter>('/api/supporters/upsert', body),
@@ -404,7 +436,7 @@ export const api = {
   getIncidentReports:         () => authGet<IncidentReport[]>('/api/incidentreports'),
   getUpcomingPlans:           () => authGet<UpcomingPlan[]>('/api/interventionplans/upcoming'),
   getResidentPublicCounts:    () => get<{ totalServed: number; activeResidents: number; reintegrated: number }>('/api/residents/public-counts'),
-  getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
+  getSocialWorkers:           () => authGet<SocialWorker[]>('/api/socialworkers'),
   getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
   getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
   createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string; caseStatus?: string }) =>
@@ -447,4 +479,19 @@ export const api = {
   // Update supporter profile
   updateSupporter:            (id: number, body: Partial<{ firstName: string; lastName: string; displayName: string; email: string; phone: string }>) =>
     authPatchWithBody<Supporter>(`/api/supporters/${id}`, body),
+
+  // Case conference requests
+  getCaseConferenceRequests:     (status?: string) =>
+    authGet<CaseConferenceRequest[]>(`/api/caseconferencerequests${status ? `?status=${status}` : ''}`),
+  getPendingConferenceCount:     () => authGet<number>('/api/caseconferencerequests/pending-count'),
+  submitCaseConferenceRequest:   (body: { residentIds: number[]; requestedDate: string; requestedTime: string; agenda: { residentId: number; notes: string }[] }) =>
+    authPost<CaseConferenceRequest>('/api/caseconferencerequests', body),
+  approveCaseConferenceRequest:  (id: number, notes?: string) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/approve`, { notes }),
+  rejectCaseConferenceRequest:   (id: number, notes?: string) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/reject`, { notes }),
+  counterProposeConference:      (id: number, body: { counterDate: string; counterTime: string; notes?: string }) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/counter-propose`, body),
+  acceptCaseConferenceRequest:   (id: number) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/accept`, {}),
 }

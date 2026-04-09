@@ -309,6 +309,12 @@
   list-style: none;
   margin: 0;
   padding: 0;
+  border-top: none;
+}
+
+.ap-row-wrap {
+  margin: 0;
+  padding: 0;
 }
 
 .ap-row-wrap + .ap-row-wrap {
@@ -324,6 +330,7 @@
   font: inherit;
   color: var(--cove-deep);
   font-size: 0.85rem;
+  margin: 0;
 }
 
 .ap-row:hover { background: var(--cove-seafoam); }

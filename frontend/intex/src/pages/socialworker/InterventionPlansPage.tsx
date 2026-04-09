@@ -81,6 +81,7 @@ function InterventionPlansPage() {
   const [plans, setPlans] = useState<InterventionPlan[]>([])
   const [knownServices, setKnownServices] = useState<string[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [modalPlan, setModalPlan] = useState<InterventionPlan | null>(null)
   const [filter, setFilter] = useState<StatusFilter>('All')
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -476,7 +477,7 @@ function InterventionPlansPage() {
                               key={p.planId}
                               className={`ip-row-wrap${overdue ? ' ip-row-wrap--overdue' : ''}`}
                             >
-                              <div className="ip-row">
+                              <div className="ip-row" onClick={() => setModalPlan(p)} style={{ cursor: 'pointer' }}>
                                 <div className="ip-row-cat">
                                   <span className="ip-plan-cat">{p.planCategory ?? 'Plan'}</span>
                                 </div>
@@ -496,7 +497,7 @@ function InterventionPlansPage() {
                                     <span className="ip-row-muted">—</span>
                                   )}
                                 </div>
-                                <div className="ip-row-status">
+                                <div className="ip-row-status" onClick={(e) => e.stopPropagation()}>
                                   <select
                                     className="ip-plan-status"
                                     value={p.status ?? ''}
@@ -649,6 +650,63 @@ function InterventionPlansPage() {
           )}
         </section>
       </div>
+
+      {modalPlan && (() => {
+        const p = modalPlan
+        return (
+          <div className="ip-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalPlan(null) }}>
+            <div className="ip-modal">
+              <header className="ip-modal-header">
+                <div>
+                  <h2 className="ip-modal-title">{p.planCategory ?? 'Intervention Plan'}</h2>
+                  <p className="ip-modal-meta">
+                    Status: {p.status ?? '—'}
+                    {p.targetDate && ` · Target: ${formatDate(p.targetDate)}`}
+                    {p.caseConferenceDate && ` · Conference: ${formatDate(p.caseConferenceDate)}`}
+                  </p>
+                </div>
+                <button type="button" className="ip-modal-close" onClick={() => setModalPlan(null)} aria-label="Close">×</button>
+              </header>
+              <div className="ip-modal-body">
+                {p.planDescription && (
+                  <div className="ip-modal-section">
+                    <div className="ip-modal-label">Description</div>
+                    <p>{p.planDescription}</p>
+                  </div>
+                )}
+                {p.servicesProvided && (
+                  <div className="ip-modal-section">
+                    <div className="ip-modal-label">Services Provided</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {p.servicesProvided.split(',').map((s, i) => (
+                        <span key={i} className="ip-plan-cat" style={{ fontSize: '0.8rem' }}>{s.trim()}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {p.targetValue != null && (
+                  <div className="ip-modal-section">
+                    <div className="ip-modal-label">Target Value</div>
+                    <p>{p.targetValue}</p>
+                  </div>
+                )}
+                {p.createdAt && (
+                  <div className="ip-modal-section">
+                    <div className="ip-modal-label">Created</div>
+                    <p>{formatDate(p.createdAt)}</p>
+                  </div>
+                )}
+                {p.updatedAt && (
+                  <div className="ip-modal-section">
+                    <div className="ip-modal-label">Last Updated</div>
+                    <p>{formatDate(p.updatedAt)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

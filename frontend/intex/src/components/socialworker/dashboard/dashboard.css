@@ -1215,3 +1215,108 @@
     min-width: 720px;
   }
 }
+
+/* ─── Conference Requests card (SW Dashboard Today tab) ──────────────── */
+
+.conf-req-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.conf-req-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--cove-anchor);
+  margin: 0 0 var(--space-sm);
+}
+
+.conf-req-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.conf-req-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  flex-wrap: wrap;
+}
+
+.conf-req-row + .conf-req-row {
+  border-top: 1px solid var(--border-light);
+}
+
+.conf-req-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.conf-req-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+}
+
+.conf-req-status--pending {
+  background: var(--cove-sand);
+  color: var(--color-warning);
+}
+.conf-req-status--counter {
+  background: #e0f2fe;
+  color: var(--cove-tidal);
+}
+.conf-req-status--confirmed {
+  background: var(--cove-seafoam);
+  color: var(--color-success);
+}
+
+.conf-req-date {
+  font-weight: 600;
+  color: var(--cove-anchor);
+}
+
+.conf-req-residents {
+  color: var(--text-muted);
+}
+
+.conf-req-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.conf-req-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.conf-req-btn {
+  padding: 4px 14px;
+  border: none;
+  border-radius: var(--radius-full);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.conf-req-btn--accept {
+  background: var(--cove-tidal);
+  color: white;
+}
+.conf-req-btn--accept:hover { background: var(--cove-deep); }
+.conf-req-btn--accept:disabled { opacity: 0.5; }

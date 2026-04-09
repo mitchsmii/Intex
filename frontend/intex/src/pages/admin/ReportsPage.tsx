@@ -152,6 +152,83 @@ function cacheAgeLabel(ts: number): string {
   return `${Math.round(hrs / 24)}d ago`
 }
 
+function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapseRows: LapseRow[] }) {
+  const { retentionRate, priorYearCount, highRiskCount } = useMemo(() => {
+    const now = new Date()
+    const last12Start = new Date(now)
+    last12Start.setFullYear(now.getFullYear() - 1)
+    const prior12Start = new Date(now)
+    prior12Start.setFullYear(now.getFullYear() - 2)
+
+    const priorYearDonors = new Set<number>()
+    const recentDonors = new Set<number>()
+
+    for (const d of donations) {
+      if (d.supporterId == null || !d.donationDate) continue
+      const ts = new Date(d.donationDate).getTime()
+      if (Number.isNaN(ts)) continue
+
+      if (ts >= prior12Start.getTime() && ts < last12Start.getTime()) {
+        priorYearDonors.add(d.supporterId)
+      }
+      if (ts >= last12Start.getTime() && ts <= now.getTime()) {
+        recentDonors.add(d.supporterId)
+      }
+    }
+
+    let retained = 0
+    for (const id of priorYearDonors) {
+      if (recentDonors.has(id)) retained += 1
+    }
+
+    const retention = priorYearDonors.size > 0 ? (retained / priorYearDonors.size) * 100 : 0
+    const highRisk = lapseRows.filter(r => r.probability >= 0.85).length
+
+    return {
+      retentionRate: retention,
+      priorYearCount: priorYearDonors.size,
+      highRiskCount: highRisk,
+    }
+  }, [donations, lapseRows])
+
+  const retentionStatus = retentionRate >= 40 ? 'ok' : retentionRate >= 25 ? 'warn' : 'bad'
+  const retentionProgress = Math.min(100, Math.max(0, (retentionRate / 40) * 100))
+
+  const highRiskStatus = highRiskCount <= 10 ? 'ok' : highRiskCount <= 20 ? 'warn' : 'bad'
+  const highRiskProgress = highRiskCount <= 10
+    ? 100
+    : Math.max(0, Math.min(100, ((20 - highRiskCount) / 10) * 100))
+
+  return (
+    <section className="rp-okr-banner" aria-label="Donor OKR summary">
+      <div className="rp-okr-grid">
+        <article className="rp-okr-card">
+          <div className="rp-okr-label">OBJECTIVE</div>
+          <p className="rp-okr-objective"><strong>Retain existing donors</strong></p>
+          <div className="rp-okr-value">{Math.round(retentionRate)}%</div>
+          <p className="rp-okr-target">
+            Target: 40%
+            {priorYearCount > 0 ? ` (${priorYearCount} prior-year donors)` : ''}
+          </p>
+          <div className="rp-okr-track">
+            <div className={`rp-okr-fill rp-okr-fill-${retentionStatus}`} style={{ width: `${retentionProgress}%` }} />
+          </div>
+        </article>
+
+        <article className="rp-okr-card">
+          <div className="rp-okr-label">OBJECTIVE</div>
+          <p className="rp-okr-objective"><strong>Reduce high-risk donor lapse</strong></p>
+          <div className="rp-okr-value">{highRiskCount} donors</div>
+          <p className="rp-okr-target">Target: fewer than 10 · {highRiskCount} donors need outreach</p>
+          <div className="rp-okr-track">
+            <div className={`rp-okr-fill rp-okr-fill-${highRiskStatus}`} style={{ width: `${highRiskProgress}%` }} />
+          </div>
+        </article>
+      </div>
+    </section>
+  )
+}
+
 function resolveAcquisitionChannel(raw: unknown): string {
   const s = raw as {
     acquisitionChannel?: string | null
@@ -306,7 +383,15 @@ function buildChurnInput(rows: Donation[]): DonorChurnInput {
 
 const LAPSE_PAGE_SIZE = 10
 
-function LapseRiskPanel({ donations, currency }: { donations: Donation[]; currency: string }) {
+function LapseRiskPanel({
+  donations,
+  currency,
+  onRowsChange,
+}: {
+  donations: Donation[]
+  currency: string
+  onRowsChange?: (rows: LapseRow[]) => void
+}) {
   // Seed state from cache immediately so the table is visible on first render
   const initialCache = loadLapseCache()
   const [rows, setRows] = useState<LapseRow[]>(initialCache?.rows ?? [])
@@ -323,6 +408,10 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
   const [channelMap, setChannelMap] = useState<Map<number, string>>(new Map())
   const [showModelDrivers, setShowModelDrivers] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
+
+  useEffect(() => {
+    onRowsChange?.(rows)
+  }, [rows, onRowsChange])
 
   useEffect(() => {
     fetchDonorChurnFeatureImportance()
@@ -371,6 +460,7 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
     }
     try {
       const entries = Array.from(perDonor.entries())
+      // Batch into groups of 8 to avoid overwhelming the ML API on cold starts
       const BATCH = 8
       const results: LapseRow[] = []
       for (let i = 0; i < entries.length; i += BATCH) {
@@ -404,7 +494,7 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
               recurring: input.is_recurring_donor,
               probability: res.probability,
               reasons,
-            } satisfies LapseRow
+            }
           }),
         )
         for (const r of settled) {
@@ -947,13 +1037,15 @@ const RANGE_LABELS: Record<TrendRange, string> = {
 // ─── Tab: Donations ────────────────────────────────────────────────────────────
 
 function DonationsTab({
-  donations, monthly, topDonors, allocation, loading,
+  donations, monthly, topDonors, allocation, loading, onLapseRowsChange, lapseRows,
 }: {
   donations: Donation[]
   monthly: MonthlyDonationSummary[]
   topDonors: TopSupporter[]
   allocation: AllocationSummary | null
   loading: boolean
+  onLapseRowsChange?: (rows: LapseRow[]) => void
+  lapseRows: LapseRow[]
 }) {
   const [trendRange,   setTrendRange]   = useState<TrendRange>('1Y')
   /** Default index 1 = "Full Capacity" ($25,000) — users pick other presets via buttons only. */
@@ -992,6 +1084,10 @@ function DonationsTab({
 
   return (
     <div className="rp-tab-content">
+      {lapseRows.length > 0 && (
+        <DonorOKRBanner donations={donations} lapseRows={lapseRows} />
+      )}
+
       <div className="rp-kpi-grid">
         {[
           { label: 'YTD Total', value: fmtAmt(ytd, currency), sub: `${monthly.filter(m => m.year === curYear).reduce((s, m) => s + m.count, 0)} donations` },
@@ -1127,7 +1223,7 @@ function DonationsTab({
         </div>
       )}
 
-      <LapseRiskPanel donations={donations} currency={currency} />
+      <LapseRiskPanel donations={donations} currency={currency} onRowsChange={onLapseRowsChange} />
 
       <div className="rp-section">
         <h3 className="rp-section-title">Funding Thresholds</h3>
@@ -2368,6 +2464,7 @@ export default function ReportsPage() {
   const [safehouses, setSafehouses] = useState<Safehouse[]>([])
   const [residents,  setResidents]  = useState<Resident[]>([])
   const [loading,    setLoading]    = useState(true)
+  const [lapseRows,  setLapseRows]  = useState<LapseRow[]>([])
 
   useEffect(() => {
     Promise.allSettled([
@@ -2414,7 +2511,15 @@ export default function ReportsPage() {
       </div>
 
       {tab === 'donations' && (
-        <DonationsTab donations={donations} monthly={monthly} topDonors={topDonors} allocation={allocation} loading={loading} />
+        <DonationsTab
+          donations={donations}
+          monthly={monthly}
+          topDonors={topDonors}
+          allocation={allocation}
+          loading={loading}
+          onLapseRowsChange={setLapseRows}
+          lapseRows={lapseRows}
+        />
       )}
       {tab === 'outcomes' && (
         <OutcomesTab metrics={metrics} safehouses={safehouses} residents={residents} loading={loading} />

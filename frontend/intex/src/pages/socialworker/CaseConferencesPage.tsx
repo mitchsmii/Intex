@@ -4,6 +4,7 @@ import {
   fetchResidents,
   fetchInterventionPlans,
 } from '../../services/socialWorkerService'
+import { api } from '../../services/apiService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import type { Resident } from '../../types/Resident'
 import type { InterventionPlan } from '../../types/InterventionPlan'
@@ -43,6 +44,16 @@ function CaseConferencesPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedDate, setExpandedDate] = useState<string | null>(null)
+  const [modalConference, setModalConference] = useState<Conference | null>(null)
+
+  // ── Schedule request form state ──
+  const [showRequestForm, setShowRequestForm] = useState(false)
+  const [reqDate, setReqDate] = useState('')
+  const [reqTime, setReqTime] = useState('')
+  const [reqResidents, setReqResidents] = useState<Set<number>>(new Set())
+  const [reqAgenda, setReqAgenda] = useState<Record<number, string>>({})
+  const [reqSubmitting, setReqSubmitting] = useState(false)
+  const [reqError, setReqError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchResidents()
@@ -191,9 +202,16 @@ function CaseConferencesPage() {
                 <button
                   type="button"
                   className="cc-schedule-btn"
-                  onClick={() => navigate('/socialworker/dashboard/intervention-plans')}
+                  onClick={() => {
+                    setReqDate('')
+                    setReqTime('')
+                    setReqResidents(new Set())
+                    setReqAgenda({})
+                    setReqError(null)
+                    setShowRequestForm(true)
+                  }}
                 >
-                  + Schedule Conference
+                  + Request Conference
                 </button>
               </div>
 
@@ -234,11 +252,7 @@ function CaseConferencesPage() {
                               conference={c}
                               upcoming
                               expanded={expandedDate === `up-${c.date}`}
-                              onToggle={() =>
-                                setExpandedDate((cur) =>
-                                  cur === `up-${c.date}` ? null : `up-${c.date}`,
-                                )
-                              }
+                              onToggle={() => setModalConference(c)}
                               onOpenPlans={() =>
                                 navigate('/socialworker/dashboard/intervention-plans')
                               }
@@ -271,11 +285,7 @@ function CaseConferencesPage() {
                               conference={c}
                               upcoming={false}
                               expanded={expandedDate === `past-${c.date}`}
-                              onToggle={() =>
-                                setExpandedDate((cur) =>
-                                  cur === `past-${c.date}` ? null : `past-${c.date}`,
-                                )
-                              }
+                              onToggle={() => setModalConference(c)}
                               onOpenPlans={() =>
                                 navigate('/socialworker/dashboard/intervention-plans')
                               }
@@ -293,6 +303,164 @@ function CaseConferencesPage() {
           )}
         </section>
       </div>
+
+      {modalConference && (() => {
+        const c = modalConference
+        return (
+          <div className="cc-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalConference(null) }}>
+            <div className="cc-modal">
+              <header className="cc-modal-header">
+                <div>
+                  <h2 className="cc-modal-title">Case Conference</h2>
+                  <p className="cc-modal-meta">
+                    {formatDate(c.date)} · {c.plans.length} {c.plans.length === 1 ? 'plan' : 'plans'}
+                  </p>
+                </div>
+                <button type="button" className="cc-modal-close" onClick={() => setModalConference(null)} aria-label="Close">×</button>
+              </header>
+              <div className="cc-modal-body">
+                {c.plans.map((p) => (
+                  <div key={p.planId} className="cc-modal-plan">
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                      <span className="cc-cat-chip">{p.planCategory ?? 'Plan'}</span>
+                      {p.status && <span className="cc-status-pill">{p.status}</span>}
+                    </div>
+                    {p.planDescription && (
+                      <div className="cc-modal-section">
+                        <div className="cc-modal-label">Description</div>
+                        <p>{p.planDescription}</p>
+                      </div>
+                    )}
+                    {p.servicesProvided && (
+                      <div className="cc-modal-section">
+                        <div className="cc-modal-label">Services Provided</div>
+                        <p>{p.servicesProvided}</p>
+                      </div>
+                    )}
+                    {p.targetDate && (
+                      <div className="cc-modal-section">
+                        <div className="cc-modal-label">Target Date</div>
+                        <p>{formatDate(p.targetDate)}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {showRequestForm && (
+        <div className="cc-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowRequestForm(false) }}>
+          <div className="cc-modal" style={{ maxWidth: 700 }}>
+            <header className="cc-modal-header">
+              <div>
+                <h2 className="cc-modal-title">Request a Case Conference</h2>
+                <p className="cc-modal-meta">Select a date, time, residents, and agenda items. Admin will review your request.</p>
+              </div>
+              <button type="button" className="cc-modal-close" onClick={() => setShowRequestForm(false)}>×</button>
+            </header>
+            <form
+              className="cc-modal-body"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                if (reqResidents.size === 0) { setReqError('Select at least one resident.'); return }
+                setReqSubmitting(true)
+                setReqError(null)
+                try {
+                  await api.submitCaseConferenceRequest({
+                    residentIds: Array.from(reqResidents),
+                    requestedDate: reqDate,
+                    requestedTime: reqTime,
+                    agenda: Array.from(reqResidents).map((id) => ({
+                      residentId: id,
+                      notes: reqAgenda[id] ?? '',
+                    })),
+                  })
+                  setShowRequestForm(false)
+                } catch (err) {
+                  setReqError(err instanceof Error ? err.message : 'Submission failed')
+                } finally {
+                  setReqSubmitting(false)
+                }
+              }}
+            >
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                <label className="cc-req-field">
+                  <span className="cc-modal-label">Preferred Date</span>
+                  <input type="date" value={reqDate} onChange={(e) => setReqDate(e.target.value)} required />
+                </label>
+                <label className="cc-req-field">
+                  <span className="cc-modal-label">Preferred Time</span>
+                  <select value={reqTime} onChange={(e) => setReqTime(e.target.value)} required>
+                    <option value="">Select…</option>
+                    {['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'].map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="cc-req-section">
+                <div className="cc-modal-label">Select Residents to Discuss</div>
+                <div className="cc-req-residents">
+                  {residents.map((r) => {
+                    const checked = reqResidents.has(r.residentId)
+                    return (
+                      <label key={r.residentId} className={`cc-req-resident-opt${checked ? ' cc-req-resident-opt--on' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setReqResidents((prev) => {
+                              const next = new Set(prev)
+                              e.target.checked ? next.add(r.residentId) : next.delete(r.residentId)
+                              return next
+                            })
+                          }}
+                        />
+                        <span>{r.internalCode ?? `#${r.residentId}`}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {reqResidents.size > 0 && (
+                <div className="cc-req-section">
+                  <div className="cc-modal-label">Agenda — What to Discuss per Resident</div>
+                  {Array.from(reqResidents).map((id) => {
+                    const res = residents.find((r) => r.residentId === id)
+                    return (
+                      <label key={id} className="cc-req-agenda-row">
+                        <span className="cc-req-agenda-code">{res?.internalCode ?? `#${id}`}</span>
+                        <input
+                          type="text"
+                          placeholder="e.g. Review risk level, discuss reintegration plan"
+                          value={reqAgenda[id] ?? ''}
+                          onChange={(e) => setReqAgenda((prev) => ({ ...prev, [id]: e.target.value }))}
+                        />
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+
+              {reqError && <div style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{reqError}</div>}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 'var(--space-sm)', paddingTop: 'var(--space-sm)' }}>
+                <button type="button" className="cc-detail-link" onClick={() => setShowRequestForm(false)} disabled={reqSubmitting}>
+                  Cancel
+                </button>
+                <button type="submit" className="cc-schedule-btn" disabled={reqSubmitting}>
+                  {reqSubmitting ? 'Submitting…' : 'Submit Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

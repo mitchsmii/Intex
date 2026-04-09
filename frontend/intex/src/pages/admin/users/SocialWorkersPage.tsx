@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../../services/apiService'
 import type { SocialWorker, Safehouse, Resident } from '../../../services/apiService'
 import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
@@ -107,9 +108,10 @@ export default function SocialWorkersPage() {
   const [sortCol,    setSortCol]    = useState<SortKey>('fullName')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
   const [valueFilter, setValueFilter] = useState('')
-  const [showAdd,    setShowAdd]    = useState(false)
+  const [showAdd,      setShowAdd]      = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<SocialWorker | null>(null)
-  const [deleting, setDeleting] = useState(false)
+  const [deleting,     setDeleting]     = useState(false)
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
   useEffect(() => { setValueFilter('') }, [sortCol])
 
@@ -313,8 +315,22 @@ export default function SocialWorkersPage() {
               )}
               {filtered.map((w, i) => {
                 const res = assignedResidents(w)
+                const rowKey = w.socialWorkerId || i
+                const expanded = expandedRows.has(rowKey)
+                const visibleRes = expanded ? res : res.slice(0, 3)
+                const overflowCount = res.length - 3
+
+                function toggleExpand(e: React.MouseEvent) {
+                  e.stopPropagation()
+                  setExpandedRows(prev => {
+                    const next = new Set(prev)
+                    next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey)
+                    return next
+                  })
+                }
+
                 return (
-                  <tr key={w.socialWorkerId || i}>
+                  <tr key={rowKey}>
                     <td className="mu-td-name">{w.fullName}</td>
                     <td>{w.email ?? '—'}</td>
                     <td>{w.phone ?? '—'}</td>
@@ -329,13 +345,33 @@ export default function SocialWorkersPage() {
                         <span className="mu-muted">—</span>
                       ) : (
                         <div className="mu-resident-chips">
-                          {res.slice(0, 3).map(r => (
-                            <span key={r.residentId} className="mu-chip">
+                          {visibleRes.map(r => (
+                            <Link
+                              key={r.residentId}
+                              to={`/admin/residents/${r.residentId}`}
+                              className="mu-chip mu-chip-link"
+                              title={`View ${r.internalCode ?? `R-${r.residentId}`}'s profile`}
+                            >
                               {r.internalCode ?? `R-${r.residentId}`}
-                            </span>
+                            </Link>
                           ))}
-                          {res.length > 3 && (
-                            <span className="mu-chip mu-chip-more">+{res.length - 3}</span>
+                          {!expanded && overflowCount > 0 && (
+                            <button
+                              className="mu-chip mu-chip-more mu-chip-expand"
+                              onClick={toggleExpand}
+                              title="Show all residents"
+                            >
+                              +{overflowCount}
+                            </button>
+                          )}
+                          {expanded && (
+                            <button
+                              className="mu-chip mu-chip-more mu-chip-expand"
+                              onClick={toggleExpand}
+                              title="Show fewer"
+                            >
+                              ↑ less
+                            </button>
                           )}
                         </div>
                       )}
