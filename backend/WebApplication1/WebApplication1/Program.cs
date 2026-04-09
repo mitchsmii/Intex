@@ -197,6 +197,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseCors("AllowFrontend");
+
 app.UseHttpsRedirection();
 
 // Content-Security-Policy header
@@ -211,8 +213,6 @@ app.Use(async (context, next) =>
         "connect-src 'self' https://intexbackend-dragb9ahdsfvejfe.centralus-01.azurewebsites.net https://intex-ochre.vercel.app;";
     await next();
 });
-
-app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
