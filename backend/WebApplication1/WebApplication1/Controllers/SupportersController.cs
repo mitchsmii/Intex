@@ -7,6 +7,7 @@ namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class SupportersController : ControllerBase
 {
     private readonly AppDbContext _context;
