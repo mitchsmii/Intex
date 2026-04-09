@@ -106,6 +106,7 @@ public class HomeVisitationsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,SocialWorker")]
     public async Task<ActionResult<HomeVisitation>> CreateHomeVisitation(HomeVisitation visitation)
     {
         _context.HomeVisitations.Add(visitation);
@@ -114,6 +115,7 @@ public class HomeVisitationsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,SocialWorker")]
     public async Task<IActionResult> UpdateHomeVisitation(int id, HomeVisitation visitation)
     {
         if (id != visitation.VisitationId) return BadRequest();
