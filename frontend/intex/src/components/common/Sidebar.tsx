@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import logoImg from '../../assets/intex_logo.png'
+import logoImg from '../../assets/intex_logo.webp'
 import './Sidebar.css'
 
 export interface NavItem {

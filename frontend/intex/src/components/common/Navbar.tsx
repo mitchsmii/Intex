@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import logoImg from '../../assets/intex_logo.png'
+import logoImg from '../../assets/intex_logo.webp'
 import ThemeToggle from './ThemeToggle'
 import './Navbar.css'
 

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import shelterImg from '../../assets/shelter.webp'
-import handsImg from '../../assets/hands.png'
-import girlsJumpingFieldImg from '../../assets/girls-jumping-field.png'
+import handsImg from '../../assets/hands.webp'
+import girlsJumpingFieldImg from '../../assets/girls-jumping-field.webp'
 import './HomePage.css'
 
 const pillars = [
@@ -76,7 +76,7 @@ function HomePage() {
             </p>
           </div>
           <div className="hp-holistic-img">
-            <img src={handsImg} alt="Hands reaching out in support" />
+            <img src={handsImg} alt="Hands reaching out in support" fetchPriority="high" />
           </div>
         </div>
       </section>
@@ -104,7 +104,7 @@ function HomePage() {
       <section className="hp-impact-banner">
         <div className="hp-impact-inner">
           <div className="hp-impact-image">
-            <img src={girlsJumpingFieldImg} alt="Girls jumping in a field" />
+            <img src={girlsJumpingFieldImg} alt="Girls jumping in a field" loading="lazy" />
           </div>
           <div className="hp-impact-content">
             <div className="hp-impact-text">
