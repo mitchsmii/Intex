@@ -14,7 +14,12 @@ builder.Services.AddOpenApi();
 
 // EF Core + Npgsql
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null)));
 
 // ASP.NET Identity
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
@@ -195,6 +200,11 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+else
+{
+    // HSTS: instruct browsers to only contact this site over HTTPS for 1 year
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
