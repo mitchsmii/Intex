@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
 import type { Supporter, Donation } from '../../../services/apiService'
+import { DONOR_CHURN_THRESHOLDS } from '../../../config/donorChurnThresholds'
 import type { MlCachedPrediction } from '../../../services/apiService'
 import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
 import '../ManageUsersPage.css'
@@ -17,8 +18,8 @@ type Dir = 'asc' | 'desc'
 
 function getRiskTier(prob: number | undefined): { label: string; className: string } {
   if (prob === undefined) return { label: 'Loading…', className: 'mu-badge-off' }
-  if (prob >= 0.85) return { label: 'Critical', className: 'mu-badge-critical' }
-  if (prob >= 0.50) return { label: 'Moderate', className: 'mu-badge-warn' }
+  if (prob >= DONOR_CHURN_THRESHOLDS.donorsCriticalRisk) return { label: 'Critical', className: 'mu-badge-critical' }
+  if (prob >= DONOR_CHURN_THRESHOLDS.donorsModerateRisk) return { label: 'Moderate', className: 'mu-badge-warn' }
   return { label: 'Low Risk', className: 'mu-badge-ok' }
 }
 
@@ -175,7 +176,7 @@ export default function DonorsPage() {
     .filter(d => {
       if (kpiFilter === 'recurring' && !isRecurring(d.supporterId))    return false
       if (kpiFilter === 'active'    && d.status !== 'Active')           return false
-      if (kpiFilter === 'critical'  && (churnScores[d.supporterId] ?? 0) < 0.85) return false
+      if (kpiFilter === 'critical'  && (churnScores[d.supporterId] ?? 0) < DONOR_CHURN_THRESHOLDS.donorsCriticalRisk) return false
       if (valueFilter && pinValue(d) !== valueFilter) return false
       const matchSearch = !search ||
         (d.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
@@ -239,7 +240,7 @@ export default function DonorsPage() {
           { label: 'Total Donors',     display: String(donors.length),                                    num: donors.length,                                    den: null,           key: null },
           { label: 'Recurring Donors', display: null,                                                      num: recurring,                                        den: donors.length,  key: 'recurring' },
           { label: 'Active Status',    display: null,                                                      num: donors.filter(d => d.status === 'Active').length, den: donors.length,  key: 'active' },
-          { label: 'Critical Risk',    display: null,                                                      num: donors.filter(d => (churnScores[d.supporterId] ?? 0) >= 0.85).length, den: donors.length,  key: 'critical' },
+          { label: 'Critical Risk',    display: null,                                                      num: donors.filter(d => (churnScores[d.supporterId] ?? 0) >= DONOR_CHURN_THRESHOLDS.donorsCriticalRisk).length, den: donors.length,  key: 'critical' },
           { label: 'Total Raised',     display: fmtAmt(totalRaised, currency),                            num: 0,                                                den: null,           key: null },
         ] as { label: string; display: string | null; num: number; den: number | null; key: string | null }[]).map(k => (
           <div

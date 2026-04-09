@@ -15,6 +15,7 @@ import type {
   AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident, ResidentMlFeatures,
   ProcessRecording, HealthRecord, HomeVisitation, EducationRecord,
 } from '../../services/apiService'
+import { DONOR_CHURN_THRESHOLDS } from '../../config/donorChurnThresholds'
 import './ReportsPage.css'
 
 
@@ -186,7 +187,7 @@ function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapse
     }
 
     const retention = priorYearDonors.size > 0 ? (retained / priorYearDonors.size) * 100 : 0
-    const highRisk = lapseRows.filter(r => r.probability >= 0.85).length
+    const highRisk = lapseRows.filter(r => r.probability >= DONOR_CHURN_THRESHOLDS.donorsCriticalRisk).length
 
     return {
       retentionRate: retention,
@@ -319,7 +320,11 @@ function deriveReasons(input: {
 type RiskFilter = 'all' | 'high' | 'medium' | 'low'
 
 function riskOf(p: number): 'high' | 'medium' | 'low' {
-  return p >= 0.7 ? 'high' : p >= 0.4 ? 'medium' : 'low'
+  return p >= DONOR_CHURN_THRESHOLDS.reportsHighRisk
+    ? 'high'
+    : p >= DONOR_CHURN_THRESHOLDS.reportsMediumRisk
+      ? 'medium'
+      : 'low'
 }
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -563,7 +568,7 @@ function LapseRiskPanel({
       const scored = ids
         .filter(id => idsWithScores.has(id))
         .map(id => scoreById.get(id) ?? 0)
-      const lapsed = scored.filter(p => p >= 0.5).length
+      const lapsed = scored.filter(p => p >= DONOR_CHURN_THRESHOLDS.lapsedProxy).length
       const count = scored.length
       if (count === 0) return null
       const lapseRate = (lapsed / count) * 100
@@ -923,8 +928,8 @@ function LapseRiskPanel({
             {filteredRows.slice(page * LAPSE_PAGE_SIZE, (page + 1) * LAPSE_PAGE_SIZE).map(r => {
               const pct = Math.round(r.probability * 100)
               const tone =
-                r.probability >= 0.7 ? 'var(--color-error)'
-                : r.probability >= 0.4 ? 'var(--color-warning)'
+                r.probability >= DONOR_CHURN_THRESHOLDS.reportsHighRisk ? 'var(--color-error)'
+                : r.probability >= DONOR_CHURN_THRESHOLDS.reportsMediumRisk ? 'var(--color-warning)'
                 : 'var(--color-success)'
               return (
                 <tr key={r.supporterId}>
@@ -960,7 +965,11 @@ function LapseRiskPanel({
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{pct}%</span>
                   </td>
                   <td style={{ color: tone, fontWeight: 600 }}>
-                    {r.probability >= 0.7 ? 'High' : r.probability >= 0.4 ? 'Medium' : 'Low'}
+                    {r.probability >= DONOR_CHURN_THRESHOLDS.reportsHighRisk
+                      ? 'High'
+                      : r.probability >= DONOR_CHURN_THRESHOLDS.reportsMediumRisk
+                        ? 'Medium'
+                        : 'Low'}
                   </td>
                 </tr>
               )
