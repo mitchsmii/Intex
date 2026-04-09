@@ -84,10 +84,8 @@ export default function DonorProfilePage() {
     )
   }
 
-  const name = supporter.displayName
-    ?? `${supporter.firstName ?? ''} ${supporter.lastName ?? ''}`.trim()
-    || supporter.email
-    || 'Donor'
+  const fullName = `${supporter.firstName ?? ''} ${supporter.lastName ?? ''}`.trim()
+  const name = supporter.displayName || fullName || supporter.email || 'Donor'
 
   return (
     <div className="dp-page">
