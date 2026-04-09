@@ -1,6 +1,9 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { api } from '../../services/apiService'
 import shelterImg from '../../assets/shelter.webp'
 import handsImg from '../../assets/hands.png'
+import girlsJumpingFieldImg from '../../assets/girls-jumping-field.png'
 import './HomePage.css'
 
 const pillars = [
@@ -27,11 +30,18 @@ const pillars = [
 ]
 
 
-const CAMPAIGN_GOAL = 25000
-const CAMPAIGN_RAISED = 12450
-const CAMPAIGN_PCT = Math.round((CAMPAIGN_RAISED / CAMPAIGN_GOAL) * 100)
 
 function HomePage() {
+  const [totalServed, setTotalServed] = useState(0)
+  const [activeSafehouses, setActiveSafehouses] = useState(0)
+  const [totalRaised, setTotalRaised] = useState(0)
+
+  useEffect(() => {
+    api.getResidentPublicCounts().then(c => setTotalServed(c.totalServed))
+    api.getSafehouses().then(s => setActiveSafehouses(s.filter(h => h.status === 'Active').length))
+    api.getDonationsTotal().then(({ total }) => setTotalRaised(Number(total)))
+  }, [])
+
   return (
     <>
       {/* ── Hero ── */}
@@ -90,6 +100,42 @@ function HomePage() {
         </div>
       </section>
 
+      {/* ── Impact Banner ── */}
+      <section className="hp-impact-banner">
+        <div className="hp-impact-inner">
+          <div className="hp-impact-image">
+            <img src={girlsJumpingFieldImg} alt="Girls jumping in a field" />
+          </div>
+          <div className="hp-impact-content">
+            <div className="hp-impact-text">
+              <p className="hp-impact-eyebrow">Transparency &amp; Trust</p>
+              <h2>See the Real Impact</h2>
+              <p>
+                Curious where your donation goes? View our live impact dashboard —
+                real numbers, real outcomes, updated from our case management system.
+              </p>
+            </div>
+            <div className="hp-impact-stats" aria-label="Impact highlights">
+              <div className="hp-impact-stat">
+                <p className="hp-impact-stat-value">{totalServed}+</p>
+                <p className="hp-impact-stat-label">Survivors Served</p>
+              </div>
+              <div className="hp-impact-stat">
+                <p className="hp-impact-stat-value">{activeSafehouses}</p>
+                <p className="hp-impact-stat-label">Active Safe Homes</p>
+              </div>
+              <div className="hp-impact-stat">
+                <p className="hp-impact-stat-value">${totalRaised.toLocaleString()}</p>
+                <p className="hp-impact-stat-label">Total Raised</p>
+              </div>
+            </div>
+            <div className="hp-impact-cta-row">
+              <Link to="/impact" className="hp-btn-secondary">View Our Impact</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Mission Banner ── */}
       <section className="hp-mission">
         <div className="hp-mission-inner">
@@ -101,46 +147,6 @@ function HomePage() {
             leadership. Here, survivors become part of a community where every
             person is seen, heard, and loved like family."
           </blockquote>
-          <p className="hp-mission-motto">Family · Progress · Holistic Love</p>
-        </div>
-      </section>
-
-      {/* ── Active Campaign ── */}
-      <section className="hp-campaign">
-        <div className="hp-campaign-inner">
-          <span className="hp-campaign-badge">Active Campaign</span>
-          <h2>Wheels of Hope</h2>
-          <p>
-            Transportation is a critical barrier for survivors escaping dangerous
-            situations. Help us provide reliable vehicles for our outreach team
-            and safe transit for those who need it most.
-          </p>
-          <div className="hp-progress-wrap">
-            <div className="hp-progress-labels">
-              <span>${CAMPAIGN_RAISED.toLocaleString()} raised</span>
-              <span>Goal: ${CAMPAIGN_GOAL.toLocaleString()}</span>
-            </div>
-            <div className="hp-progress-bar" role="progressbar" aria-valuenow={CAMPAIGN_PCT} aria-valuemin={0} aria-valuemax={100}>
-              <div className="hp-progress-fill" style={{ width: `${CAMPAIGN_PCT}%` }} />
-            </div>
-            <p className="hp-progress-pct">{CAMPAIGN_PCT}% funded</p>
-          </div>
-          <Link to="/donate" className="hp-btn-secondary">Support This Campaign</Link>
-        </div>
-      </section>
-
-      {/* ── Impact Banner ── */}
-      <section className="hp-impact-banner">
-        <div className="hp-impact-inner">
-          <div className="hp-impact-text">
-            <p className="hp-impact-eyebrow">Transparency &amp; Trust</p>
-            <h2>See the Real Impact</h2>
-            <p>
-              Curious where your donation goes? View our live impact dashboard —
-              real numbers, real outcomes, updated from our case management system.
-            </p>
-          </div>
-          <Link to="/impact" className="hp-btn-secondary">View Our Impact</Link>
         </div>
       </section>
     </>

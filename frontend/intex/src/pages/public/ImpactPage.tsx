@@ -42,6 +42,7 @@ function StatNumber({ value, suffix = '' }: { value: number; suffix?: string }) 
 export default function ImpactPage() {
   const [safehouses, setSafehouses] = useState<Safehouse[]>([])
   const [metrics,    setMetrics]    = useState<SafehouseMonthlyMetric[]>([])
+  const [allMetrics, setAllMetrics] = useState<SafehouseMonthlyMetric[]>([])
   const [totalRaised, setTotalRaised] = useState(0)
   const [activeResidents, setActiveResidents]  = useState(0)
   const [reintegrated,    setReintegrated]     = useState(0)
@@ -60,28 +61,61 @@ export default function ImpactPage() {
         setTotalServed(counts.totalServed)
       }),
       api.getLatestMetrics().then(setMetrics),
+      api.getSafehouseMonthlyMetrics().then(setAllMetrics),
       api.getDonationsTotal().then(({ total }) => setTotalRaised(Number(total))),
     ])
   }, [])
 
   const activeSafehouses = safehouses.filter(s => s.status === 'Active').length
 
-  const avgHealth = metrics.filter(m => m.avgHealthScore != null).length
-    ? metrics.reduce((s, m) => s + Number(m.avgHealthScore ?? 0), 0) / metrics.filter(m => m.avgHealthScore != null).length
-    : 0
-  const avgEdu = metrics.filter(m => m.avgEducationProgress != null).length
-    ? metrics.reduce((s, m) => s + Number(m.avgEducationProgress ?? 0), 0) / metrics.filter(m => m.avgEducationProgress != null).length
-    : 0
+  const average = (values: number[]) => (
+    values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
+  )
+
+  const latestHealthValues = metrics
+    .map(m => m.avgHealthScore)
+    .filter((value): value is number => value != null)
+    .map(Number)
+  const latestEducationValues = metrics
+    .map(m => m.avgEducationProgress)
+    .filter((value): value is number => value != null)
+    .map(Number)
+
+  const groupedBySafehouse = allMetrics.reduce<Record<number, SafehouseMonthlyMetric[]>>((acc, metric) => {
+    if (metric.safehouseId == null) return acc
+    if (!acc[metric.safehouseId]) acc[metric.safehouseId] = []
+    acc[metric.safehouseId].push(metric)
+    return acc
+  }, {})
+
+  const recentHealthFallback = Object.values(groupedBySafehouse)
+    .map(group => {
+      const sorted = [...group].sort((a, b) => (b.monthStart ?? '').localeCompare(a.monthStart ?? ''))
+      return sorted.find(m => m.avgHealthScore != null)?.avgHealthScore
+    })
+    .filter((value): value is number => value != null)
+    .map(Number)
+
+  const recentEducationFallback = Object.values(groupedBySafehouse)
+    .map(group => {
+      const sorted = [...group].sort((a, b) => (b.monthStart ?? '').localeCompare(a.monthStart ?? ''))
+      return sorted.find(m => m.avgEducationProgress != null)?.avgEducationProgress
+    })
+    .filter((value): value is number => value != null)
+    .map(Number)
+
+  const avgHealth = average(latestHealthValues.length ? latestHealthValues : recentHealthFallback)
+  const avgEdu = average(latestEducationValues.length ? latestEducationValues : recentEducationFallback)
 
   const goalUSD = 100_000
   const goalPct = Math.min(100, Math.round((totalRaised / goalUSD) * 100))
 
   const IMPACT_TIERS = [
-    { amount: '₱850/mo',   label: 'provides essential vitamins for a child in care' },
-    { amount: '₱2,825/mo', label: "covers a child's monthly food expenses" },
-    { amount: '₱5,650/mo', label: 'funds medical, dental, and educational services' },
-    { amount: '₱16,950/mo',label: 'employs professional caregiving staff' },
-    { amount: '₱84,750/mo',label: 'covers the mortgage that keeps children sheltered' },
+    { amount: '$15/mo',    label: 'provides essential vitamins for a child in care' },
+    { amount: '$50/mo',    label: "covers a child's monthly food expenses" },
+    { amount: '$100/mo',   label: 'funds medical, dental, and educational services' },
+    { amount: '$300/mo',   label: 'employs professional caregiving staff' },
+    { amount: '$1,500/mo', label: 'covers the mortgage that keeps children sheltered' },
   ]
 
   return (
@@ -98,9 +132,8 @@ export default function ImpactPage() {
               what the Lighthouse Sanctuary community has achieved together — and
               how far we still have to go.
             </p>
-            <div className="ip-hero-actions">
+            <div className="ip-hero-actions ip-hero-actions-stack">
               <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
-              <a href="#impact-numbers" className="ip-btn-ghost">See the Numbers</a>
             </div>
           </div>
         </div>
@@ -269,11 +302,11 @@ export default function ImpactPage() {
           <div className="ip-fund-card">
             <div className="ip-fund-numbers">
               <div>
-                <div className="ip-fund-raised">₱{totalRaised.toLocaleString()}</div>
+                <div className="ip-fund-raised">${totalRaised.toLocaleString()}</div>
                 <div className="ip-fund-label">raised so far</div>
               </div>
               <div className="ip-fund-goal">
-                <div className="ip-fund-goal-num">₱{(goalUSD * 56.5).toLocaleString()}</div>
+                <div className="ip-fund-goal-num">${goalUSD.toLocaleString()}</div>
                 <div className="ip-fund-label">goal</div>
               </div>
             </div>
@@ -305,7 +338,7 @@ export default function ImpactPage() {
           <div className="ip-section-label">What You Make Possible</div>
           <h2 className="ip-section-title">Your Monthly Gift in Action</h2>
           <p className="ip-section-sub">
-            Every peso goes directly to the children. See exactly where your contribution goes.
+            Every dollar goes directly to the children. See exactly where your contribution goes.
           </p>
 
           <div className="ip-tiers-grid">
@@ -335,9 +368,8 @@ export default function ImpactPage() {
             Your gift — no matter the size — directly funds shelter, healing, and a brighter future
             for survivors of abuse and trafficking in the Philippines.
           </p>
-          <div className="ip-cta-actions">
+          <div className="ip-cta-actions ip-cta-actions-stack">
             <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
-            <Link to="/" className="ip-btn-ghost ip-btn-ghost-dark">Back to Home</Link>
           </div>
           <p className="ip-cta-note">
             Lighthouse Sanctuary · 501(c)(3) nonprofit · EIN: 81-3220618 · Tax-deductible to the full extent of the law.
