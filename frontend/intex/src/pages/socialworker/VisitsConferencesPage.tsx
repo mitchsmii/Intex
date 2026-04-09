@@ -48,7 +48,9 @@ const emptyVisitForm = (): VisitForm => ({
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  // Append T00:00:00 to date-only strings so they parse as local time, not UTC
+  const safe = iso.includes('T') ? iso : `${iso}T00:00:00`
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -550,7 +552,7 @@ function VisitsConferencesPage() {
       {modalVisit && (() => {
         const v = modalVisit
         const fmtDate = (iso: string | null) =>
-          iso ? new Date(iso).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '—'
+          iso ? new Date(iso.includes('T') ? iso : iso + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '—'
         return (
           <div className="vc-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalVisit(null) }}>
             <div className="vc-modal">

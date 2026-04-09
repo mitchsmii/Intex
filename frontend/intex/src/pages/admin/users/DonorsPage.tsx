@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
 import type { Supporter, Donation } from '../../../services/apiService'
-import { predictDonorChurn } from '../../../services/mlApi'
+import type { MlCachedPrediction } from '../../../services/apiService'
 import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
 import '../ManageUsersPage.css'
 
@@ -126,48 +126,16 @@ export default function DonorsPage() {
   const totalBySupporter     = (id: number) => donationsBySupporter(id).reduce((s, d) => s + (d.amount ?? 0), 0)
   const isRecurring          = (id: number) => donationsBySupporter(id).some(d => d.isRecurring)
 
+  // Load cached ML predictions instead of calling ML API per-donor at runtime
   useEffect(() => {
-    if (donors.length === 0 || donations.length === 0) return
-
-    const runPredictions = async () => {
-      for (const donor of donors) {
-        const donorDonations = donationsBySupporter(donor.supporterId)
-        const total_donation_count = donorDonations.length
-        const total_amount = donorDonations.reduce((sum, d) => sum + (d.amount ?? 0), 0)
-        const avg_donation_amount = total_donation_count > 0 ? total_amount / total_donation_count : 0
-        const firstDonationDate = donor.firstDonationDate
-          ? new Date(donor.firstDonationDate)
-          : donorDonations
-              .map(d => d.donationDate)
-              .filter((d): d is string => Boolean(d))
-              .map(d => new Date(d))
-              .sort((a, b) => a.getTime() - b.getTime())[0]
-        const days_since_first_donation = firstDonationDate
-          ? Math.max(0, Math.floor((Date.now() - firstDonationDate.getTime()) / (1000 * 60 * 60 * 24)))
-          : 999
-        const donation_type_variety = new Set(
-          donorDonations.map(d => d.donationType).filter((t): t is string => Boolean(t)),
-        ).size
-        const is_recurring_donor = donorDonations.some(d => d.isRecurring === true)
-
-        try {
-          const result = await predictDonorChurn({
-            total_donation_count,
-            total_amount,
-            avg_donation_amount,
-            days_since_first_donation,
-            donation_type_variety,
-            is_recurring_donor,
-          })
-          setChurnScores(prev => ({ ...prev, [donor.supporterId]: result.probability }))
-        } catch {
-          // Keep page functional even if one prediction call fails.
-        }
-      }
-    }
-
-    void runPredictions()
-  }, [donors, donations])
+    api.getMlPredictions('donor-churn')
+      .then((preds: MlCachedPrediction[]) => {
+        const map: Record<number, number> = {}
+        preds.forEach(p => { map[p.entityId] = p.probability })
+        setChurnScores(map)
+      })
+      .catch(() => { /* predictions unavailable — page still works */ })
+  }, [])
 
   async function handleDelete() {
     if (!deleteTarget) return

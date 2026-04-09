@@ -18,7 +18,8 @@ function fmtAmount(amount: number | null, currency: string | null) {
 
 function fmtDate(iso: string | null) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function memberSince(createdAt: string | null, donations: DonationRaw[]) {

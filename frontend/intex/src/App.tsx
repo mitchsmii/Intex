@@ -89,7 +89,9 @@ function App() {
                 <Route path="sw/residents/:id" element={<ResidentDetailPage />} />
                 <Route path="sw/process-recordings" element={<ProcessRecordingsPage />} />
                 <Route path="sw/home-visits" element={<VisitsConferencesPage />} />
+                <Route path="sw/case-conferences" element={<CaseConferencesPage />} />
                 <Route path="sw/intervention-plans" element={<InterventionPlansPage />} />
+                <Route path="sw/assessments" element={<AssessmentsPage />} />
                 <Route path="sw/analytics" element={<AnalyticsPage />} />
                 <Route path="users/social-workers" element={<SocialWorkersPage />} />
                 <Route path="users/partners" element={<PartnersPage />} />

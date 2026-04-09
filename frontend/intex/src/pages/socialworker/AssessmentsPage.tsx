@@ -23,7 +23,8 @@ type FilterId = 'All' | Instrument
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',

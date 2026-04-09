@@ -7,7 +7,7 @@ import {
   updateInterventionPlan,
 } from '../../services/socialWorkerService'
 import { api } from '../../services/apiService'
-import type { AdmissionChecklist } from '../../services/apiService'
+import type { AdmissionChecklist, CaseConferenceRequest } from '../../services/apiService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import type { Resident } from '../../types/Resident'
 import type { InterventionPlan } from '../../types/InterventionPlan'
@@ -60,7 +60,8 @@ const NOT_IN_FACILITY_ITEMS = [
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -99,6 +100,7 @@ function InterventionPlansPage() {
   const [checklistError, setChecklistError] = useState<string | null>(null)
   const [existingChecklist, setExistingChecklist] = useState<AdmissionChecklist | null>(null)
   const [checklistLoading, setChecklistLoading] = useState(false)
+  const [conferences, setConferences] = useState<CaseConferenceRequest[]>([])
 
   useEffect(() => {
     fetchResidents()
@@ -148,6 +150,20 @@ function InterventionPlansPage() {
       .then(setPlans)
       .catch((err) => setError(err.message))
       .finally(() => setDetailLoading(false))
+
+    // Fetch approved/accepted conferences that include this resident
+    api.getCaseConferenceRequests()
+      .then((all) => {
+        const forResident = all.filter((c) => {
+          if (c.status !== 'Approved' && c.status !== 'Accepted') return false
+          try {
+            const ids: number[] = JSON.parse(c.residentIds)
+            return ids.includes(selectedId)
+          } catch { return false }
+        })
+        setConferences(forResident)
+      })
+      .catch(() => setConferences([]))
 
     // Load any existing checklist submission for this resident
     api.getAdmissionChecklists()
@@ -363,14 +379,6 @@ function InterventionPlansPage() {
                             type="date"
                             value={form.targetDate}
                             onChange={(e) => updateField('targetDate', e.target.value)}
-                          />
-                        </label>
-                        <label className="ip-field">
-                          <span>Case Conference Date</span>
-                          <input
-                            type="date"
-                            value={form.caseConferenceDate}
-                            onChange={(e) => updateField('caseConferenceDate', e.target.value)}
                           />
                         </label>
                       </div>

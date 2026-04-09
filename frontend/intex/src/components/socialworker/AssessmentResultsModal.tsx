@@ -18,7 +18,8 @@ const SUICIDE_LABELS: { key: keyof SuicideRiskSections; label: string }[] = [
 ]
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'long',
     day: 'numeric',
     year: 'numeric',

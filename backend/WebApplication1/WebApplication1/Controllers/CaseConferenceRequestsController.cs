@@ -100,7 +100,7 @@ public class CaseConferenceRequestsController : ControllerBase
             _context.Notifications.Add(new Notification
             {
                 RecipientEmail = item.RequestedBy,
-                Message = $"Your case conference for {item.RequestedDate:MMM d, yyyy} has been approved.",
+                Message = $"Your case conference for {item.RequestedDate?.ToString("MMM d, yyyy") ?? "TBD"} has been approved.",
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow,
             });
@@ -128,7 +128,7 @@ public class CaseConferenceRequestsController : ControllerBase
             _context.Notifications.Add(new Notification
             {
                 RecipientEmail = item.RequestedBy,
-                Message = $"Your case conference request for {item.RequestedDate:MMM d, yyyy} was declined."
+                Message = $"Your case conference request for {item.RequestedDate?.ToString("MMM d, yyyy") ?? "TBD"} was declined."
                     + (string.IsNullOrEmpty(dto.Notes) ? "" : $" Reason: {dto.Notes}"),
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow,
@@ -159,8 +159,8 @@ public class CaseConferenceRequestsController : ControllerBase
             _context.Notifications.Add(new Notification
             {
                 RecipientEmail = item.RequestedBy,
-                Message = $"Admin suggested {dto.CounterDate:MMM d, yyyy} at {dto.CounterTime} "
-                    + $"instead of {item.RequestedDate:MMM d, yyyy} at {item.RequestedTime} for your conference."
+                Message = $"Admin suggested {dto.CounterDate?.ToString("MMM d, yyyy") ?? "TBD"} at {dto.CounterTime} "
+                    + $"instead of {item.RequestedDate?.ToString("MMM d, yyyy") ?? "TBD"} at {item.RequestedTime} for your conference."
                     + (string.IsNullOrEmpty(dto.Notes) ? "" : $" Note: {dto.Notes}"),
                 IsRead = false,
                 CreatedAt = DateTime.UtcNow,

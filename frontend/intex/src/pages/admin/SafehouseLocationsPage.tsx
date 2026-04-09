@@ -492,7 +492,6 @@ export default function SafehouseLocationsPage() {
               : 'Dominican Republic · VAW Rate Analysis · 2026 Projections'}
           </p>
         </div>
-        <span className="sl-demo-badge">Demo Data</span>
       </div>
 
       {/* Country toggle */}

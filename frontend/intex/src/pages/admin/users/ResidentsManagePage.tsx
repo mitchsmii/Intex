@@ -38,7 +38,7 @@ export default function ResidentsManagePage() {
   useEffect(() => {
     Promise.allSettled([
       api.getResidents().then(setResidents),
-      api.getSafehouses().then(setSafehouses),
+      api.getAdminSafehouses().then(setSafehouses),
     ]).finally(() => setLoading(false))
   }, [])
 

@@ -108,9 +108,26 @@ public class HomeVisitationsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<HomeVisitation>> CreateHomeVisitation(HomeVisitation visitation)
     {
-        _context.HomeVisitations.Add(visitation);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetHomeVisitation), new { id = visitation.VisitationId }, visitation);
+        try
+        {
+            visitation.VisitationId = 0;
+
+            if (visitation.SocialWorkerId == null && !string.IsNullOrEmpty(visitation.SocialWorker))
+            {
+                var sw = await _context.SocialWorkers
+                    .FirstOrDefaultAsync(s => s.FullName == visitation.SocialWorker);
+                if (sw != null) visitation.SocialWorkerId = sw.SocialWorkerId;
+            }
+
+            _context.HomeVisitations.Add(visitation);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetHomeVisitation), new { id = visitation.VisitationId }, visitation);
+        }
+        catch (Exception ex)
+        {
+            var inner = ex.InnerException?.Message ?? "none";
+            return StatusCode(500, new { error = ex.Message, inner });
+        }
     }
 
     [HttpPut("{id}")]

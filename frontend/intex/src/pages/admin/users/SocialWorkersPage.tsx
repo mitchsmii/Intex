@@ -30,8 +30,6 @@ function AddSocialWorkerModal({
   onSave: (w: SocialWorker) => void
 }) {
   const [fullName,    setFullName]    = useState('')
-  const [email,       setEmail]       = useState('')
-  const [phone,       setPhone]       = useState('')
   const [safehouseId, setSafehouseId] = useState<number | null>(null)
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState('')
@@ -43,8 +41,6 @@ function AddSocialWorkerModal({
     try {
       const created = await api.createSocialWorker({
         fullName: fullName.trim(),
-        email:    email.trim() || undefined,
-        phone:    phone.trim() || undefined,
         safehouseId: safehouseId ?? undefined,
         status: 'Active',
       })
@@ -64,14 +60,6 @@ function AddSocialWorkerModal({
         <div className="mu-form-row">
           <label className="mu-form-label">Full Name *</label>
           <input className="mu-form-input" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Maria Santos" />
-        </div>
-        <div className="mu-form-row">
-          <label className="mu-form-label">Email</label>
-          <input className="mu-form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
-        </div>
-        <div className="mu-form-row">
-          <label className="mu-form-label">Phone</label>
-          <input className="mu-form-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+63 9XX XXX XXXX" />
         </div>
         <div className="mu-form-row">
           <label className="mu-form-label">Safehouse Assignment</label>
@@ -195,8 +183,11 @@ export default function SocialWorkersPage() {
       if (kpiFilter === 'active'   && w.status !== 'Active') return false
       if (kpiFilter === 'assigned' && !w.safehouseId)        return false
       if (valueFilter && pinValue(w) !== valueFilter) return false
-      return !search || w.fullName.toLowerCase().includes(search.toLowerCase()) ||
-        (w.email ?? '').toLowerCase().includes(search.toLowerCase())
+      const q = search.toLowerCase()
+      return !search || w.fullName.toLowerCase().includes(q) ||
+        (w.firstName ?? '').toLowerCase().includes(q) ||
+        (w.lastName ?? '').toLowerCase().includes(q) ||
+        (w.email ?? '').toLowerCase().includes(q)
     })
     .sort((a, b) => {
       let va = '', vb = ''
@@ -300,9 +291,6 @@ export default function SocialWorkersPage() {
             <thead>
               <tr>
                 <SortTh label="Name"       col="fullName"  sort={sortCol} dir={sortDir} onSort={toggleSort} />
-                <SortTh label="Email"      col="email"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
-                <SortTh label="Phone"      col="phone"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
-                <SortTh label="Safehouse"  col="safehouse" sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <SortTh label="Status"     col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <th>Residents</th>
                 <SortTh label="Since"      col="createdAt" sort={sortCol} dir={sortDir} onSort={toggleSort} />
@@ -311,7 +299,7 @@ export default function SocialWorkersPage() {
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="mu-empty-cell">No social workers found.</td></tr>
+                <tr><td colSpan={5} className="mu-empty-cell">No social workers found.</td></tr>
               )}
               {filtered.map((w, i) => {
                 const res = assignedResidents(w)
@@ -331,10 +319,10 @@ export default function SocialWorkersPage() {
 
                 return (
                   <tr key={rowKey}>
-                    <td className="mu-td-name">{w.fullName}</td>
-                    <td>{w.email ?? '—'}</td>
-                    <td>{w.phone ?? '—'}</td>
-                    <td>{shName(w.safehouseId ?? null)}</td>
+                    <td className="mu-td-name">
+                      <div>{w.firstName && w.lastName ? `${w.firstName} ${w.lastName}` : w.fullName}</div>
+                      {w.firstName && <div className="mu-muted" style={{ fontSize: '0.78rem' }}>{w.fullName}{w.email ? ` · ${w.email}` : ''}</div>}
+                    </td>
                     <td>
                       <span className={`mu-badge ${w.status === 'Active' ? 'mu-badge-ok' : 'mu-badge-off'}`}>
                         {w.status}
