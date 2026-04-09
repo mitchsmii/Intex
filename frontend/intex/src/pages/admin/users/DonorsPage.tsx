@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
 import type { Supporter, Donation } from '../../../services/apiService'
-import { predictDonorChurn } from '../../../services/mlApi'
 import { DONOR_CHURN_THRESHOLDS } from '../../../config/donorChurnThresholds'
 import type { MlCachedPrediction } from '../../../services/apiService'
 import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
