@@ -70,7 +70,6 @@ function ResidentDetailPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [journeyCluster, setJourneyCluster] = useState<{ clusterId: number; clusterName: string } | null>(null)
   const [readinessScore, setReadinessScore] = useState<number | null>(null)
 
   // Admin-only state
@@ -108,28 +107,10 @@ function ResidentDetailPage() {
       .finally(() => setLoading(false))
   }, [residentId])
 
-  // ── Reintegration journey cluster (from cached predictions) ────────────
-  const CLUSTER_NAMES: Record<number, string> = {
-    0: 'Newly Admitted \u2014 Onboarding Needed',
-    1: 'Established \u2014 Active Care',
-  }
-
+  // ── Reintegration readiness (from cached predictions) ──────────────────
   useEffect(() => {
     if (!residentId) return
     let cancelled = false
-
-    api.getMlPredictions('reintegration-journey')
-      .then((preds) => {
-        const mine = preds.find((p) => p.entityId === residentId)
-        if (mine && !cancelled) {
-          const clusterId = Math.round(mine.probability)
-          setJourneyCluster({
-            clusterId,
-            clusterName: CLUSTER_NAMES[clusterId] ?? `Developing Profile \u2014 Monitor & Support`,
-          })
-        }
-      })
-      .catch(() => {})
 
     api.getMlPredictions('reintegration-readiness')
       .then((preds) => {
@@ -588,16 +569,6 @@ function ResidentDetailPage() {
                 {resident.reintegrationType ?? '—'}
                 {resident.reintegrationStatus ? ` · ${resident.reintegrationStatus}` : ''}
               </dd>
-              {journeyCluster && (
-                <>
-                  <dt>Journey Profile</dt>
-                  <dd>
-                    <span className={`rd-journey-chip rd-journey-chip--${journeyCluster.clusterName.includes('Onboarding') ? 'onboarding' : journeyCluster.clusterName.includes('Active') ? 'active' : 'developing'}`}>
-                      {journeyCluster.clusterName}
-                    </span>
-                  </dd>
-                </>
-              )}
               {readinessScore != null && (
                 <>
                   <dt>Reintegration Readiness</dt>
