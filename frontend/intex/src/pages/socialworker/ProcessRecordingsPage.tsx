@@ -96,7 +96,7 @@ function ProcessRecordingsPage() {
   const [draftRestored, setDraftRestored] = useState(false)
 
   const [filter, setFilter] = useState<RecordingFilter>('all')
-  const [expandedRowId, setExpandedRowId] = useState<number | null>(null)
+  const [expandedRowId] = useState<number | null>(null)
   const [modalRecording, setModalRecording] = useState<ProcessRecording | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)

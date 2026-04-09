@@ -79,7 +79,7 @@ function VisitsConferencesPage() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const [expandedRowId, setExpandedRowId] = useState<number | null>(null)
+  const [expandedRowId] = useState<number | null>(null)
   const [modalVisit, setModalVisit] = useState<HomeVisitation | null>(null)
   const [page, setPage] = useState(1)
   const pageSize = 10
