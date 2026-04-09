@@ -625,3 +625,39 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 600px) {
+  .sl-title {
+    font-size: 1.25rem;
+  }
+
+  .sl-header {
+    gap: var(--space-sm);
+  }
+
+  /* Country toggle spans full width on small screens */
+  .sl-country-toggle {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .sl-country-btn {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  /* SVG map takes reasonable height on phones */
+  .sl-svg {
+    max-height: calc(100vh - 280px);
+  }
+
+  .sl-loading {
+    height: calc(100vh - 280px);
+  }
+
+  /* Info metrics: stack to 1 col */
+  .sl-info-metrics {
+    grid-template-columns: 1fr;
+  }
+}
