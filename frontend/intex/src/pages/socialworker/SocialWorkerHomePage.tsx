@@ -173,7 +173,7 @@ function SocialWorkerHomePage() {
                   .filter((r) => ['Pending', 'Counter-Proposed', 'Approved', 'Accepted'].includes(r.status))
                   .map((r) => {
                     const fmtDate = (iso: string | null) =>
-                      iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'
+                      iso ? new Date(iso.includes('T') ? iso : iso + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'
                     const isCounter = r.status === 'Counter-Proposed'
                     const isConfirmed = r.status === 'Approved' || r.status === 'Accepted'
                     return (
@@ -221,7 +221,43 @@ function SocialWorkerHomePage() {
           )}
 
           <WeekCalendar
-            events={events}
+            events={[
+              ...events,
+              // Inject approved/accepted conference requests as calendar events
+              ...confRequests
+                .filter((r) => r.status === 'Approved' || r.status === 'Accepted')
+                .map((r) => {
+                  // Use counter date/time if accepted, otherwise requested date/time
+                  const date = r.status === 'Accepted' && r.counterDate
+                    ? r.counterDate
+                    : r.requestedDate
+                  const time = r.status === 'Accepted' && r.counterTime
+                    ? r.counterTime
+                    : r.requestedTime
+                  // Parse time string like "1:00 PM" into an ISO date
+                  let isoDate = date ?? ''
+                  if (date && time) {
+                    const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+                    if (match) {
+                      let h = parseInt(match[1])
+                      const m = parseInt(match[2])
+                      const ampm = match[3].toUpperCase()
+                      if (ampm === 'PM' && h !== 12) h += 12
+                      if (ampm === 'AM' && h === 12) h = 0
+                      isoDate = `${date}T${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`
+                    }
+                  }
+                  const residentIds: number[] = (() => { try { return JSON.parse(r.residentIds) } catch { return [] } })()
+                  return {
+                    id: `conf-req-${r.requestId}`,
+                    type: 'CaseConference' as const,
+                    residentId: residentIds[0] ?? 0,
+                    residentCode: residentIds.map((id) => `#${id}`).join(', '),
+                    date: isoDate,
+                    location: 'Safehouse office',
+                  }
+                }),
+            ]}
             onEventClick={(ev) => goToResidentById(ev.residentId)}
           />
         </div>

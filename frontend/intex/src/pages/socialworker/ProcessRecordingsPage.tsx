@@ -41,8 +41,9 @@ const emptyForm = (): FormState => ({
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  const d = new Date(iso)
-  return d.toLocaleDateString(undefined, {
+  // Append T00:00:00 to date-only strings so they parse as local time, not UTC
+  const safe = iso.includes('T') ? iso : `${iso}T00:00:00`
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -235,13 +236,16 @@ function ProcessRecordingsPage() {
         concernsFlagged: form.concernsFlagged,
         referralMade: form.referralMade,
       }
-      const created = await createProcessRecording(payload)
-      setRecordings((prev) => [created, ...prev])
+      await createProcessRecording(payload)
+      // Re-fetch from server so shape matches GET projection and sort is correct
+      const fresh = await fetchProcessRecordings({ residentId: selectedId })
+      setRecordings(fresh)
       if (selectedId != null) {
         localStorage.removeItem(draftKey(selectedId))
       }
       setDraftRestored(false)
       setShowForm(false)
+      setPage(1)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to save recording')
     } finally {
@@ -716,7 +720,7 @@ function ProcessRecordingsPage() {
       {modalRecording && (() => {
         const r = modalRecording
         const fmtDate = (iso: string | null) =>
-          iso ? new Date(iso).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '—'
+          iso ? new Date(iso.includes('T') ? iso : iso + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '—'
         return (
           <div className="pr-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalRecording(null) }}>
             <div className="pr-modal">

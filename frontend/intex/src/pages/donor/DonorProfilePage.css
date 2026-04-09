@@ -171,3 +171,29 @@
   text-align: center;
   padding: 2rem;
 }
+
+@media (max-width: 480px) {
+  .dp-page {
+    margin: 1rem auto;
+    padding: 0 0.75rem;
+  }
+
+  .dp-card {
+    padding: 1.25rem;
+  }
+
+  .dp-actions {
+    flex-direction: column;
+  }
+
+  .dp-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .dp-field {
+    flex-direction: column;
+    gap: 0.2rem;
+    align-items: flex-start;
+  }
+}

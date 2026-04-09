@@ -409,8 +409,16 @@ export interface CaseConferenceRequest {
   submittedAt: string
 }
 
+export interface MlCachedPrediction {
+  entityId: number
+  isPositive: boolean
+  probability: number
+  computedAt: string
+}
+
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
+  getSafehousesAdmin:         () => authGet<Safehouse[]>('/api/safehouses/admin'),
   getResidents:               () => authGet<Resident[]>('/api/residents'),
   getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
   getPartners:                () => authGet<Partner[]>('/api/partners'),
@@ -451,6 +459,7 @@ export const api = {
   getProcessRecordingsByResident: (id: number) => authGet<ProcessRecording[]>(`/api/processrecordings?residentId=${id}`),
   getHealthRecordsByResident:     (id: number) => authGet<HealthRecord[]>(`/api/healthwellbeingrecords?residentId=${id}`),
   getHomeVisitationsByResident:   (id: number) => authGet<HomeVisitation[]>(`/api/homevisitations?residentId=${id}`),
+  getEducationRecords:             () => authGet<EducationRecord[]>('/api/educationrecords'),
   getEducationRecordsByResident:  (id: number) => authGet<EducationRecord[]>(`/api/educationrecords?residentId=${id}`),
   getIncidentsByResident:         (id: number) => authGet<IncidentReport[]>(`/api/incidentreports?residentId=${id}`),
   getSocialMediaPosts:        () => get<SocialMediaPost[]>('/api/socialmediaposts'),
@@ -494,4 +503,10 @@ export const api = {
     authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/counter-propose`, body),
   acceptCaseConferenceRequest:   (id: number) =>
     authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/accept`, {}),
+
+  // ML predictions (cached)
+  getMlPredictions:             (model: string) =>
+    authGet<MlCachedPrediction[]>(`/api/ml-predictions/${model}`),
+  refreshMlPredictions:         (model: string) =>
+    authPost<{ refreshed: number; model: string }>(`/api/ml-predictions/${model}/refresh`, {}),
 }

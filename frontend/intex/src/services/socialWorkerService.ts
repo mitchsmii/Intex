@@ -63,7 +63,14 @@ export async function createProcessRecording(
     },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(`Failed to create process recording: ${res.status}`);
+  if (!res.ok) {
+    let message = `Failed to create process recording: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.error) message = `${body.error}${body.inner ? ' — ' + body.inner : ''}`;
+    } catch { /* ignore */ }
+    throw new Error(message);
+  }
   return res.json();
 }
 

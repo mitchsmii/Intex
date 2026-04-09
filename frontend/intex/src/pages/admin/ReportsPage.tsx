@@ -3,10 +3,13 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import {
-  predictDonorChurn, fetchDonorChurnFeatureImportance,
-  predictResidentRisk, fetchResidentRiskFeatureImportance,
+  fetchDonorChurnFeatureImportance,
+  predictResidentRisk,
+  fetchResidentRiskFeatureImportance,
+  predictEducationOutcome,
 } from '../../services/mlApi'
-import type { DonorChurnInput, ResidentRiskInput, FeatureImportance } from '../../services/mlApi'
+import type { DonorChurnInput, ResidentRiskInput, FeatureImportance, EducationOutcomeInput } from '../../services/mlApi'
+import type { MlCachedPrediction } from '../../services/apiService'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
   AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident, ResidentMlFeatures,
@@ -14,6 +17,7 @@ import type {
 } from '../../services/apiService'
 import { DONOR_CHURN_THRESHOLDS } from '../../config/donorChurnThresholds'
 import './ReportsPage.css'
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -464,50 +468,46 @@ function LapseRiskPanel({
       setError(null)
     }
     try {
+      const cached = await api.getMlPredictions('donor-churn') as MlCachedPrediction[]
+      const predMap = new Map(cached.map(p => [p.entityId, p.probability]))
       const entries = Array.from(perDonor.entries())
-      // Batch into groups of 8 to avoid overwhelming the ML API on cold starts
-      const BATCH = 8
       const results: LapseRow[] = []
-      for (let i = 0; i < entries.length; i += BATCH) {
-        const batch = entries.slice(i, i + BATCH)
-        const settled = await Promise.allSettled(
-          batch.map(async ([supporterId, { name, rows: dRows }]) => {
-            const input = buildChurnInput(dRows)
-            const res = await predictDonorChurn(input)
-            const lastTs = dRows
-              .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
-              .filter(n => !Number.isNaN(n))
-            const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
-            const reasons = deriveReasons({
-              count: input.total_donation_count,
-              avg: input.avg_donation_amount,
-              lastDonation,
-              daysSinceFirst: input.days_since_first_donation,
-              variety: input.donation_type_variety,
-              recurring: input.is_recurring_donor,
-            })
-            return {
-              supporterId,
-              name,
-              email: emailMap.get(supporterId) ?? null,
-              total: input.total_amount,
-              count: input.total_donation_count,
-              avg: input.avg_donation_amount,
-              lastDonation,
-              daysSinceFirst: input.days_since_first_donation,
-              variety: input.donation_type_variety,
-              recurring: input.is_recurring_donor,
-              probability: res.probability,
-              reasons,
-            }
-          }),
-        )
-        for (const r of settled) {
-          if (r.status === 'fulfilled') results.push(r.value)
-        }
+
+      for (const [supporterId, { name, rows: dRows }] of entries) {
+        const input = buildChurnInput(dRows)
+        const probability = predMap.get(supporterId)
+        if (probability === undefined) continue
+
+        const lastTs = dRows
+          .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
+          .filter(n => !Number.isNaN(n))
+        const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
+        const reasons = deriveReasons({
+          count: input.total_donation_count,
+          avg: input.avg_donation_amount,
+          lastDonation,
+          daysSinceFirst: input.days_since_first_donation,
+          variety: input.donation_type_variety,
+          recurring: input.is_recurring_donor,
+        })
+        results.push({
+          supporterId,
+          name,
+          email: emailMap.get(supporterId) ?? null,
+          total: input.total_amount,
+          count: input.total_donation_count,
+          avg: input.avg_donation_amount,
+          lastDonation,
+          daysSinceFirst: input.days_since_first_donation,
+          variety: input.donation_type_variety,
+          recurring: input.is_recurring_donor,
+          probability,
+          reasons,
+        })
       }
+
       if (results.length === 0 && !background) {
-        setError('No predictions returned — the ML API may be warming up. Try again in a moment.')
+        setError('No cached predictions available — an admin can trigger a refresh from the dashboard.')
         setStatus('error')
         return
       }
@@ -1706,53 +1706,38 @@ function OutcomesTab({
     setRiskLoading(true)
     setRiskError(null)
 
-    const activeIds = new Set(activeResidents.map(r => r.residentId))
+    const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
 
-    api.getResidentMlFeatures()
-      .then(async (allFeatures: ResidentMlFeatures[]) => {
-        const features = allFeatures.filter(f => activeIds.has(f.resident_id))
-        const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
-
-        return Promise.all(
-          features.map(async (f) => {
-            // Strip metadata fields; forward only the model's input columns.
-            const {
-              resident_id: _id,
-              internal_code: _ic,
-              case_control_no: _cc,
-              current_risk_level: _crl,
-              assigned_social_worker: _sw,
-              last_action_date: _lad,
-              last_action_type: _lat,
-              ...input
-            } = f
-            void _id; void _ic; void _cc; void _crl; void _sw; void _lad; void _lat
-            try {
-              const res = await predictResidentRisk(input as unknown as ResidentRiskInput)
-              return {
-                resident: residentById.get(f.resident_id)!,
-                features: f,
-                probability: res.probability,
-                isHighRisk: res.is_high_risk,
-              }
-            } catch {
-              return {
-                resident: residentById.get(f.resident_id)!,
-                features: f,
-                probability: 0,
-                isHighRisk: false,
-              }
-            }
-          }),
-        )
-      })
-      .then((results) => {
+    // Load cached predictions + ML features in parallel
+    Promise.all([
+      api.getMlPredictions('resident-risk') as Promise<MlCachedPrediction[]>,
+      api.getResidentMlFeatures(),
+    ])
+      .then(([cached, allFeatures]) => {
         if (cancelled) return
+        const predMap = new Map(cached.map(p => [p.entityId, p]))
+        const activeIds = new Set(activeResidents.map(r => r.residentId))
+        const features = allFeatures.filter(f => activeIds.has(f.resident_id))
+
+        const results: RiskRow[] = features
+          .map(f => {
+            const pred = predMap.get(f.resident_id)
+            const resident = residentById.get(f.resident_id)
+            if (!resident) return null
+            return {
+              resident,
+              features: f,
+              probability: pred?.probability ?? 0,
+              isHighRisk: pred?.isPositive ?? false,
+            }
+          })
+          .filter((r): r is RiskRow => r !== null)
+
         results.sort((a, b) => b.probability - a.probability)
         setRiskPreds(results)
       })
       .catch((err) => {
-        if (!cancelled) setRiskError(err instanceof Error ? err.message : 'Prediction failed')
+        if (!cancelled) setRiskError(err instanceof Error ? err.message : 'Failed to load predictions')
       })
       .finally(() => {
         if (!cancelled) setRiskLoading(false)
@@ -1763,6 +1748,76 @@ function OutcomesTab({
   }, [residents.length])
 
   const modelHighRiskCount = riskPreds.filter(p => p.isHighRisk).length
+
+  // ── ML: Education outcome predictions ──────────────────────────────────────
+  type EduRow = { resident: Resident; probability: number; willComplete: boolean }
+  const [eduPreds, setEduPreds] = useState<EduRow[]>([])
+  const [eduLoading, setEduLoading] = useState(false)
+  const [eduError, setEduError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (activeResidents.length === 0) return
+    let cancelled = false
+    setEduLoading(true)
+    setEduError(null)
+
+    api.getEducationRecords()
+      .then(async (allRecords) => {
+        // Group records by resident, sorted earliest first
+        const byResident = new Map<number, typeof allRecords>()
+        allRecords.forEach(r => {
+          if (r.residentId == null) return
+          const arr = byResident.get(r.residentId) ?? []
+          arr.push(r)
+          byResident.set(r.residentId, arr)
+        })
+        byResident.forEach((recs, id) =>
+          byResident.set(id, recs.sort((a, b) =>
+            new Date(a.recordDate ?? 0).getTime() - new Date(b.recordDate ?? 0).getTime()
+          ))
+        )
+
+        const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
+        const rows = await Promise.all(
+          activeResidents
+            .filter(r => (byResident.get(r.residentId)?.length ?? 0) > 0)
+            .map(async (r) => {
+              const recs = (byResident.get(r.residentId) ?? []).slice(0, 3)
+              const attRates = recs.map(rec => rec.attendanceRate ?? 0.8)
+              const progPcts  = recs.map(rec => (rec.progressPercent ?? 50) / 100)
+              const early_attendance_mean = attRates.reduce((s, v) => s + v, 0) / attRates.length
+              const early_progress_mean   = progPcts.reduce((s, v) => s + v, 0) / progPcts.length
+              const initial_progress      = progPcts[0]
+              const early_attendance_slope = attRates.length >= 2
+                ? (attRates[attRates.length - 1] - attRates[0]) / (attRates.length - 1)
+                : 0
+              const input: EducationOutcomeInput = {
+                early_health_mean: 3.5,               // approximated — health records fetched separately
+                early_attendance_mean,
+                early_progress_mean,
+                early_emotional_improvement_rate: 0.5, // approximated — process recordings fetched separately
+                early_attendance_slope,
+                initial_progress,
+              }
+              try {
+                const res = await predictEducationOutcome(input)
+                return { resident: residentById.get(r.residentId)!, probability: res.probability, willComplete: res.will_complete }
+              } catch {
+                return { resident: residentById.get(r.residentId)!, probability: 0.5, willComplete: false }
+              }
+            })
+        )
+        return rows.sort((a, b) => b.probability - a.probability)
+      })
+      .then(rows => { if (!cancelled) setEduPreds(rows) })
+      .catch(err => { if (!cancelled) setEduError(err instanceof Error ? err.message : 'Prediction failed') })
+      .finally(() => { if (!cancelled) setEduLoading(false) })
+
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [residents.length])
+
+  const eduCompleteCount = eduPreds.filter(p => p.willComplete).length
 
   // ── Filters ────────────────────────────────────────────────────────────────
   const [filterSafehouse, setFilterSafehouse] = useState<string>('all')
@@ -1927,6 +1982,7 @@ function OutcomesTab({
           { label: 'Avg. Education Progress', value: avgEdu ? `${Math.round(avgEdu)}%` : '—', sub: 'across all safehouses' },
           { label: 'Reintegration Pipeline', value: String(reintegrated.length), sub: `${highRisk.length} high-risk residents` },
           { label: 'ML-Flagged High Risk', value: riskLoading ? '…' : String(modelHighRiskCount), sub: 'predicted by resident risk model' },
+          { label: 'ML: Predicted to Complete Edu.', value: eduLoading ? '…' : String(eduCompleteCount), sub: `of ${eduPreds.length} scored residents` },
         ].map(k => (
           <div key={k.label} className="rp-kpi">
             <div className="rp-kpi-label">{k.label}</div>
@@ -2188,6 +2244,70 @@ function OutcomesTab({
                   Next
                 </button>
               </div>
+            )}
+          </div>
+
+          <div className="rp-section">
+            <h3 className="rp-section-title">ML Education Outcome Predictions</h3>
+            <p className="rp-empty" style={{ marginTop: 0 }}>
+              Predicts whether each active resident is on track to complete their education program,
+              based on early attendance and progress trends. Use as a guidance tool — social workers
+              should review individual case context.
+            </p>
+            {eduError && <p className="rp-empty" style={{ color: 'var(--color-warning)' }}>{eduError}</p>}
+            {eduLoading ? (
+              <p className="rp-empty">Scoring residents…</p>
+            ) : eduPreds.length === 0 ? (
+              <p className="rp-empty">No education records available to score.</p>
+            ) : (
+              <table className="rp-table rp-table-wide">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Resident</th>
+                    <th>Safehouse</th>
+                    <th>Completion Probability</th>
+                    <th>Progress Bar</th>
+                    <th>Prediction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {eduPreds.map((p, idx) => {
+                    const pct = Math.round(p.probability * 100)
+                    const color = p.willComplete
+                      ? 'var(--color-success)'
+                      : p.probability >= 0.4
+                        ? 'var(--cove-tidal)'
+                        : 'var(--color-warning)'
+                    const safehouseCode = safehouseCodeById.get(p.resident.safehouseId ?? -1) ?? '—'
+                    return (
+                      <tr key={p.resident.residentId}>
+                        <td className="rp-td-num">{idx + 1}</td>
+                        <td className="rp-td-name">
+                          <Link
+                            className="rp-ml-link"
+                            to={`/admin/residents/${p.resident.residentId}`}
+                          >
+                            {p.resident.internalCode ?? p.resident.caseControlNo ?? `#${p.resident.residentId}`}
+                          </Link>
+                        </td>
+                        <td>{safehouseCode}</td>
+                        <td className="rp-td-num">{pct}%</td>
+                        <td>
+                          <div className="rp-mini-track">
+                            <div className="rp-mini-fill" style={{ width: `${pct}%`, background: color }} />
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`rp-ml-flag ${p.willComplete ? 'rp-ml-flag--ok' : 'rp-ml-flag--high'}`}>
+                            {p.willComplete ? 'On Track' : 'Needs Support'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
 

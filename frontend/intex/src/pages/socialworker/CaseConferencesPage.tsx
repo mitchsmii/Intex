@@ -17,7 +17,8 @@ type Conference = {
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -45,6 +46,7 @@ function CaseConferencesPage() {
   const [error, setError] = useState<string | null>(null)
   const [expandedDate, setExpandedDate] = useState<string | null>(null)
   const [modalConference, setModalConference] = useState<Conference | null>(null)
+  const [approvedRequests, setApprovedRequests] = useState<import('../../services/apiService').CaseConferenceRequest[]>([])
 
   // ── Schedule request form state ──
   const [showRequestForm, setShowRequestForm] = useState(false)
@@ -76,6 +78,9 @@ function CaseConferencesPage() {
       .then(setPlans)
       .catch((err) => setError(err.message))
       .finally(() => setDetailLoading(false))
+    api.getCaseConferenceRequests()
+      .then((reqs) => setApprovedRequests(reqs.filter((r) => r.status === 'Approved' || r.status === 'Accepted')))
+      .catch(() => {})
   }, [selectedId])
 
   const selectedResident = useMemo(
@@ -94,8 +99,22 @@ function CaseConferencesPage() {
       bucket.push(p)
       byDate.set(key, bucket)
     }
-    return Array.from(byDate.entries()).map(([date, plans]) => ({ date, plans }))
-  }, [plans])
+    const result = Array.from(byDate.entries()).map(([date, plans]) => ({ date, plans }))
+
+    // Merge approved conference requests only if the selected resident is included
+    const existingDates = new Set(result.map((c) => c.date))
+    for (const req of approvedRequests) {
+      const ids: number[] = (() => { try { return JSON.parse(req.residentIds) } catch { return [] } })()
+      if (selectedId != null && !ids.includes(selectedId)) continue
+      const date = (req.status === 'Accepted' && req.counterDate) ? req.counterDate : req.requestedDate
+      if (date && !existingDates.has(date)) {
+        result.push({ date, plans: [] })
+        existingDates.add(date)
+      }
+    }
+
+    return result
+  }, [plans, approvedRequests])
 
   const todayMs = new Date().setHours(0, 0, 0, 0)
 
