@@ -33,6 +33,7 @@ public class DonationsController : ControllerBase
         return Ok(donation);
     }
 
+    [AllowAnonymous]
     [HttpGet("total")]
     public async Task<IActionResult> Total()
     {
