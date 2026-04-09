@@ -54,6 +54,10 @@ RESIDENT_RISK_MODEL_PATH = SAVED_MODELS_DIR / "resident_risk_model.pkl"
 RESIDENT_RISK_METADATA_PATH = SAVED_MODELS_DIR / "resident_risk_metadata.json"
 EDUCATION_OUTCOME_MODEL_PATH = SAVED_MODELS_DIR / "education_outcome_model.pkl"
 EDUCATION_OUTCOME_METADATA_PATH = SAVED_MODELS_DIR / "education_outcome_metadata.json"
+REINTEGRATION_KMEANS_PATH = SAVED_MODELS_DIR / "reintegration_journey_kmeans.pkl"
+REINTEGRATION_SCALER_PATH = SAVED_MODELS_DIR / "reintegration_journey_scaler.pkl"
+REINTEGRATION_FEATURES_PATH = SAVED_MODELS_DIR / "reintegration_journey_features.pkl"
+REINTEGRATION_CLUSTER_NAMES_PATH = SAVED_MODELS_DIR / "reintegration_journey_cluster_names.pkl"
 
 
 def _load_feature_list_from_metadata(path: Path, key: str) -> list[str]:
@@ -408,3 +412,65 @@ def predict_education_outcome(payload: dict[str, Any]) -> dict[str, Any]:
     will_complete = probability >= 0.5
 
     return {"will_complete": bool(will_complete), "probability": float(probability)}
+
+
+@app.post("/predict/reintegration-journey")
+def predict_reintegration_journey(payload: dict[str, Any]) -> dict[str, Any]:
+    """Assign a resident to a journey cluster based on their features.
+
+    Args:
+        payload: JSON payload with resident feature values matching the 28
+                 clustering features (e.g. days_in_care, avg_health_score, …).
+
+    Returns:
+        dict[str, Any]: cluster_id, cluster_name, and distances to each centroid.
+    """
+    kmeans = _load_artifact(REINTEGRATION_KMEANS_PATH)
+    scaler = _load_artifact(REINTEGRATION_SCALER_PATH)
+    feature_names: list[str] = _load_artifact(REINTEGRATION_FEATURES_PATH)
+    cluster_name_map: dict[int, str] = _load_artifact(REINTEGRATION_CLUSTER_NAMES_PATH)
+
+    aligned = _align_features(payload, feature_names)
+    scaled = scaler.transform(aligned)
+
+    cluster_id = int(kmeans.predict(scaled)[0])
+    cluster_name = cluster_name_map.get(cluster_id, f"Cluster {cluster_id}")
+
+    distances = kmeans.transform(scaled)[0]
+    centroid_distances = {
+        cluster_name_map.get(i, f"Cluster {i}"): float(d)
+        for i, d in enumerate(distances)
+    }
+
+    return {
+        "cluster_id": cluster_id,
+        "cluster_name": cluster_name,
+        "centroid_distances": centroid_distances,
+    }
+
+
+@app.get("/feature-importance/reintegration-journey")
+def reintegration_journey_feature_importance() -> dict[str, Any]:
+    """Return pseudo-importance for reintegration clustering features.
+
+    Uses the variance of each feature's centroid values across clusters as a
+    proxy for how much each feature differentiates the clusters.
+
+    Returns:
+        dict[str, Any]: ``{"features": [{feature, importance}, ...]}``.
+    """
+    kmeans = _load_artifact(REINTEGRATION_KMEANS_PATH)
+    feature_names: list[str] = _load_artifact(REINTEGRATION_FEATURES_PATH)
+
+    centroids = kmeans.cluster_centers_
+    variance = np.var(centroids, axis=0)
+    total = float(variance.sum())
+    if total > 0:
+        variance = variance / total
+
+    pairs = [
+        {"feature": name, "importance": float(v)}
+        for name, v in zip(feature_names, variance)
+    ]
+    pairs.sort(key=lambda item: item["importance"], reverse=True)
+    return {"features": pairs}

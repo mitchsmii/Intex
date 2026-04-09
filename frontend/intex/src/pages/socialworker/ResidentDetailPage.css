@@ -599,6 +599,29 @@
   text-transform: uppercase;
 }
 
+/* ---------- Journey profile chip ---------- */
+.rd-journey-chip {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px var(--space-sm);
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.rd-journey-chip--onboarding {
+  background: #fff3cd;
+  color: #856404;
+}
+.rd-journey-chip--active {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+.rd-journey-chip--developing {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
 /* ---------- Score bars ---------- */
 .rd-scores {
   display: flex;
