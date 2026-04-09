@@ -1,0 +1,547 @@
+Using launch settings from C:\Users\William Francom\OneDrive\Desktop\INTEX\Intex\backend\WebApplication1\WebApplication1\Properties\launchSettings.json...
+Building...
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (84ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+warn: IdentitySeeder[0]
+      Database migrations could not be applied automatically. Falling back to schema checks.
+      System.InvalidOperationException: An error was generated for warning 'Microsoft.EntityFrameworkCore.Migrations.PendingModelChangesWarning': The model for context 'AppDbContext' has pending changes. Add a new migration before updating the database. See https://aka.ms/efcore-docs-pending-changes. This exception can be suppressed or logged by passing event ID 'RelationalEventId.PendingModelChangesWarning' to the 'ConfigureWarnings' method in 'DbContext.OnConfiguring' or 'AddDbContext'.
+         at Microsoft.EntityFrameworkCore.Diagnostics.EventDefinition`1.Log[TLoggerCategory](IDiagnosticsLogger`1 logger, TParam arg)
+         at Microsoft.EntityFrameworkCore.Diagnostics.RelationalLoggerExtensions.PendingModelChangesWarning(IDiagnosticsLogger`1 diagnostics, Type contextType)
+         at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.ValidateMigrations(Boolean useTransaction, String targetMigration)
+         at Microsoft.EntityFrameworkCore.Migrations.Internal.Migrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+         at Npgsql.EntityFrameworkCore.PostgreSQL.Migrations.Internal.NpgsqlMigrator.MigrateAsync(String targetMigration, CancellationToken cancellationToken)
+         at Program.<<Main>$>g__TryApplyMigrationsAsync|0_7(AppDbContext db, ILogger logger) in C:\Users\William Francom\OneDrive\Desktop\INTEX\Intex\backend\WebApplication1\WebApplication1\Program.cs:line 176
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (76ms) [Parameters=[@normalizedName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."ConcurrencyStamp", a."Name", a."NormalizedName"
+      FROM "AspNetRoles" AS a
+      WHERE a."NormalizedName" = @normalizedName
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@normalizedName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."ConcurrencyStamp", a."Name", a."NormalizedName"
+      FROM "AspNetRoles" AS a
+      WHERE a."NormalizedName" = @normalizedName
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[@normalizedUserName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."AccessFailedCount", a."ConcurrencyStamp", a."Email", a."EmailConfirmed", a."LockoutEnabled", a."LockoutEnd", a."NormalizedEmail", a."NormalizedUserName", a."PasswordHash", a."PhoneNumber", a."PhoneNumberConfirmed", a."SecurityStamp", a."TwoFactorEnabled", a."UserName"
+      FROM "AspNetUsers" AS a
+      WHERE a."NormalizedUserName" = @normalizedUserName
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (73ms) [Parameters=[@normalizedRoleName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."ConcurrencyStamp", a."Name", a."NormalizedName"
+      FROM "AspNetRoles" AS a
+      WHERE a."NormalizedName" = @normalizedRoleName
+      LIMIT 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[@p='?', @p0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."UserId", a."RoleId"
+      FROM "AspNetUserRoles" AS a
+      WHERE a."UserId" = @p AND a."RoleId" = @p0
+      LIMIT 1
+info: IdentitySeeder[0]
+      Seed user ready: username 'admin', email 'admin@intex.com', role 'Admin'. Password loaded from configuration.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[@normalizedUserName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."AccessFailedCount", a."ConcurrencyStamp", a."Email", a."EmailConfirmed", a."LockoutEnabled", a."LockoutEnd", a."NormalizedEmail", a."NormalizedUserName", a."PasswordHash", a."PhoneNumber", a."PhoneNumberConfirmed", a."SecurityStamp", a."TwoFactorEnabled", a."UserName"
+      FROM "AspNetUsers" AS a
+      WHERE a."NormalizedUserName" = @normalizedUserName
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@normalizedRoleName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."ConcurrencyStamp", a."Name", a."NormalizedName"
+      FROM "AspNetRoles" AS a
+      WHERE a."NormalizedName" = @normalizedRoleName
+      LIMIT 2
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@p='?', @p0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."UserId", a."RoleId"
+      FROM "AspNetUserRoles" AS a
+      WHERE a."UserId" = @p AND a."RoleId" = @p0
+      LIMIT 1
+info: IdentitySeeder[0]
+      Seed user ready: username 'donor', email 'donor@intex.com', role 'Donor'. Password loaded from configuration.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@normalizedUserName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."AccessFailedCount", a."ConcurrencyStamp", a."Email", a."EmailConfirmed", a."LockoutEnabled", a."LockoutEnd", a."NormalizedEmail", a."NormalizedUserName", a."PasswordHash", a."PhoneNumber", a."PhoneNumberConfirmed", a."SecurityStamp", a."TwoFactorEnabled", a."UserName"
+      FROM "AspNetUsers" AS a
+      WHERE a."NormalizedUserName" = @normalizedUserName
+      LIMIT 1
+info: IdentitySeeder[0]
+      Seed user ready: username 'basicuser', email 'user@intex.com', role 'None'. Password loaded from configuration.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: https://localhost:7054
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5280
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\William Francom\OneDrive\Desktop\INTEX\Intex\backend\WebApplication1\WebApplication1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@p='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."AccessFailedCount", a."ConcurrencyStamp", a."Email", a."EmailConfirmed", a."LockoutEnabled", a."LockoutEnd", a."NormalizedEmail", a."NormalizedUserName", a."PasswordHash", a."PhoneNumber", a."PhoneNumberConfirmed", a."SecurityStamp", a."TwoFactorEnabled", a."UserName"
+      FROM "AspNetUsers" AS a
+      WHERE a."Id" = @p
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@userId='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a0."Name"
+      FROM "AspNetUserRoles" AS a
+      INNER JOIN "AspNetRoles" AS a0 ON a."RoleId" = a0."Id"
+      WHERE a."UserId" = @userId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[@ToLower='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+      WHERE s.email IS NOT NULL AND lower(s.email) = @ToLower
+      ORDER BY s.supporter_id
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(COALESCE(d.amount, 0.0)), 0.0)
+      FROM donations AS d
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@ToLower='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id
+      FROM supporters AS s
+      WHERE s.email IS NOT NULL AND lower(s.email) = @ToLower
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (67ms) [Parameters=[@ToLower='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+      WHERE lower(s.email) = @ToLower
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (150ms) [Parameters=[@supporterIds='?' (DbType = Object)], CommandType='Text', CommandTimeout='30']
+      SELECT d.donation_id, d.amount, d.campaign_name, d.channel_source, d.currency_code, d.donation_date, d.donation_type, d.estimated_value, d.impact_unit, d.is_recurring, d.notes, d.supporter_id
+      FROM donations AS d
+      WHERE d.supporter_id IS NOT NULL AND d.supporter_id = ANY (@supporterIds)
+      ORDER BY d.donation_date DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(COALESCE(d.amount, 0.0)), 0.0)
+      FROM donations AS d
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (67ms) [Parameters=[@ToLower='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+      WHERE s.email IS NOT NULL AND lower(s.email) = @ToLower
+      ORDER BY s.supporter_id
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@normalizedUserName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."AccessFailedCount", a."ConcurrencyStamp", a."Email", a."EmailConfirmed", a."LockoutEnabled", a."LockoutEnd", a."NormalizedEmail", a."NormalizedUserName", a."PasswordHash", a."PhoneNumber", a."PhoneNumberConfirmed", a."SecurityStamp", a."TwoFactorEnabled", a."UserName"
+      FROM "AspNetUsers" AS a
+      WHERE a."NormalizedUserName" = @normalizedUserName
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@userId='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a0."Name"
+      FROM "AspNetUserRoles" AS a
+      INNER JOIN "AspNetRoles" AS a0 ON a."RoleId" = a0."Id"
+      WHERE a."UserId" = @userId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (66ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(COALESCE(d.amount, 0.0)), 0.0)
+      FROM donations AS d
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[@ToLower='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+      WHERE s.email IS NOT NULL AND lower(s.email) = @ToLower
+      ORDER BY s.supporter_id
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@ToLower='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+      WHERE lower(s.email) = @ToLower
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT d.donation_id, d.amount, d.campaign_name, d.channel_source, d.currency_code, d.donation_date, d.donation_type, d.estimated_value, d.impact_unit, d.is_recurring, d.notes, d.supporter_id
+      FROM donations AS d
+      ORDER BY d.donation_date DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@ToLower='?'], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+      WHERE s.email IS NOT NULL AND lower(s.email) = @ToLower
+      ORDER BY s.supporter_id
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.safehouse_id, s.capacity_girls, s.capacity_staff, s.city, s.country, s.current_occupancy, s.name, s.notes, s.open_date, s.province, s.region, s.safehouse_code, s.status
+      FROM safehouses AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id, r.age_upon_admission, r.assigned_social_worker, r.birth_status, r.case_category, r.case_control_no, r.case_status, r.created_at, r.current_risk_level, r.date_case_study_prepared, r.date_closed, r.date_colb_obtained, r.date_colb_registered, r.date_enrolled, r.date_of_admission, r.date_of_birth, r.family_indigenous, r.family_informal_settler, r.family_is_4ps, r.family_parent_pwd, r.family_solo_parent, r.has_special_needs, r.initial_case_assessment, r.initial_risk_level, r.internal_code, r.is_pwd, r.length_of_stay, r.notes_restricted, r.place_of_birth, r.present_age, r.pwd_type, r.referral_source, r.referring_agency_person, r.reintegration_status, r.reintegration_type, r.religion, r.safehouse_id, r.sex, r.special_needs_diagnosis, r.sub_cat_at_risk, r.sub_cat_child_labor, r.sub_cat_child_with_hiv, r.sub_cat_cicl, r.sub_cat_orphaned, r.sub_cat_osaec, r.sub_cat_physical_abuse, r.sub_cat_sexual_abuse, r.sub_cat_street_child, r.sub_cat_trafficked
+      FROM residents AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0)
+      FROM donation_allocations AS d
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s3.metric_id, s3.active_residents, s3.avg_education_progress, s3.avg_health_score, s3.home_visitation_count, s3.incident_count, s3.month_end, s3.month_start, s3.notes, s3.process_recording_count, s3.safehouse_id
+      FROM (
+          SELECT s.safehouse_id
+          FROM safehouse_monthly_metrics AS s
+          GROUP BY s.safehouse_id
+      ) AS s1
+      LEFT JOIN (
+          SELECT s2.metric_id, s2.active_residents, s2.avg_education_progress, s2.avg_health_score, s2.home_visitation_count, s2.incident_count, s2.month_end, s2.month_start, s2.notes, s2.process_recording_count, s2.safehouse_id
+          FROM (
+              SELECT s0.metric_id, s0.active_residents, s0.avg_education_progress, s0.avg_health_score, s0.home_visitation_count, s0.incident_count, s0.month_end, s0.month_start, s0.notes, s0.process_recording_count, s0.safehouse_id, ROW_NUMBER() OVER(PARTITION BY s0.safehouse_id ORDER BY s0.month_start DESC) AS row
+              FROM safehouse_monthly_metrics AS s0
+          ) AS s2
+          WHERE s2.row <= 1
+      ) AS s3 ON s1.safehouse_id = s3.safehouse_id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[@today='?' (DbType = Date), @cutoff='?' (DbType = Date)], CommandType='Text', CommandTimeout='30']
+      SELECT i.plan_id, i.case_conference_date, i.created_at, i.plan_category, i.plan_description, i.resident_id, i.services_provided, i.status, i.target_date, i.target_value, i.updated_at
+      FROM intervention_plans AS i
+      WHERE i.case_conference_date IS NOT NULL AND i.case_conference_date >= @today AND i.case_conference_date <= @cutoff
+      ORDER BY i.case_conference_date
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT i.incident_id, i.description, i.follow_up_required, i.incident_date, i.incident_type, i.reported_by, i.resident_id, i.resolution_date, i.resolved, i.response_taken, i.safehouse_id, i.severity
+      FROM incident_reports AS i
+      ORDER BY i.incident_date DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT d.donation_id AS "DonationId", d.supporter_id AS "SupporterId", CASE
+          WHEN s.supporter_id IS NULL THEN 'Anonymous'
+          ELSE COALESCE(s.display_name, btrim(COALESCE(s.first_name, '') || ' ' || COALESCE(s.last_name, ''), E' \t\n\r'))
+      END AS "SupporterName", d.amount AS "Amount", d.estimated_value AS "EstimatedValue", d.donation_date AS "DonationDate", d.is_recurring AS "IsRecurring", d.donation_type AS "DonationType", d.channel_source AS "ChannelSource", d.currency_code AS "CurrencyCode", d.campaign_name AS "CampaignName", d.notes AS "Notes"
+      FROM donations AS d
+      LEFT JOIN supporters AS s ON d.supporter_id = s.supporter_id
+      ORDER BY d.donation_date DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT d.program_area AS "ProgramArea", COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0) AS "AmountAllocated"
+      FROM donation_allocations AS d
+      WHERE d.program_area IS NOT NULL
+      GROUP BY d.program_area
+      ORDER BY COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0) DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[@residentIds='?' (DbType = Object)], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id AS "ResidentId", r.internal_code AS "InternalCode", r.safehouse_id AS "SafehouseId", r.assigned_social_worker AS "AssignedSocialWorker"
+      FROM residents AS r
+      WHERE r.resident_id = ANY (@residentIds)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[@normalizedUserName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a."Id", a."AccessFailedCount", a."ConcurrencyStamp", a."Email", a."EmailConfirmed", a."LockoutEnabled", a."LockoutEnd", a."NormalizedEmail", a."NormalizedUserName", a."PasswordHash", a."PhoneNumber", a."PhoneNumberConfirmed", a."SecurityStamp", a."TwoFactorEnabled", a."UserName"
+      FROM "AspNetUsers" AS a
+      WHERE a."NormalizedUserName" = @normalizedUserName
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (66ms) [Parameters=[@userId='?'], CommandType='Text', CommandTimeout='30']
+      SELECT a0."Name"
+      FROM "AspNetUserRoles" AS a
+      INNER JOIN "AspNetRoles" AS a0 ON a."RoleId" = a0."Id"
+      WHERE a."UserId" = @userId
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s3.metric_id, s3.active_residents, s3.avg_education_progress, s3.avg_health_score, s3.home_visitation_count, s3.incident_count, s3.month_end, s3.month_start, s3.notes, s3.process_recording_count, s3.safehouse_id
+      FROM (
+          SELECT s.safehouse_id
+          FROM safehouse_monthly_metrics AS s
+          GROUP BY s.safehouse_id
+      ) AS s1
+      LEFT JOIN (
+          SELECT s2.metric_id, s2.active_residents, s2.avg_education_progress, s2.avg_health_score, s2.home_visitation_count, s2.incident_count, s2.month_end, s2.month_start, s2.notes, s2.process_recording_count, s2.safehouse_id
+          FROM (
+              SELECT s0.metric_id, s0.active_residents, s0.avg_education_progress, s0.avg_health_score, s0.home_visitation_count, s0.incident_count, s0.month_end, s0.month_start, s0.notes, s0.process_recording_count, s0.safehouse_id, ROW_NUMBER() OVER(PARTITION BY s0.safehouse_id ORDER BY s0.month_start DESC) AS row
+              FROM safehouse_monthly_metrics AS s0
+          ) AS s2
+          WHERE s2.row <= 1
+      ) AS s3 ON s1.safehouse_id = s3.safehouse_id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.safehouse_id, s.capacity_girls, s.capacity_staff, s.city, s.country, s.current_occupancy, s.name, s.notes, s.open_date, s.province, s.region, s.safehouse_code, s.status
+      FROM safehouses AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id, r.age_upon_admission, r.assigned_social_worker, r.birth_status, r.case_category, r.case_control_no, r.case_status, r.created_at, r.current_risk_level, r.date_case_study_prepared, r.date_closed, r.date_colb_obtained, r.date_colb_registered, r.date_enrolled, r.date_of_admission, r.date_of_birth, r.family_indigenous, r.family_informal_settler, r.family_is_4ps, r.family_parent_pwd, r.family_solo_parent, r.has_special_needs, r.initial_case_assessment, r.initial_risk_level, r.internal_code, r.is_pwd, r.length_of_stay, r.notes_restricted, r.place_of_birth, r.present_age, r.pwd_type, r.referral_source, r.referring_agency_person, r.reintegration_status, r.reintegration_type, r.religion, r.safehouse_id, r.sex, r.special_needs_diagnosis, r.sub_cat_at_risk, r.sub_cat_child_labor, r.sub_cat_child_with_hiv, r.sub_cat_cicl, r.sub_cat_orphaned, r.sub_cat_osaec, r.sub_cat_physical_abuse, r.sub_cat_sexual_abuse, r.sub_cat_street_child, r.sub_cat_trafficked
+      FROM residents AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT i.incident_id, i.description, i.follow_up_required, i.incident_date, i.incident_type, i.reported_by, i.resident_id, i.resolution_date, i.resolved, i.response_taken, i.safehouse_id, i.severity
+      FROM incident_reports AS i
+      ORDER BY i.incident_date DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (69ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0)
+      FROM donation_allocations AS d
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (69ms) [Parameters=[@today='?' (DbType = Date), @cutoff='?' (DbType = Date)], CommandType='Text', CommandTimeout='30']
+      SELECT i.plan_id, i.case_conference_date, i.created_at, i.plan_category, i.plan_description, i.resident_id, i.services_provided, i.status, i.target_date, i.target_value, i.updated_at
+      FROM intervention_plans AS i
+      WHERE i.case_conference_date IS NOT NULL AND i.case_conference_date >= @today AND i.case_conference_date <= @cutoff
+      ORDER BY i.case_conference_date
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (125ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT d.donation_id AS "DonationId", d.supporter_id AS "SupporterId", CASE
+          WHEN s.supporter_id IS NULL THEN 'Anonymous'
+          ELSE COALESCE(s.display_name, btrim(COALESCE(s.first_name, '') || ' ' || COALESCE(s.last_name, ''), E' \t\n\r'))
+      END AS "SupporterName", d.amount AS "Amount", d.estimated_value AS "EstimatedValue", d.donation_date AS "DonationDate", d.is_recurring AS "IsRecurring", d.donation_type AS "DonationType", d.channel_source AS "ChannelSource", d.currency_code AS "CurrencyCode", d.campaign_name AS "CampaignName", d.notes AS "Notes"
+      FROM donations AS d
+      LEFT JOIN supporters AS s ON d.supporter_id = s.supporter_id
+      ORDER BY d.donation_date DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT d.program_area AS "ProgramArea", COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0) AS "AmountAllocated"
+      FROM donation_allocations AS d
+      WHERE d.program_area IS NOT NULL
+      GROUP BY d.program_area
+      ORDER BY COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0) DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[@residentIds='?' (DbType = Object)], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id AS "ResidentId", r.internal_code AS "InternalCode", r.safehouse_id AS "SafehouseId", r.assigned_social_worker AS "AssignedSocialWorker"
+      FROM residents AS r
+      WHERE r.resident_id = ANY (@residentIds)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id, r.age_upon_admission, r.assigned_social_worker, r.birth_status, r.case_category, r.case_control_no, r.case_status, r.created_at, r.current_risk_level, r.date_case_study_prepared, r.date_closed, r.date_colb_obtained, r.date_colb_registered, r.date_enrolled, r.date_of_admission, r.date_of_birth, r.family_indigenous, r.family_informal_settler, r.family_is_4ps, r.family_parent_pwd, r.family_solo_parent, r.has_special_needs, r.initial_case_assessment, r.initial_risk_level, r.internal_code, r.is_pwd, r.length_of_stay, r.notes_restricted, r.place_of_birth, r.present_age, r.pwd_type, r.referral_source, r.referring_agency_person, r.reintegration_status, r.reintegration_type, r.religion, r.safehouse_id, r.sex, r.special_needs_diagnosis, r.sub_cat_at_risk, r.sub_cat_child_labor, r.sub_cat_child_with_hiv, r.sub_cat_cicl, r.sub_cat_orphaned, r.sub_cat_osaec, r.sub_cat_physical_abuse, r.sub_cat_sexual_abuse, r.sub_cat_street_child, r.sub_cat_trafficked
+      FROM residents AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.safehouse_id, s.capacity_girls, s.capacity_staff, s.city, s.country, s.current_occupancy, s.name, s.notes, s.open_date, s.province, s.region, s.safehouse_code, s.status
+      FROM safehouses AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.social_worker_id, s.created_at, s.email, s.first_name, s.full_name, s.last_name, s.phone, s.safehouse_id, s.status, s.updated_at
+      FROM social_workers AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT s.social_worker_id, s.created_at, s.email, s.first_name, s.full_name, s.last_name, s.phone, s.safehouse_id, s.status, s.updated_at
+      FROM social_workers AS s
+      WHERE s.social_worker_id = @p
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[@id='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT p.recording_id, p.concerns_flagged, p.emotional_state_end, p.emotional_state_observed, p.follow_up_actions, p.interventions_applied, p.notes_restricted, p.progress_noted, p.referral_made, p.resident_id, p.session_date, p.session_duration_minutes, p.session_narrative, p.session_type, p.social_worker, p.social_worker_id
+      FROM process_recordings AS p
+      WHERE p.social_worker_id = @id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[@id='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT h.visitation_id, h.family_cooperation_level, h.family_members_present, h.follow_up_needed, h.follow_up_notes, h.location_visited, h.observations, h.purpose, h.resident_id, h.safety_concerns_noted, h.social_worker, h.social_worker_id, h.visit_date, h.visit_outcome, h.visit_type
+      FROM home_visitations AS h
+      WHERE h.social_worker_id = @id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT s.social_worker_id, s.created_at, s.email, s.first_name, s.full_name, s.last_name, s.phone, s.safehouse_id, s.status, s.updated_at
+      FROM social_workers AS s
+      WHERE s.social_worker_id = @p
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT s.social_worker_id, s.created_at, s.email, s.first_name, s.full_name, s.last_name, s.phone, s.safehouse_id, s.status, s.updated_at
+      FROM social_workers AS s
+      WHERE s.social_worker_id = @p
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[@socialWorker_FullName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id, r.age_upon_admission, r.assigned_social_worker, r.birth_status, r.case_category, r.case_control_no, r.case_status, r.created_at, r.current_risk_level, r.date_case_study_prepared, r.date_closed, r.date_colb_obtained, r.date_colb_registered, r.date_enrolled, r.date_of_admission, r.date_of_birth, r.family_indigenous, r.family_informal_settler, r.family_is_4ps, r.family_parent_pwd, r.family_solo_parent, r.has_special_needs, r.initial_case_assessment, r.initial_risk_level, r.internal_code, r.is_pwd, r.length_of_stay, r.notes_restricted, r.place_of_birth, r.present_age, r.pwd_type, r.referral_source, r.referring_agency_person, r.reintegration_status, r.reintegration_type, r.religion, r.safehouse_id, r.sex, r.special_needs_diagnosis, r.sub_cat_at_risk, r.sub_cat_child_labor, r.sub_cat_child_with_hiv, r.sub_cat_cicl, r.sub_cat_orphaned, r.sub_cat_osaec, r.sub_cat_physical_abuse, r.sub_cat_sexual_abuse, r.sub_cat_street_child, r.sub_cat_trafficked
+      FROM residents AS r
+      WHERE r.assigned_social_worker = @socialWorker_FullName
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (66ms) [Parameters=[@id='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT p.recording_id, p.concerns_flagged, p.emotional_state_end, p.emotional_state_observed, p.follow_up_actions, p.interventions_applied, p.notes_restricted, p.progress_noted, p.referral_made, p.resident_id, p.session_date, p.session_duration_minutes, p.session_narrative, p.session_type, p.social_worker, p.social_worker_id
+      FROM process_recordings AS p
+      WHERE p.social_worker_id = @id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@id='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT p.recording_id, p.concerns_flagged, p.emotional_state_end, p.emotional_state_observed, p.follow_up_actions, p.interventions_applied, p.notes_restricted, p.progress_noted, p.referral_made, p.resident_id, p.session_date, p.session_duration_minutes, p.session_narrative, p.session_type, p.social_worker, p.social_worker_id
+      FROM process_recordings AS p
+      WHERE p.social_worker_id = @id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[@id='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT h.visitation_id, h.family_cooperation_level, h.family_members_present, h.follow_up_needed, h.follow_up_notes, h.location_visited, h.observations, h.purpose, h.resident_id, h.safety_concerns_noted, h.social_worker, h.social_worker_id, h.visit_date, h.visit_outcome, h.visit_type
+      FROM home_visitations AS h
+      WHERE h.social_worker_id = @id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM social_workers
+      WHERE social_worker_id = @p0;
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@id='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT h.visitation_id, h.family_cooperation_level, h.family_members_present, h.follow_up_needed, h.follow_up_notes, h.location_visited, h.observations, h.purpose, h.resident_id, h.safety_concerns_noted, h.social_worker, h.social_worker_id, h.visit_date, h.visit_outcome, h.visit_type
+      FROM home_visitations AS h
+      WHERE h.social_worker_id = @id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[@socialWorker_FullName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id, r.age_upon_admission, r.assigned_social_worker, r.birth_status, r.case_category, r.case_control_no, r.case_status, r.created_at, r.current_risk_level, r.date_case_study_prepared, r.date_closed, r.date_colb_obtained, r.date_colb_registered, r.date_enrolled, r.date_of_admission, r.date_of_birth, r.family_indigenous, r.family_informal_settler, r.family_is_4ps, r.family_parent_pwd, r.family_solo_parent, r.has_special_needs, r.initial_case_assessment, r.initial_risk_level, r.internal_code, r.is_pwd, r.length_of_stay, r.notes_restricted, r.place_of_birth, r.present_age, r.pwd_type, r.referral_source, r.referring_agency_person, r.reintegration_status, r.reintegration_type, r.religion, r.safehouse_id, r.sex, r.special_needs_diagnosis, r.sub_cat_at_risk, r.sub_cat_child_labor, r.sub_cat_child_with_hiv, r.sub_cat_cicl, r.sub_cat_orphaned, r.sub_cat_osaec, r.sub_cat_physical_abuse, r.sub_cat_sexual_abuse, r.sub_cat_street_child, r.sub_cat_trafficked
+      FROM residents AS r
+      WHERE r.assigned_social_worker = @socialWorker_FullName
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.safehouse_id, s.capacity_girls, s.capacity_staff, s.city, s.country, s.current_occupancy, s.name, s.notes, s.open_date, s.province, s.region, s.safehouse_code, s.status
+      FROM safehouses AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (64ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.social_worker_id, s.created_at, s.email, s.first_name, s.full_name, s.last_name, s.phone, s.safehouse_id, s.status, s.updated_at
+      FROM social_workers AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (66ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id, r.age_upon_admission, r.assigned_social_worker, r.birth_status, r.case_category, r.case_control_no, r.case_status, r.created_at, r.current_risk_level, r.date_case_study_prepared, r.date_closed, r.date_colb_obtained, r.date_colb_registered, r.date_enrolled, r.date_of_admission, r.date_of_birth, r.family_indigenous, r.family_informal_settler, r.family_is_4ps, r.family_parent_pwd, r.family_solo_parent, r.has_special_needs, r.initial_case_assessment, r.initial_risk_level, r.internal_code, r.is_pwd, r.length_of_stay, r.notes_restricted, r.place_of_birth, r.present_age, r.pwd_type, r.referral_source, r.referring_agency_person, r.reintegration_status, r.reintegration_type, r.religion, r.safehouse_id, r.sex, r.special_needs_diagnosis, r.sub_cat_at_risk, r.sub_cat_child_labor, r.sub_cat_child_with_hiv, r.sub_cat_cicl, r.sub_cat_orphaned, r.sub_cat_osaec, r.sub_cat_physical_abuse, r.sub_cat_sexual_abuse, r.sub_cat_street_child, r.sub_cat_trafficked
+      FROM residents AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (67ms) [Parameters=[@socialWorker_FullName='?'], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id, r.age_upon_admission, r.assigned_social_worker, r.birth_status, r.case_category, r.case_control_no, r.case_status, r.created_at, r.current_risk_level, r.date_case_study_prepared, r.date_closed, r.date_colb_obtained, r.date_colb_registered, r.date_enrolled, r.date_of_admission, r.date_of_birth, r.family_indigenous, r.family_informal_settler, r.family_is_4ps, r.family_parent_pwd, r.family_solo_parent, r.has_special_needs, r.initial_case_assessment, r.initial_risk_level, r.internal_code, r.is_pwd, r.length_of_stay, r.notes_restricted, r.place_of_birth, r.present_age, r.pwd_type, r.referral_source, r.referring_agency_person, r.reintegration_status, r.reintegration_type, r.religion, r.safehouse_id, r.sex, r.special_needs_diagnosis, r.sub_cat_at_risk, r.sub_cat_child_labor, r.sub_cat_child_with_hiv, r.sub_cat_cicl, r.sub_cat_orphaned, r.sub_cat_osaec, r.sub_cat_physical_abuse, r.sub_cat_sexual_abuse, r.sub_cat_street_child, r.sub_cat_trafficked
+      FROM residents AS r
+      WHERE r.assigned_social_worker = @socialWorker_FullName
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT s.social_worker_id, s.created_at, s.email, s.first_name, s.full_name, s.last_name, s.phone, s.safehouse_id, s.status, s.updated_at
+      FROM social_workers AS s
+      WHERE s.social_worker_id = @p
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM social_workers
+      WHERE social_worker_id = @p0;
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException: The database operation was expected to affect 1 row(s), but actually affected 0 row(s); data may have been modified or deleted since entities were loaded. See https://go.microsoft.com/fwlink/?LinkId=527962 for information on understanding and handling optimistic concurrency exceptions.
+         at Npgsql.EntityFrameworkCore.PostgreSQL.Update.Internal.NpgsqlModificationCommandBatch.ThrowAggregateUpdateConcurrencyExceptionAsync(RelationalDataReader reader, Int32 commandIndex, Int32 expectedRowsAffected, Int32 rowsAffected, CancellationToken cancellationToken)
+         at Npgsql.EntityFrameworkCore.PostgreSQL.Update.Internal.NpgsqlModificationCommandBatch.Consume(RelationalDataReader reader, Boolean async, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at WebApplication1.Controllers.SocialWorkersController.Delete(Int32 id) in C:\Users\William Francom\OneDrive\Desktop\INTEX\Intex\backend\WebApplication1\WebApplication1\Controllers\SocialWorkersController.cs:line 122
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+         at Program.<>c.<<<Main>$>b__0_6>d.MoveNext() in C:\Users\William Francom\OneDrive\Desktop\INTEX\Intex\backend\WebApplication1\WebApplication1\Program.cs:line 160
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (63ms) [Parameters=[@p0='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      DELETE FROM social_workers
+      WHERE social_worker_id = @p0;
+fail: Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware[1]
+      An unhandled exception has occurred while executing the request.
+      Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException: The database operation was expected to affect 1 row(s), but actually affected 0 row(s); data may have been modified or deleted since entities were loaded. See https://go.microsoft.com/fwlink/?LinkId=527962 for information on understanding and handling optimistic concurrency exceptions.
+         at Npgsql.EntityFrameworkCore.PostgreSQL.Update.Internal.NpgsqlModificationCommandBatch.ThrowAggregateUpdateConcurrencyExceptionAsync(RelationalDataReader reader, Int32 commandIndex, Int32 expectedRowsAffected, Int32 rowsAffected, CancellationToken cancellationToken)
+         at Npgsql.EntityFrameworkCore.PostgreSQL.Update.Internal.NpgsqlModificationCommandBatch.Consume(RelationalDataReader reader, Boolean async, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.ReaderModificationCommandBatch.ExecuteAsync(IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Update.Internal.BatchExecutor.ExecuteAsync(IEnumerable`1 commandBatches, IRelationalConnection connection, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.Storage.RelationalDatabase.SaveChangesAsync(IList`1 entries, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(IList`1 entriesToSave, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.ChangeTracking.Internal.StateManager.SaveChangesAsync(StateManager stateManager, Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+         at Microsoft.EntityFrameworkCore.DbContext.SaveChangesAsync(Boolean acceptAllChangesOnSuccess, CancellationToken cancellationToken)
+         at WebApplication1.Controllers.SocialWorkersController.Delete(Int32 id) in C:\Users\William Francom\OneDrive\Desktop\INTEX\Intex\backend\WebApplication1\WebApplication1\Controllers\SocialWorkersController.cs:line 122
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ActionMethodExecutor.TaskOfIActionResultExecutor.Execute(ActionContext actionContext, IActionResultTypeMapper mapper, ObjectMethodExecutor executor, Object controller, Object[] arguments)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeActionMethodAsync>g__Awaited|12_0(ControllerActionInvoker invoker, ValueTask`1 actionResultValueTask)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeNextActionFilterAsync>g__Awaited|10_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Rethrow(ActionExecutedContextSealed context)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.Next(State& next, Scope& scope, Object& state, Boolean& isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ControllerActionInvoker.<InvokeInnerFilterAsync>g__Awaited|13_0(ControllerActionInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeFilterPipelineAsync>g__Awaited|20_0(ResourceInvoker invoker, Task lastTask, State next, Scope scope, Object state, Boolean isCompleted)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+         at Microsoft.AspNetCore.Mvc.Infrastructure.ResourceInvoker.<InvokeAsync>g__Awaited|17_0(ResourceInvoker invoker, Task task, IDisposable scope)
+         at Microsoft.AspNetCore.Authorization.AuthorizationMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+         at Program.<>c.<<<Main>$>b__0_6>d.MoveNext() in C:\Users\William Francom\OneDrive\Desktop\INTEX\Intex\backend\WebApplication1\WebApplication1\Program.cs:line 160
+      --- End of stack trace from previous location ---
+         at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.safehouse_id, s.capacity_girls, s.capacity_staff, s.city, s.country, s.current_occupancy, s.name, s.notes, s.open_date, s.province, s.region, s.safehouse_code, s.status
+      FROM safehouses AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (62ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s3.metric_id, s3.active_residents, s3.avg_education_progress, s3.avg_health_score, s3.home_visitation_count, s3.incident_count, s3.month_end, s3.month_start, s3.notes, s3.process_recording_count, s3.safehouse_id
+      FROM (
+          SELECT s.safehouse_id
+          FROM safehouse_monthly_metrics AS s
+          GROUP BY s.safehouse_id
+      ) AS s1
+      LEFT JOIN (
+          SELECT s2.metric_id, s2.active_residents, s2.avg_education_progress, s2.avg_health_score, s2.home_visitation_count, s2.incident_count, s2.month_end, s2.month_start, s2.notes, s2.process_recording_count, s2.safehouse_id
+          FROM (
+              SELECT s0.metric_id, s0.active_residents, s0.avg_education_progress, s0.avg_health_score, s0.home_visitation_count, s0.incident_count, s0.month_end, s0.month_start, s0.notes, s0.process_recording_count, s0.safehouse_id, ROW_NUMBER() OVER(PARTITION BY s0.safehouse_id ORDER BY s0.month_start DESC) AS row
+              FROM safehouse_monthly_metrics AS s0
+          ) AS s2
+          WHERE s2.row <= 1
+      ) AS s3 ON s1.safehouse_id = s3.safehouse_id
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (69ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT s.supporter_id, s.acquisition_channel, s.country, s.created_at, s.display_name, s.email, s.first_donation_date, s.first_name, s.last_name, s.organization_name, s.phone, s.region, s.relationship_type, s.status, s.supporter_type
+      FROM supporters AS s
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (65ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0)
+      FROM donation_allocations AS d
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (76ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id, r.age_upon_admission, r.assigned_social_worker, r.birth_status, r.case_category, r.case_control_no, r.case_status, r.created_at, r.current_risk_level, r.date_case_study_prepared, r.date_closed, r.date_colb_obtained, r.date_colb_registered, r.date_enrolled, r.date_of_admission, r.date_of_birth, r.family_indigenous, r.family_informal_settler, r.family_is_4ps, r.family_parent_pwd, r.family_solo_parent, r.has_special_needs, r.initial_case_assessment, r.initial_risk_level, r.internal_code, r.is_pwd, r.length_of_stay, r.notes_restricted, r.place_of_birth, r.present_age, r.pwd_type, r.referral_source, r.referring_agency_person, r.reintegration_status, r.reintegration_type, r.religion, r.safehouse_id, r.sex, r.special_needs_diagnosis, r.sub_cat_at_risk, r.sub_cat_child_labor, r.sub_cat_child_with_hiv, r.sub_cat_cicl, r.sub_cat_orphaned, r.sub_cat_osaec, r.sub_cat_physical_abuse, r.sub_cat_sexual_abuse, r.sub_cat_street_child, r.sub_cat_trafficked
+      FROM residents AS r
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (69ms) [Parameters=[@today='?' (DbType = Date), @cutoff='?' (DbType = Date)], CommandType='Text', CommandTimeout='30']
+      SELECT i.plan_id, i.case_conference_date, i.created_at, i.plan_category, i.plan_description, i.resident_id, i.services_provided, i.status, i.target_date, i.target_value, i.updated_at
+      FROM intervention_plans AS i
+      WHERE i.case_conference_date IS NOT NULL AND i.case_conference_date >= @today AND i.case_conference_date <= @cutoff
+      ORDER BY i.case_conference_date
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (129ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT d.donation_id AS "DonationId", d.supporter_id AS "SupporterId", CASE
+          WHEN s.supporter_id IS NULL THEN 'Anonymous'
+          ELSE COALESCE(s.display_name, btrim(COALESCE(s.first_name, '') || ' ' || COALESCE(s.last_name, ''), E' \t\n\r'))
+      END AS "SupporterName", d.amount AS "Amount", d.estimated_value AS "EstimatedValue", d.donation_date AS "DonationDate", d.is_recurring AS "IsRecurring", d.donation_type AS "DonationType", d.channel_source AS "ChannelSource", d.currency_code AS "CurrencyCode", d.campaign_name AS "CampaignName", d.notes AS "Notes"
+      FROM donations AS d
+      LEFT JOIN supporters AS s ON d.supporter_id = s.supporter_id
+      ORDER BY d.donation_date DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (123ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT i.incident_id, i.description, i.follow_up_required, i.incident_date, i.incident_type, i.reported_by, i.resident_id, i.resolution_date, i.resolved, i.response_taken, i.safehouse_id, i.severity
+      FROM incident_reports AS i
+      ORDER BY i.incident_date DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (66ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT d.program_area AS "ProgramArea", COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0) AS "AmountAllocated"
+      FROM donation_allocations AS d
+      WHERE d.program_area IS NOT NULL
+      GROUP BY d.program_area
+      ORDER BY COALESCE(sum(COALESCE(d.amount_allocated, 0.0)), 0.0) DESC
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (66ms) [Parameters=[@residentIds='?' (DbType = Object)], CommandType='Text', CommandTimeout='30']
+      SELECT r.resident_id AS "ResidentId", r.internal_code AS "InternalCode", r.safehouse_id AS "SafehouseId", r.assigned_social_worker AS "AssignedSocialWorker"
+      FROM residents AS r
+      WHERE r.resident_id = ANY (@residentIds)
