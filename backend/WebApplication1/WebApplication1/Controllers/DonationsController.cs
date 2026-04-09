@@ -13,6 +13,7 @@ public class DonationsController : ControllerBase
     private readonly AppDbContext _context;
     public DonationsController(AppDbContext context) => _context = context;
 
+    [AllowAnonymous]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateDonationDto dto)
     {
