@@ -47,11 +47,18 @@ function HomePage() {
   return (
     <>
       {/* ── Hero ── */}
-      <section
-        className="hp-hero"
-        style={{ backgroundImage: `url(${shelterImg})` }}
-        aria-label="Hero"
-      >
+      <section className="hp-hero" aria-label="Hero">
+        {/* Real <img> so the browser can paint it as soon as bytes arrive,
+            matching the /shelter.webp preload hint in index.html */}
+        <img
+          src={shelterImg}
+          alt=""
+          aria-hidden="true"
+          className="hp-hero-bg-img"
+          fetchPriority="high"
+          width="2816"
+          height="1536"
+        />
         <div className="hp-hero-overlay">
           <div className="hp-hero-content">
             <p className="hp-hero-eyebrow">Safety · Healing · Justice · Empowerment</p>

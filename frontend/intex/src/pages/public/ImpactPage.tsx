@@ -123,7 +123,16 @@ export default function ImpactPage() {
     <div className="ip-page">
 
       {/* ── Hero ── */}
-      <section className="ip-hero" style={{ backgroundImage: `url(${shelterImg})` }}>
+      <section className="ip-hero">
+        <img
+          src={shelterImg}
+          alt=""
+          aria-hidden="true"
+          className="ip-hero-bg-img"
+          loading="lazy"
+          width="2816"
+          height="1536"
+        />
         <div className="ip-hero-overlay">
           <div className="ip-hero-inner">
             <p className="ip-hero-eyebrow">Transparency · Trust · Impact</p>
