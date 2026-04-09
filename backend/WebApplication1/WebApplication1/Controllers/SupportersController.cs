@@ -7,6 +7,7 @@ namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class SupportersController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -86,4 +87,33 @@ public class SupportersController : ControllerBase
 
         return Ok(match);
     }
+
+    [HttpPatch("{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> UpdatePartial(int id, [FromBody] UpdateSupporterDto dto)
+    {
+        var supporter = await _context.Supporters.FindAsync(id);
+        if (supporter == null) return NotFound();
+
+        if (dto.FirstName   != null) supporter.FirstName   = dto.FirstName;
+        if (dto.LastName    != null) supporter.LastName    = dto.LastName;
+        if (dto.DisplayName != null) supporter.DisplayName = dto.DisplayName;
+        if (dto.Email       != null) supporter.Email       = dto.Email;
+        if (dto.Phone       != null) supporter.Phone       = dto.Phone;
+
+        await _context.SaveChangesAsync();
+        return Ok(supporter);
+    }
+
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var supporter = await _context.Supporters.FindAsync(id);
+        if (supporter == null) return NotFound();
+        _context.Supporters.Remove(supporter);
+        await _context.SaveChangesAsync();
+        return NoContent();
+    }
 }
+

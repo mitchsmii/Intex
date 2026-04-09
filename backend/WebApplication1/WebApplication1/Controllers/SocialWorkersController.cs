@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -6,6 +7,7 @@ namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class SocialWorkersController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -69,5 +71,16 @@ public class SocialWorkersController : ControllerBase
         var sw = await _context.SocialWorkers.FindAsync(id);
         if (sw == null) return NotFound();
         return Ok(sw);
+    }
+
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var sw = await _context.SocialWorkers.FindAsync(id);
+        if (sw == null) return NotFound();
+        _context.SocialWorkers.Remove(sw);
+        await _context.SaveChangesAsync();
+        return NoContent();
     }
 }

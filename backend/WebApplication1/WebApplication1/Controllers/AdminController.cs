@@ -1,4 +1,5 @@
 using System.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -6,36 +7,39 @@ using WebApplication1.Data;
 
 namespace WebApplication1.Controllers;
 
-// TEMPORARY: This controller contains a one-time backfill endpoint.
-// Protect with [Authorize(Roles = "Admin")] before production use.
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ILogger<AdminController> _logger;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IConfiguration _configuration;
 
     public AdminController(
         AppDbContext context,
         ILogger<AdminController> logger,
         UserManager<IdentityUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole> roleManager,
+        IConfiguration configuration)
     {
         _context = context;
         _logger = logger;
         _userManager = userManager;
         _roleManager = roleManager;
+        _configuration = configuration;
     }
 
     // POST /api/admin/seed-social-worker-users
     // Creates one AspNet user per row in social_workers, username = full_name (e.g. "SW-01"),
-    // password = "Password123!", role = "SocialWorker". Idempotent — skips existing usernames.
+    // password from config, role = "SocialWorker". Idempotent — skips existing usernames.
     [HttpPost("seed-social-worker-users")]
     public async Task<IActionResult> SeedSocialWorkerUsers()
     {
-        const string defaultPassword = "Password123!";
+        var defaultPassword = _configuration["SeedUsers:SocialWorker:Password"]
+                              ?? throw new InvalidOperationException("SeedUsers:SocialWorker:Password is not configured.");
         const string roleName = "SocialWorker";
 
         if (!await _roleManager.RoleExistsAsync(roleName))
@@ -86,7 +90,6 @@ public class AdminController : ControllerBase
             created,
             skipped,
             failed,
-            defaultPassword,
             note = "Login with username=SW-XX (matching social_workers.full_name)."
         });
     }

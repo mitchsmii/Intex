@@ -4,6 +4,7 @@ import type {
   Donation, MonthlyDonationSummary, TopSupporter,
   AllocationSummary, SafehouseMonthlyMetric, Safehouse,
 } from '../../../services/apiService'
+import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
 import './DonationReportPage.css'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -81,6 +82,19 @@ export default function DonationReportPage() {
   const [_metrics,    setMetrics]      = useState<SafehouseMonthlyMetric[]>([])
   const [safehouses,  setSafehouses]  = useState<Safehouse[]>([])
   const [loading,     setLoading]     = useState(true)
+  const [deleteTarget, setDeleteTarget] = useState<Donation | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    if (!deleteTarget?.donationId) return
+    setDeleting(true)
+    try {
+      await api.deleteDonation(deleteTarget.donationId)
+      setDonations(prev => prev.filter(d => d.donationId !== deleteTarget.donationId))
+      setDeleteTarget(null)
+    } catch { /* ignore */ }
+    finally { setDeleting(false) }
+  }
 
   useEffect(() => {
     Promise.allSettled([
@@ -144,6 +158,13 @@ export default function DonationReportPage() {
 
   return (
     <div className="dr-page">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        title="Delete Donation"
+        message={deleteTarget ? `Delete this ${deleteTarget.isRecurring ? 'recurring' : 'one-time'} donation of ${deleteTarget.amount?.toLocaleString() ?? '?'}?` : ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
 
       {/* ── Header ── */}
       <div className="dr-header">
@@ -453,6 +474,14 @@ export default function DonationReportPage() {
                   <span className={`dr-tag ${d.isRecurring ? 'tag-monthly' : 'tag-onetime'}`}>
                     {d.isRecurring ? 'Monthly' : 'One-Time'}
                   </span>
+                  <button
+                    onClick={() => setDeleteTarget(d)}
+                    disabled={deleting}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)', fontSize: '0.75rem', padding: '0.2rem 0.4rem' }}
+                    title="Delete donation"
+                  >
+                    ✕
+                  </button>
                 </div>
               </div>
             ))}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
 import type { Supporter, Donation } from '../../../services/apiService'
 import { predictDonorChurn } from '../../../services/mlApi'
+import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
 import '../ManageUsersPage.css'
 
 function fmtAmt(n: number | null, currency?: string | null) {
@@ -107,6 +108,8 @@ export default function DonorsPage() {
   const [valueFilter, setValueFilter] = useState('')
   const [showAdd,     setShowAdd]     = useState(false)
   const [churnScores, setChurnScores] = useState<Record<number, number>>({})
+  const [deleteTarget, setDeleteTarget] = useState<Supporter | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => { setValueFilter('') }, [sortCol])
 
@@ -166,6 +169,17 @@ export default function DonorsPage() {
     void runPredictions()
   }, [donors, donations])
 
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.deleteSupporter(deleteTarget.supporterId)
+      setSupporters(prev => prev.filter(s => s.supporterId !== deleteTarget.supporterId))
+      setDeleteTarget(null)
+    } catch { /* ignore */ }
+    finally { setDeleting(false) }
+  }
+
   function toggleSort(col: SortKey) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortCol(col); setSortDir('asc') }
@@ -224,6 +238,12 @@ export default function DonorsPage() {
   const recurring   = donors.filter(d => isRecurring(d.supporterId)).length
   return (
     <div className="mu-page">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        itemLabel={deleteTarget ? (deleteTarget.displayName ?? `${deleteTarget.firstName ?? ''} ${deleteTarget.lastName ?? ''}`.trim()) : ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
       {showAdd && (
         <AddDonorModal
           onClose={() => setShowAdd(false)}
@@ -313,11 +333,12 @@ export default function DonorsPage() {
                 <SortTh label="Status"      col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <SortTh label="Lapse Risk"  col="risk"      sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <SortTh label="First Gift"  col="firstDate" sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="mu-empty-cell">No donors found.</td></tr>
+                <tr><td colSpan={12} className="mu-empty-cell">No donors found.</td></tr>
               )}
               {filtered.map(s => {
                 const ds = donationsBySupporter(s.supporterId)
@@ -355,6 +376,16 @@ export default function DonorsPage() {
                       </div>
                     </td>
                     <td>{s.firstDonationDate ? new Date(s.firstDonationDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</td>
+                    <td>
+                      <button
+                        className="mu-btn mu-btn-danger"
+                        onClick={() => setDeleteTarget(s)}
+                        disabled={deleting}
+                        style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem' }}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 )
               })}
