@@ -157,9 +157,9 @@ using (var scope = app.Services.CreateScope())
     // Seed test users (create via Identity, assign roles via raw SQL to dodge PgBouncer bug)
     var seedUsers = new[]
     {
-        new { UserName = "admin", Email = "admin@cove.org", Password = "Admin123!@#xyz", Role = "ADMIN" },
-        new { UserName = "donor", Email = "donor@cove.org", Password = "Donor123!@#xyz", Role = "DONOR" },
-        new { UserName = "socialworker", Email = "sw@cove.org", Password = "Worker123!@#xyz", Role = "SOCIALWORKER" },
+        new { UserName = "admin", Email = "admin@cove.org", Password = builder.Configuration["SeedUsers:Admin:Password"] ?? throw new InvalidOperationException("SeedUsers:Admin:Password is not configured."), Role = "ADMIN" },
+        new { UserName = "donor", Email = "donor@cove.org", Password = builder.Configuration["SeedUsers:Donor:Password"] ?? throw new InvalidOperationException("SeedUsers:Donor:Password is not configured."), Role = "DONOR" },
+        new { UserName = "socialworker", Email = "sw@cove.org", Password = builder.Configuration["SeedUsers:SocialWorker:Password"] ?? throw new InvalidOperationException("SeedUsers:SocialWorker:Password is not configured."), Role = "SOCIALWORKER" },
     };
 
     foreach (var seed in seedUsers)
