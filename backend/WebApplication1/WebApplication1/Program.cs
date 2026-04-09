@@ -31,6 +31,9 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
+builder.Services.Configure<Microsoft.AspNetCore.Identity.DataProtectionTokenProviderOptions>(o =>
+    o.TokenLifespan = TimeSpan.FromMinutes(10));
+
 // JWT
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtKey = Encoding.UTF8.GetBytes(jwtSection["Key"]!);
@@ -55,6 +58,9 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddSingleton<JwtSecurityTokenHandler>();
+
+// Email sender
+builder.Services.AddTransient<WebApplication1.Services.IEmailSender, WebApplication1.Services.SmtpEmailSender>();
 
 // CORS
 builder.Services.AddCors(options =>
@@ -198,6 +204,10 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
+else
+{
+    app.UseHsts();
 }
 
 app.UseCors("AllowFrontend");

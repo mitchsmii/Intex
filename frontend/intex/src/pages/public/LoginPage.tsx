@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { GoogleLogin } from '@react-oauth/google'
 import { useAuth } from '../../hooks/useAuth'
 import './LoginPage.css'
 
@@ -11,7 +12,7 @@ function getRoleHomePath(roles: string[]): string {
 }
 
 export default function LoginPage() {
-  const { user, login, logout, isLoading } = useAuth()
+  const { user, login, logout, isLoading, googleLogin, verifyTwoFactor } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [loggedOut, setLoggedOut] = useState(false)
@@ -26,6 +27,11 @@ export default function LoginPage() {
     username?: string
     password?: string
   }>({})
+
+  // 2FA state
+  const [twoFactorUserId, setTwoFactorUserId] = useState<string | null>(null)
+  const [twoFactorCode, setTwoFactorCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
 
   // Run once after auth state is known on page load.
   // If the user was already logged in when they arrived, log them out so they
@@ -63,7 +69,11 @@ export default function LoginPage() {
 
     setSubmitting(true)
     try {
-      await login(username, password)
+      const result = await login(username, password)
+      if (result.requires2FA && result.userId) {
+        setTwoFactorUserId(result.userId)
+      }
+      // if not requires2FA, the redirect useEffect handles navigation
     } catch (err) {
       setServerError(
         err instanceof Error ? err.message : 'Login failed. Please try again.'
@@ -71,6 +81,40 @@ export default function LoginPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleTwoFactorSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!twoFactorCode.trim() || !twoFactorUserId) return
+    setServerError(null)
+    setVerifying(true)
+    try {
+      await verifyTwoFactor(twoFactorUserId, twoFactorCode)
+      // redirect useEffect will fire when user is set
+    } catch (err) {
+      setServerError(
+        err instanceof Error ? err.message : 'Invalid or expired code.'
+      )
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return
+    setServerError(null)
+    try {
+      await googleLogin(credentialResponse.credential)
+      // redirect useEffect will fire when user is set
+    } catch (err) {
+      setServerError(
+        err instanceof Error ? err.message : 'Google sign-in failed. Please try again.'
+      )
+    }
+  }
+
+  const handleGoogleError = () => {
+    setServerError('Google sign-in was cancelled or failed.')
   }
 
   if (isLoading) {
@@ -107,115 +151,188 @@ export default function LoginPage() {
       </div>
 
       <div className="login-form-container">
-        <form className="login-card" onSubmit={handleSubmit} noValidate>
-          <h1 className="login-card__heading">Welcome Back</h1>
-          <p className="login-card__subheading">
-            Sign in to your Cove account
-          </p>
+        {twoFactorUserId ? (
+          <form className="login-card" onSubmit={handleTwoFactorSubmit} noValidate>
+            <h1 className="login-card__heading">Two-Factor Verification</h1>
+            <p className="login-card__subheading">
+              Check your email for a 6-digit code
+            </p>
 
-          {serverError && (
-            <div className="login-error-banner" role="alert">
-              {serverError}
-            </div>
-          )}
-
-          <div className="login-field">
-            <label className="login-field__label" htmlFor="login-username">
-              Username
-            </label>
-            <div className="login-field__input-wrapper">
-              <input
-                id="login-username"
-                className={`login-field__input${fieldErrors.username ? ' login-field__input--error' : ''}`}
-                type="text"
-                autoComplete="username"
-                autoFocus
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                aria-describedby={
-                  fieldErrors.username ? 'login-username-error' : undefined
-                }
-              />
-            </div>
-            {fieldErrors.username && (
-              <p id="login-username-error" className="login-field__error">
-                {fieldErrors.username}
-              </p>
+            {serverError && (
+              <div className="login-error-banner" role="alert">
+                {serverError}
+              </div>
             )}
-          </div>
 
-          <div className="login-field">
-            <label className="login-field__label" htmlFor="login-password">
-              Password
-            </label>
-            <div className="login-field__input-wrapper">
-              <input
-                id="login-password"
-                className={`login-field__input login-field__input--has-toggle${fieldErrors.password ? ' login-field__input--error' : ''}`}
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                aria-describedby={
-                  fieldErrors.password ? 'login-password-error' : undefined
-                }
-              />
-              <button
-                type="button"
-                className="login-field__toggle"
-                onClick={() => setShowPassword((s) => !s)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+            <div className="login-field">
+              <label className="login-field__label" htmlFor="login-2fa-code">
+                Verification Code
+              </label>
+              <div className="login-field__input-wrapper">
+                <input
+                  id="login-2fa-code"
+                  className="login-field__input"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  autoFocus
+                  maxLength={6}
+                  placeholder="000000"
+                  value={twoFactorCode}
+                  onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="login-submit"
+              disabled={verifying || twoFactorCode.length !== 6}
+              aria-label={verifying ? 'Verifying…' : 'Verify Code'}
+            >
+              {verifying && <span className="login-spinner" />}
+              {verifying ? 'Verifying…' : 'Verify Code'}
+            </button>
+
+            <button
+              type="button"
+              className="login-card__forgot"
+              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              onClick={() => {
+                setTwoFactorUserId(null)
+                setTwoFactorCode('')
+                setServerError(null)
+              }}
+            >
+              Back to login
+            </button>
+          </form>
+        ) : (
+          <form className="login-card" onSubmit={handleSubmit} noValidate>
+            <h1 className="login-card__heading">Welcome Back</h1>
+            <p className="login-card__subheading">
+              Sign in to your Cove account
+            </p>
+
+            {serverError && (
+              <div className="login-error-banner" role="alert">
+                {serverError}
+              </div>
+            )}
+
+            <div className="login-field">
+              <label className="login-field__label" htmlFor="login-username">
+                Username
+              </label>
+              <div className="login-field__input-wrapper">
+                <input
+                  id="login-username"
+                  className={`login-field__input${fieldErrors.username ? ' login-field__input--error' : ''}`}
+                  type="text"
+                  autoComplete="username"
+                  autoFocus
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  aria-describedby={
+                    fieldErrors.username ? 'login-username-error' : undefined
+                  }
+                />
+              </div>
+              {fieldErrors.username && (
+                <p id="login-username-error" className="login-field__error">
+                  {fieldErrors.username}
+                </p>
+              )}
+            </div>
+
+            <div className="login-field">
+              <label className="login-field__label" htmlFor="login-password">
+                Password
+              </label>
+              <div className="login-field__input-wrapper">
+                <input
+                  id="login-password"
+                  className={`login-field__input login-field__input--has-toggle${fieldErrors.password ? ' login-field__input--error' : ''}`}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  aria-describedby={
+                    fieldErrors.password ? 'login-password-error' : undefined
+                  }
+                />
+                <button
+                  type="button"
+                  className="login-field__toggle"
+                  onClick={() => setShowPassword((s) => !s)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? (
-                    <>
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                      <line x1="1" y1="1" x2="23" y2="23" />
-                    </>
-                  ) : (
-                    <>
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </>
-                  )}
-                </svg>
-              </button>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    {showPassword ? (
+                      <>
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+                        <line x1="1" y1="1" x2="23" y2="23" />
+                      </>
+                    ) : (
+                      <>
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </>
+                    )}
+                  </svg>
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p id="login-password-error" className="login-field__error">
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
-            {fieldErrors.password && (
-              <p id="login-password-error" className="login-field__error">
-                {fieldErrors.password}
-              </p>
-            )}
-          </div>
 
-          <button
-            type="submit"
-            className="login-submit"
-            disabled={submitting}
-            aria-label={submitting ? 'Signing in…' : 'Sign In'}
-          >
-            {submitting && <span className="login-spinner" />}
-            {submitting ? 'Signing in…' : 'Sign In'}
-          </button>
+            <button
+              type="submit"
+              className="login-submit"
+              disabled={submitting}
+              aria-label={submitting ? 'Signing in…' : 'Sign In'}
+            >
+              {submitting && <span className="login-spinner" />}
+              {submitting ? 'Signing in…' : 'Sign In'}
+            </button>
 
-          <a href="#" className="login-card__forgot">
-            Forgot password?
-          </a>
+            <a href="#" className="login-card__forgot">
+              Forgot password?
+            </a>
 
-          <p className="login-card__footer">
-            Don&apos;t have an account? Contact your administrator.
-          </p>
-        </form>
+            <div className="login-divider" aria-hidden="true">
+              <span>or</span>
+            </div>
+
+            <div className="login-google-btn">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap={false}
+                text="signin_with"
+                shape="rectangular"
+                width="100%"
+              />
+            </div>
+
+            <p className="login-card__footer">
+              Don&apos;t have an account? Contact your administrator.
+            </p>
+          </form>
+        )}
       </div>
     </div>
   )

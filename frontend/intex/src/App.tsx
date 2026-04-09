@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import LoadingSpinner from './components/common/LoadingSpinner'
@@ -55,6 +56,7 @@ const Fallback = () => (
 
 function App() {
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''}>
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
@@ -125,6 +127,7 @@ function App() {
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
+    </GoogleOAuthProvider>
   )
 }
 
