@@ -398,17 +398,17 @@ export const api = {
   getResidents:               () => authGet<Resident[]>('/api/residents'),
   getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
   getPartners:                () => authGet<Partner[]>('/api/partners'),
-  getSupporters:              () => get<Supporter[]>('/api/supporters'),
+  getSupporters:              () => authGet<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
   lookupSupporterByEmail:     (email: string) =>
     authGet<Supporter>(`/api/supporters/lookup-by-email?email=${encodeURIComponent(email)}`),
   chatWithVanessa:            (messages: { role: 'vanessa' | 'user'; content: string }[]) =>
     authPost<{ reply: string }>('/api/vanessa/chat', { messages }),
-  getDonations:               () => get<Donation[]>('/api/donations'),
-  getDonationsBySupporter:    (id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
-  getDonationsMonthlySummary: () => get<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
-  getTopSupporters:           (top = 5) => get<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
+  getDonations:               () => authGet<Donation[]>('/api/donations'),
+  getDonationsBySupporter:    (id: number) => authGet<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
+  getDonationsMonthlySummary: () => authGet<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
+  getTopSupporters:           (top = 5) => authGet<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
   getDonationsTotal:          () => get<{ total: number }>('/api/donations/total'),
   upsertSupporter:            (body: { firstName: string; lastName: string; email: string; phone?: string; displayName?: string }) =>
     post<Supporter>('/api/supporters/upsert', body),
@@ -420,7 +420,7 @@ export const api = {
   getIncidentReports:         () => authGet<IncidentReport[]>('/api/incidentreports'),
   getUpcomingPlans:           () => authGet<UpcomingPlan[]>('/api/interventionplans/upcoming'),
   getResidentPublicCounts:    () => get<{ totalServed: number; activeResidents: number; reintegrated: number }>('/api/residents/public-counts'),
-  getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
+  getSocialWorkers:           () => authGet<SocialWorker[]>('/api/socialworkers'),
   getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
   getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
   createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string; caseStatus?: string }) =>
