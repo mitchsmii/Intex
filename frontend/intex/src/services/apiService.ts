@@ -188,6 +188,42 @@ export interface IncidentReport {
   followUpRequired: boolean | null
 }
 
+export interface ProcessRecording {
+  recordingId: number
+  residentId: number | null
+  sessionDate: string | null
+  progressNoted: boolean | null
+  concernsFlagged: boolean | null
+  referralMade: boolean | null
+  emotionalStateObserved: string | null
+  emotionalStateEnd: string | null
+  sessionDurationMinutes: number | null
+}
+
+export interface HealthRecord {
+  healthRecordId: number
+  residentId: number | null
+  recordDate: string | null
+  generalHealthScore: number | null
+  sleepQualityScore: number | null
+}
+
+export interface HomeVisitation {
+  visitationId: number
+  residentId: number | null
+  visitDate: string | null
+  safetyConcernsNoted: boolean | null
+  familyCooperationLevel: string | null
+}
+
+export interface EducationRecord {
+  educationRecordId: number
+  residentId: number | null
+  recordDate: string | null
+  attendanceRate: number | null
+  progressPercent: number | null
+}
+
 export interface UpcomingPlan {
   planId: number
   residentId: number | null
@@ -235,6 +271,35 @@ export interface SwNotification {
   relatedResidentCode: string | null
   isRead: boolean
   createdAt: string
+}
+
+export interface AdmissionChecklist {
+  checklistId: number
+  residentId: number
+  residentCode: string | null
+  socialWorkerEmail: string | null
+  residentInFacility: boolean
+  checkedItems: string   // JSON-encoded string[]
+  status: string         // "Pending" | "Approved" | "Rejected"
+  submittedAt: string
+  reviewedAt: string | null
+  reviewedBy: string | null
+  adminNotes: string | null
+}
+
+export interface Partner {
+  partnerId: number
+  partnerName: string | null
+  partnerType: string | null
+  roleType: string | null
+  contactName: string | null
+  email: string | null
+  phone: string | null
+  region: string | null
+  status: string | null
+  startDate: string | null
+  endDate: string | null
+  notes: string | null
 }
 
 export interface SocialMediaPost {
@@ -295,6 +360,15 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function authDelete(path: string): Promise<void> {
+  const token = localStorage.getItem('cove_token')
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+}
+
 async function authPatch(path: string): Promise<void> {
   const token = localStorage.getItem('cove_token')
   await fetch(`${BASE_URL}${path}`, {
@@ -319,21 +393,46 @@ async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
 
 // ── API calls ──────────────────────────────────────────────────────────────
 
+export interface CaseConferenceRequest {
+  requestId: number
+  residentIds: string // JSON array of ints
+  requestedBy: string | null
+  requestedDate: string | null
+  requestedTime: string | null
+  agenda: string // JSON array of { residentId, notes }
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Counter-Proposed' | 'Accepted'
+  adminNotes: string | null
+  counterDate: string | null
+  counterTime: string | null
+  reviewedBy: string | null
+  reviewedAt: string | null
+  submittedAt: string
+}
+
+export interface MlCachedPrediction {
+  entityId: number
+  isPositive: boolean
+  probability: number
+  computedAt: string
+}
+
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
+  getSafehousesAdmin:         () => authGet<Safehouse[]>('/api/safehouses/admin'),
   getResidents:               () => authGet<Resident[]>('/api/residents'),
   getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
-  getSupporters:              () => get<Supporter[]>('/api/supporters'),
+  getPartners:                () => authGet<Partner[]>('/api/partners'),
+  getSupporters:              () => authGet<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
   lookupSupporterByEmail:     (email: string) =>
     authGet<Supporter>(`/api/supporters/lookup-by-email?email=${encodeURIComponent(email)}`),
   chatWithVanessa:            (messages: { role: 'vanessa' | 'user'; content: string }[]) =>
     authPost<{ reply: string }>('/api/vanessa/chat', { messages }),
-  getDonations:               () => get<Donation[]>('/api/donations'),
-  getDonationsBySupporter:    (id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
-  getDonationsMonthlySummary: () => get<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
-  getTopSupporters:           (top = 5) => get<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
+  getDonations:               () => authGet<Donation[]>('/api/donations'),
+  getDonationsBySupporter:    (id: number) => authGet<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
+  getDonationsMonthlySummary: () => authGet<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
+  getTopSupporters:           (top = 5) => authGet<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
   getDonationsTotal:          () => get<{ total: number }>('/api/donations/total'),
   upsertSupporter:            (body: { firstName: string; lastName: string; email: string; phone?: string; displayName?: string }) =>
     post<Supporter>('/api/supporters/upsert', body),
@@ -345,7 +444,7 @@ export const api = {
   getIncidentReports:         () => authGet<IncidentReport[]>('/api/incidentreports'),
   getUpcomingPlans:           () => authGet<UpcomingPlan[]>('/api/interventionplans/upcoming'),
   getResidentPublicCounts:    () => get<{ totalServed: number; activeResidents: number; reintegrated: number }>('/api/residents/public-counts'),
-  getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
+  getSocialWorkers:           () => authGet<SocialWorker[]>('/api/socialworkers'),
   getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
   getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
   createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string; caseStatus?: string }) =>
@@ -357,9 +456,57 @@ export const api = {
   getUnreadNotificationCount: () => authGet<number>('/api/notifications/unread-count'),
   getNotifications:           () => authGet<SwNotification[]>('/api/notifications'),
   markAllNotificationsRead:   () => authPatch('/api/notifications/mark-all-read'),
+  getProcessRecordingsByResident: (id: number) => authGet<ProcessRecording[]>(`/api/processrecordings?residentId=${id}`),
+  getHealthRecordsByResident:     (id: number) => authGet<HealthRecord[]>(`/api/healthwellbeingrecords?residentId=${id}`),
+  getHomeVisitationsByResident:   (id: number) => authGet<HomeVisitation[]>(`/api/homevisitations?residentId=${id}`),
+  getEducationRecords:             () => authGet<EducationRecord[]>('/api/educationrecords'),
+  getEducationRecordsByResident:  (id: number) => authGet<EducationRecord[]>(`/api/educationrecords?residentId=${id}`),
+  getIncidentsByResident:         (id: number) => authGet<IncidentReport[]>(`/api/incidentreports?residentId=${id}`),
   getSocialMediaPosts:        () => get<SocialMediaPost[]>('/api/socialmediaposts'),
   createSocialMediaPost:      (body: Omit<SocialMediaPost, 'postId'>) =>
     post<SocialMediaPost>('/api/socialmediaposts', body),
   updateResident:             (id: number, body: Partial<{ safehouseId: number; assignedSocialWorker: string; currentRiskLevel: string; caseStatus: string }>) =>
     authPatchWithBody<Resident>(`/api/residents/${id}`, body),
+  getAdmissionChecklists:     (status?: string) =>
+    authGet<AdmissionChecklist[]>(`/api/admissionchecklists${status ? `?status=${encodeURIComponent(status)}` : ''}`),
+  getPendingChecklistCount:   () => authGet<number>('/api/admissionchecklists/pending-count'),
+  submitAdmissionChecklist:   (body: { residentId: number; residentInFacility: boolean; checkedItems: string[] }) =>
+    authPost<AdmissionChecklist>('/api/admissionchecklists', body),
+  approveChecklist:           (id: number, notes?: string) =>
+    authPatchWithBody<AdmissionChecklist>(`/api/admissionchecklists/${id}/approve`, { notes: notes ?? null }),
+  rejectChecklist:            (id: number, notes?: string) =>
+    authPatchWithBody<AdmissionChecklist>(`/api/admissionchecklists/${id}/reject`, { notes: notes ?? null }),
+
+  // Admin-only: full safehouse data including capacity/occupancy
+  getAdminSafehouses:         () => authGet<Safehouse[]>('/api/safehouses/admin'),
+
+  // Delete operations (Admin only — require confirmed token)
+  deleteSupporter:            (id: number) => authDelete(`/api/supporters/${id}`),
+  deleteSocialWorker:         (id: number) => authDelete(`/api/socialworkers/${id}`),
+  deleteDonation:             (id: number) => authDelete(`/api/donations/${id}`),
+
+  // Update supporter profile
+  updateSupporter:            (id: number, body: Partial<{ firstName: string; lastName: string; displayName: string; email: string; phone: string }>) =>
+    authPatchWithBody<Supporter>(`/api/supporters/${id}`, body),
+
+  // Case conference requests
+  getCaseConferenceRequests:     (status?: string) =>
+    authGet<CaseConferenceRequest[]>(`/api/caseconferencerequests${status ? `?status=${status}` : ''}`),
+  getPendingConferenceCount:     () => authGet<number>('/api/caseconferencerequests/pending-count'),
+  submitCaseConferenceRequest:   (body: { residentIds: number[]; requestedDate: string; requestedTime: string; agenda: { residentId: number; notes: string }[] }) =>
+    authPost<CaseConferenceRequest>('/api/caseconferencerequests', body),
+  approveCaseConferenceRequest:  (id: number, notes?: string) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/approve`, { notes }),
+  rejectCaseConferenceRequest:   (id: number, notes?: string) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/reject`, { notes }),
+  counterProposeConference:      (id: number, body: { counterDate: string; counterTime: string; notes?: string }) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/counter-propose`, body),
+  acceptCaseConferenceRequest:   (id: number) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/accept`, {}),
+
+  // ML predictions (cached)
+  getMlPredictions:             (model: string) =>
+    authGet<MlCachedPrediction[]>(`/api/ml-predictions/${model}`),
+  refreshMlPredictions:         (model: string) =>
+    authPost<{ refreshed: number; model: string }>(`/api/ml-predictions/${model}/refresh`, {}),
 }

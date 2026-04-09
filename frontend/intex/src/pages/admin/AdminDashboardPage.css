@@ -106,7 +106,7 @@
 /* ── KPI grid ── */
 .ad-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-md);
 }
 
@@ -117,6 +117,18 @@
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border-light);
   border-left-width: 4px;
+}
+
+.ad-kpi-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+}
+.ad-kpi-link:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .ad-kpi-up   { border-left-color: var(--color-success); }
@@ -528,6 +540,9 @@
   .ad-safehouse-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+@media (max-width: 1200px) {
+  .ad-kpi-grid    { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 1000px) {
   .ad-kpi-grid    { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ad-mid-grid    { grid-template-columns: minmax(0, 1fr); }

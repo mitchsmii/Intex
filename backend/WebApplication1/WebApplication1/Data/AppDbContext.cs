@@ -31,6 +31,10 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<HealthWellbeingRecord> HealthWellbeingRecords { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<Assessment> Assessments { get; set; }
+    public DbSet<AdmissionChecklist> AdmissionChecklists { get; set; }
+    public DbSet<CaseConferenceRequest> CaseConferenceRequests { get; set; }
+    public DbSet<MlPrediction> MlPredictions { get; set; }
+    public DbSet<Partner> Partners { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,9 +50,19 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             .Property(n => n.NotificationId)
             .ValueGeneratedOnAdd();
 
+        // process_recordings.recording_id uses a sequence — let DB auto-generate
+        modelBuilder.Entity<ProcessRecording>()
+            .Property(p => p.RecordingId)
+            .ValueGeneratedOnAdd();
+
         modelBuilder.Entity<ProcessRecording>()
             .HasIndex(p => p.SocialWorkerId)
             .HasDatabaseName("IX_process_recordings_social_worker_id");
+
+        // home_visitations.visitation_id uses a sequence — let DB auto-generate
+        modelBuilder.Entity<HomeVisitation>()
+            .Property(h => h.VisitationId)
+            .ValueGeneratedOnAdd();
 
         modelBuilder.Entity<HomeVisitation>()
             .HasIndex(h => h.SocialWorkerId)
@@ -65,5 +79,17 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<Assessment>()
             .HasIndex(a => a.ResidentId)
             .HasDatabaseName("ix_assessments_resident_id");
+
+        modelBuilder.Entity<AdmissionChecklist>()
+            .Property(a => a.ChecklistId)
+            .ValueGeneratedOnAdd();
+
+        modelBuilder.Entity<CaseConferenceRequest>()
+            .Property(c => c.RequestId)
+            .ValueGeneratedOnAdd();
+
+        modelBuilder.Entity<AdmissionChecklist>()
+            .HasIndex(a => a.ResidentId)
+            .HasDatabaseName("ix_admission_checklists_resident_id");
     }
 }

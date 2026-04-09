@@ -363,11 +363,8 @@
 .ip-row-wrap:hover { background: var(--cove-seafoam); }
 
 .ip-row-wrap--overdue {
-  border-left-color: var(--color-error);
-  background: #fef2f2;
+  /* Row no longer fully red — only the Overdue tag in the Target column carries the warning. */
 }
-
-.ip-row-wrap--overdue:hover { background: #fee2e2; }
 
 .ip-row {
   font-size: 0.85rem;
@@ -481,3 +478,242 @@
     white-space: normal;
   }
 }
+
+/* ── Admission Checklist ─────────────────────────────────────────────────── */
+
+.ip-checklist-section {
+  margin-top: var(--space-xl);
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+}
+
+.ip-checklist-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+.ip-checklist-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.ip-checklist-sub {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Status badge */
+.ip-cl-status-badge {
+  flex-shrink: 0;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.ip-cl-status--pending  { background: #fef3c7; color: #92400e; }
+.ip-cl-status--approved { background: #d1fae5; color: #065f46; }
+.ip-cl-status--rejected { background: #fee2e2; color: #991b1b; }
+
+/* State messages */
+.ip-cl-approved {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-success);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: var(--space-sm) 0;
+}
+.ip-cl-pending {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: #92400e;
+  font-size: 0.88rem;
+  padding: var(--space-sm) 0;
+}
+.ip-cl-rejected {
+  color: var(--color-error);
+  font-size: 0.88rem;
+}
+.ip-cl-rejected-hint {
+  margin: var(--space-xs) 0 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+.ip-cl-notes {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+/* Facility toggle */
+.ip-cl-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+.ip-cl-toggle-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.ip-cl-toggle {
+  display: flex;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.ip-cl-toggle-btn {
+  padding: 0.35rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.ip-cl-toggle-btn.active {
+  background: var(--cove-deep);
+  color: white;
+  font-weight: 600;
+}
+
+/* Legal note */
+.ip-cl-legal-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.82rem;
+  color: #92400e;
+  margin-bottom: var(--space-md);
+}
+
+/* Checklist items */
+.ip-cl-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.ip-cl-item {
+  border-radius: var(--radius-sm);
+  transition: background 0.1s;
+}
+.ip-cl-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.1s;
+}
+.ip-cl-label:hover {
+  background: var(--bg-hover, rgba(44,74,82,0.05));
+}
+.ip-cl-check {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--cove-tidal);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.ip-cl-text--checked {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* Footer */
+.ip-cl-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border-light);
+  flex-wrap: wrap;
+}
+.ip-cl-count {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-right: auto;
+}
+.ip-cl-error {
+  font-size: 0.82rem;
+  color: var(--color-error);
+}
+
+.ip-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-xs) var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--cove-seafoam, #eaf5f1);
+  border: 1px solid var(--cove-seaglass, #d6e8e2);
+  border-radius: var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ip-services-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.8rem;
+  color: var(--cove-deep);
+  cursor: pointer;
+  user-select: none;
+}
+
+.ip-services-option input[type="checkbox"] {
+  accent-color: var(--cove-tidal);
+  cursor: pointer;
+}
+
+/* ─── Intervention Plan Detail Modal ─────────────────────────────────── */
+.ip-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(44, 74, 82, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: var(--space-md);
+}
+.ip-modal {
+  background: white; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); width: 100%; max-width: 640px;
+  max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.ip-modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl); border-bottom: 1px solid var(--border-light); gap: var(--space-md);
+}
+.ip-modal-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; color: var(--cove-deep); margin: 0; }
+.ip-modal-meta { font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0; }
+.ip-modal-close { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1; flex-shrink: 0; }
+.ip-modal-close:hover { color: var(--cove-deep); }
+.ip-modal-body {
+  flex: 1; overflow-y: auto; padding: var(--space-lg) var(--space-xl);
+  display: flex; flex-direction: column; gap: var(--space-md);
+}
+.ip-modal-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 4px; }
+.ip-modal-section p { margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }

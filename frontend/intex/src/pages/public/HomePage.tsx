@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
-import shelterImg from '../../assets/shelter.webp'
-import handsImg from '../../assets/hands.png'
-import girlsJumpingFieldImg from '../../assets/girls-jumping-field.png'
+// Shelter is served from public/ so the <link rel="preload"> in index.html
+// can reference the same stable URL (/shelter.webp) before React renders.
+const shelterImg = '/shelter.webp'
+import handsImg from '../../assets/hands.webp'
+import girlsJumpingFieldImg from '../../assets/girls-jumping-field.webp'
 import './HomePage.css'
 
 const pillars = [
@@ -45,11 +47,18 @@ function HomePage() {
   return (
     <>
       {/* ── Hero ── */}
-      <section
-        className="hp-hero"
-        style={{ backgroundImage: `url(${shelterImg})` }}
-        aria-label="Hero"
-      >
+      <section className="hp-hero" aria-label="Hero">
+        {/* Real <img> so the browser can paint it as soon as bytes arrive,
+            matching the /shelter.webp preload hint in index.html */}
+        <img
+          src={shelterImg}
+          alt=""
+          aria-hidden="true"
+          className="hp-hero-bg-img"
+          fetchPriority="high"
+          width="2816"
+          height="1536"
+        />
         <div className="hp-hero-overlay">
           <div className="hp-hero-content">
             <p className="hp-hero-eyebrow">Safety · Healing · Justice · Empowerment</p>
@@ -60,6 +69,23 @@ function HomePage() {
               and transform trauma into leadership — seen, heard, and loved like family.
             </p>
             <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Holistic Needs ── */}
+      <section className="hp-holistic">
+        <div className="hp-holistic-inner">
+          <div className="hp-holistic-content">
+            <h2>Comprehensive Care for Whole-Person Healing</h2>
+            <p className="hp-holistic-intro">
+              True healing addresses every dimension of a person's life.
+              Our holistic approach meets survivors where they are and walks
+              with them every step of the way.
+            </p>
+          </div>
+          <div className="hp-holistic-img">
+            <img src={handsImg} alt="Hands reaching out in support" fetchPriority="high" width="2650" height="1450" />
           </div>
         </div>
       </section>
@@ -83,28 +109,11 @@ function HomePage() {
         </div>
       </section>
 
-      {/* ── Holistic Needs ── */}
-      <section className="hp-holistic">
-        <div className="hp-holistic-inner">
-          <div className="hp-holistic-img">
-            <img src={handsImg} alt="Hands reaching out in support" />
-          </div>
-          <div className="hp-holistic-content">
-            <h2>Comprehensive Care for Whole-Person Healing</h2>
-            <p className="hp-holistic-intro">
-              True healing addresses every dimension of a person's life.
-              Our holistic approach meets survivors where they are and walks
-              with them every step of the way.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* ── Impact Banner ── */}
       <section className="hp-impact-banner">
         <div className="hp-impact-inner">
           <div className="hp-impact-image">
-            <img src={girlsJumpingFieldImg} alt="Girls jumping in a field" />
+            <img src={girlsJumpingFieldImg} alt="Girls jumping in a field" loading="lazy" />
           </div>
           <div className="hp-impact-content">
             <div className="hp-impact-text">

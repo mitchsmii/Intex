@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import type { SafehouseMonthlyMetric, Safehouse } from '../../services/apiService'
-import shelterImg    from '../../assets/shelter.webp'
-import kidsJumping   from '../../assets/kids-jumping.png'
-import kidsCircle    from '../../assets/kids-circle.png'
-import girlsHandsRaised from '../../assets/girls-hands-raised.png'
+// Served from public/ to match the preload hint in index.html
+const shelterImg = '/shelter.webp'
+import kidsJumping   from '../../assets/kids-jumping.webp'
+import kidsCircle    from '../../assets/kids-circle.webp'
+import girlsHandsRaised from '../../assets/girls-hands-raised.webp'
 import './ImpactPage.css'
 
 // ─── Animated counter ────────────────────────────────────────────────────────
@@ -67,9 +68,6 @@ export default function ImpactPage() {
   }, [])
 
   const activeSafehouses = safehouses.filter(s => s.status === 'Active').length
-  const totalCap = safehouses.reduce((s, h) => s + (h.capacityGirls ?? 0), 0)
-  const totalOcc = safehouses.reduce((s, h) => s + (h.currentOccupancy ?? 0), 0)
-  const occupancyPct = totalCap > 0 ? Math.round((totalOcc / totalCap) * 100) : 0
 
   const average = (values: number[]) => (
     values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0
@@ -125,14 +123,23 @@ export default function ImpactPage() {
     <div className="ip-page">
 
       {/* ── Hero ── */}
-      <section className="ip-hero" style={{ backgroundImage: `url(${shelterImg})` }}>
+      <section className="ip-hero">
+        <img
+          src={shelterImg}
+          alt=""
+          aria-hidden="true"
+          className="ip-hero-bg-img"
+          loading="lazy"
+          width="2816"
+          height="1536"
+        />
         <div className="ip-hero-overlay">
           <div className="ip-hero-inner">
             <p className="ip-hero-eyebrow">Transparency · Trust · Impact</p>
             <h1 className="ip-hero-title">See Your Impact</h1>
             <p className="ip-hero-sub">
               Every contribution moves lives forward. Here's a real-time look at
-              what the Lighthouse Sanctuary community has achieved together — and
+              what the Cove community has achieved together — and
               how far we still have to go.
             </p>
             <div className="ip-hero-actions ip-hero-actions-stack">
@@ -190,7 +197,7 @@ export default function ImpactPage() {
               {
                 value: activeSafehouses, suffix: '',
                 label: 'Active Safehouses',
-                sub: `${totalCap} total beds across all locations`,
+                sub: 'Providing safety and care across the Philippines',
                 icon: (
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -222,7 +229,7 @@ export default function ImpactPage() {
           </div>
           <div className="ip-photo-break-img-wrap">
             {/* Replace src with girls-together image when ready */}
-            <img src={kidsJumping} alt="Girls celebrating together" className="ip-photo-break-img" />
+            <img src={kidsJumping} alt="Girls celebrating together" className="ip-photo-break-img" loading="lazy" />
           </div>
         </div>
       </section>
@@ -238,20 +245,20 @@ export default function ImpactPage() {
 
           <div className="ip-outcomes-grid">
 
-            {/* Occupancy */}
+            {/* Active Safehouses */}
             <div className="ip-outcome-card">
               <div className="ip-outcome-header">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                   <polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
-                <h3>Shelter Occupancy</h3>
+                <h3>Active Safehouses</h3>
               </div>
-              <div className="ip-outcome-number">{occupancyPct}<span className="ip-outcome-unit">%</span></div>
+              <div className="ip-outcome-number">{activeSafehouses}<span className="ip-outcome-unit"> locations</span></div>
               <div className="ip-outcome-bar-track">
-                <div className="ip-outcome-bar-fill" style={{ width: `${occupancyPct}%` }} />
+                <div className="ip-outcome-bar-fill" style={{ width: '100%' }} />
               </div>
-              <p className="ip-outcome-desc">{totalOcc} of {totalCap} beds occupied — we keep every shelter as full as safely possible.</p>
+              <p className="ip-outcome-desc">Each safehouse provides a secure environment where survivors can heal and rebuild their lives.</p>
             </div>
 
             {/* Health */}
@@ -323,11 +330,11 @@ export default function ImpactPage() {
 
             <div className="ip-fund-photos">
               <div className="ip-fund-photo-wrap ip-photo-wide">
-                <img src={kidsJumping} alt="Children jumping together in a field" className="ip-fund-photo" />
+                <img src={kidsJumping} alt="Children jumping together in a field" className="ip-fund-photo" loading="lazy" />
                 <div className="ip-photo-caption">Joy restored — children in our care</div>
               </div>
               <div className="ip-fund-photo-wrap ip-photo-narrow">
-                <img src={kidsCircle} alt="Children sitting together in a circle" className="ip-fund-photo" />
+                <img src={kidsCircle} alt="Children sitting together in a circle" className="ip-fund-photo" loading="lazy" />
                 <div className="ip-photo-caption">Community &amp; belonging</div>
               </div>
             </div>
@@ -357,7 +364,7 @@ export default function ImpactPage() {
 
       {/* ── Photo break 2 ── */}
       <section className="ip-photo-full">
-        <img src={girlsHandsRaised} alt="Girls with hands raised together in front of a Philippine church" className="ip-photo-full-img" />
+        <img src={girlsHandsRaised} alt="Girls with hands raised together in front of a Philippine church" className="ip-photo-full-img" loading="lazy" />
         <div className="ip-photo-full-overlay">
           <p className="ip-photo-full-quote">"Every child deserves safety, healing, and a future."</p>
         </div>
@@ -375,7 +382,7 @@ export default function ImpactPage() {
             <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
           </div>
           <p className="ip-cta-note">
-            Lighthouse Sanctuary · 501(c)(3) nonprofit · EIN: 81-3220618 · Tax-deductible to the full extent of the law.
+            Cove · 501(c)(3) nonprofit · EIN: 81-3220618 · Tax-deductible to the full extent of the law.
           </p>
         </div>
       </section>

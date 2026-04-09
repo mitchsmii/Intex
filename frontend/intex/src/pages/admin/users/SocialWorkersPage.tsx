@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../../services/apiService'
 import type { SocialWorker, Safehouse, Resident } from '../../../services/apiService'
+import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
 import '../ManageUsersPage.css'
 
 type SortKey = 'fullName' | 'email' | 'phone' | 'safehouse' | 'status' | 'createdAt'
@@ -28,8 +30,6 @@ function AddSocialWorkerModal({
   onSave: (w: SocialWorker) => void
 }) {
   const [fullName,    setFullName]    = useState('')
-  const [email,       setEmail]       = useState('')
-  const [phone,       setPhone]       = useState('')
   const [safehouseId, setSafehouseId] = useState<number | null>(null)
   const [saving,      setSaving]      = useState(false)
   const [error,       setError]       = useState('')
@@ -41,8 +41,6 @@ function AddSocialWorkerModal({
     try {
       const created = await api.createSocialWorker({
         fullName: fullName.trim(),
-        email:    email.trim() || undefined,
-        phone:    phone.trim() || undefined,
         safehouseId: safehouseId ?? undefined,
         status: 'Active',
       })
@@ -62,14 +60,6 @@ function AddSocialWorkerModal({
         <div className="mu-form-row">
           <label className="mu-form-label">Full Name *</label>
           <input className="mu-form-input" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. Maria Santos" />
-        </div>
-        <div className="mu-form-row">
-          <label className="mu-form-label">Email</label>
-          <input className="mu-form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@example.com" />
-        </div>
-        <div className="mu-form-row">
-          <label className="mu-form-label">Phone</label>
-          <input className="mu-form-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+63 9XX XXX XXXX" />
         </div>
         <div className="mu-form-row">
           <label className="mu-form-label">Safehouse Assignment</label>
@@ -106,7 +96,10 @@ export default function SocialWorkersPage() {
   const [sortCol,    setSortCol]    = useState<SortKey>('fullName')
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
   const [valueFilter, setValueFilter] = useState('')
-  const [showAdd,    setShowAdd]    = useState(false)
+  const [showAdd,      setShowAdd]      = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<SocialWorker | null>(null)
+  const [deleting,     setDeleting]     = useState(false)
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
 
   useEffect(() => { setValueFilter('') }, [sortCol])
 
@@ -157,6 +150,17 @@ export default function SocialWorkersPage() {
   const assignedResidents = (w: SocialWorker) =>
     residents.filter(r => r.assignedSocialWorker === w.fullName)
 
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.deleteSocialWorker(deleteTarget.socialWorkerId)
+      setWorkers(prev => prev.filter(w => w.socialWorkerId !== deleteTarget.socialWorkerId))
+      setDeleteTarget(null)
+    } catch { /* ignore */ }
+    finally { setDeleting(false) }
+  }
+
   function toggleSort(col: SortKey) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortCol(col); setSortDir('asc') }
@@ -179,8 +183,11 @@ export default function SocialWorkersPage() {
       if (kpiFilter === 'active'   && w.status !== 'Active') return false
       if (kpiFilter === 'assigned' && !w.safehouseId)        return false
       if (valueFilter && pinValue(w) !== valueFilter) return false
-      return !search || w.fullName.toLowerCase().includes(search.toLowerCase()) ||
-        (w.email ?? '').toLowerCase().includes(search.toLowerCase())
+      const q = search.toLowerCase()
+      return !search || w.fullName.toLowerCase().includes(q) ||
+        (w.firstName ?? '').toLowerCase().includes(q) ||
+        (w.lastName ?? '').toLowerCase().includes(q) ||
+        (w.email ?? '').toLowerCase().includes(q)
     })
     .sort((a, b) => {
       let va = '', vb = ''
@@ -199,6 +206,12 @@ export default function SocialWorkersPage() {
 
   return (
     <div className="mu-page">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        itemLabel={deleteTarget?.fullName ?? ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
       {showAdd && (
         <AddSocialWorkerModal
           safehouses={safehouses}
@@ -278,26 +291,38 @@ export default function SocialWorkersPage() {
             <thead>
               <tr>
                 <SortTh label="Name"       col="fullName"  sort={sortCol} dir={sortDir} onSort={toggleSort} />
-                <SortTh label="Email"      col="email"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
-                <SortTh label="Phone"      col="phone"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
-                <SortTh label="Safehouse"  col="safehouse" sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <SortTh label="Status"     col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <th>Residents</th>
                 <SortTh label="Since"      col="createdAt" sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="mu-empty-cell">No social workers found.</td></tr>
+                <tr><td colSpan={5} className="mu-empty-cell">No social workers found.</td></tr>
               )}
               {filtered.map((w, i) => {
                 const res = assignedResidents(w)
+                const rowKey = w.socialWorkerId || i
+                const expanded = expandedRows.has(rowKey)
+                const visibleRes = expanded ? res : res.slice(0, 3)
+                const overflowCount = res.length - 3
+
+                function toggleExpand(e: React.MouseEvent) {
+                  e.stopPropagation()
+                  setExpandedRows(prev => {
+                    const next = new Set(prev)
+                    next.has(rowKey) ? next.delete(rowKey) : next.add(rowKey)
+                    return next
+                  })
+                }
+
                 return (
-                  <tr key={w.socialWorkerId || i}>
-                    <td className="mu-td-name">{w.fullName}</td>
-                    <td>{w.email ?? '—'}</td>
-                    <td>{w.phone ?? '—'}</td>
-                    <td>{shName(w.safehouseId ?? null)}</td>
+                  <tr key={rowKey}>
+                    <td className="mu-td-name">
+                      <div>{w.firstName && w.lastName ? `${w.firstName} ${w.lastName}` : w.fullName}</div>
+                      {w.firstName && <div className="mu-muted" style={{ fontSize: '0.78rem' }}>{w.fullName}{w.email ? ` · ${w.email}` : ''}</div>}
+                    </td>
                     <td>
                       <span className={`mu-badge ${w.status === 'Active' ? 'mu-badge-ok' : 'mu-badge-off'}`}>
                         {w.status}
@@ -308,18 +333,48 @@ export default function SocialWorkersPage() {
                         <span className="mu-muted">—</span>
                       ) : (
                         <div className="mu-resident-chips">
-                          {res.slice(0, 3).map(r => (
-                            <span key={r.residentId} className="mu-chip">
+                          {visibleRes.map(r => (
+                            <Link
+                              key={r.residentId}
+                              to={`/admin/residents/${r.residentId}`}
+                              className="mu-chip mu-chip-link"
+                              title={`View ${r.internalCode ?? `R-${r.residentId}`}'s profile`}
+                            >
                               {r.internalCode ?? `R-${r.residentId}`}
-                            </span>
+                            </Link>
                           ))}
-                          {res.length > 3 && (
-                            <span className="mu-chip mu-chip-more">+{res.length - 3}</span>
+                          {!expanded && overflowCount > 0 && (
+                            <button
+                              className="mu-chip mu-chip-more mu-chip-expand"
+                              onClick={toggleExpand}
+                              title="Show all residents"
+                            >
+                              +{overflowCount}
+                            </button>
+                          )}
+                          {expanded && (
+                            <button
+                              className="mu-chip mu-chip-more mu-chip-expand"
+                              onClick={toggleExpand}
+                              title="Show fewer"
+                            >
+                              ↑ less
+                            </button>
                           )}
                         </div>
                       )}
                     </td>
                     <td>{w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</td>
+                    <td>
+                      <button
+                        className="mu-btn mu-btn-danger"
+                        onClick={() => setDeleteTarget(w)}
+                        disabled={deleting}
+                        style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem' }}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 )
               })}

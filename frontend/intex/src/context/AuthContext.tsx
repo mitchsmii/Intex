@@ -9,7 +9,9 @@ export interface AuthContextType {
   // isLoading is ONLY true during the initial mount session-restore.
   // The login form manages its own submitting state independently.
   isLoading: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<{ requires2FA: boolean; userId?: string }>
+  googleLogin: (idToken: string) => Promise<void>
+  verifyTwoFactor: (userId: string, code: string) => Promise<void>
   logout: () => void
 }
 
@@ -39,13 +41,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false))
   }, []) // runs once on mount only — no dependencies that could re-trigger
 
-  const login = useCallback(async (username: string, password: string) => {
-    const { token: t, user: u } = await authService.login(username, password)
+  const login = useCallback(async (username: string, password: string): Promise<{ requires2FA: boolean; userId?: string }> => {
+    const result = await authService.login(username, password)
+    if (result.type === 'requires2FA') {
+      return { requires2FA: true, userId: result.userId }
+    }
+    localStorage.setItem('cove_token', result.token)
+    setToken(result.token)
+    setUser(result.user)
+    return { requires2FA: false }
+  }, [])
+
+  const googleLogin = useCallback(async (idToken: string) => {
+    const { token: t, user: u } = await authService.googleLogin(idToken)
     localStorage.setItem('cove_token', t)
     setToken(t)
     setUser(u)
-    // Resolves on success, throws on failure.
-    // The calling component (LoginPage) handles redirect after this resolves.
+  }, [])
+
+  const verifyTwoFactor = useCallback(async (userId: string, code: string) => {
+    const { token: t, user: u } = await authService.verifyTwoFactor(userId, code)
+    localStorage.setItem('cove_token', t)
+    setToken(t)
+    setUser(u)
   }, [])
 
   const logout = useCallback(() => {
@@ -55,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, googleLogin, verifyTwoFactor, logout }}>
       {children}
     </AuthContext.Provider>
   )

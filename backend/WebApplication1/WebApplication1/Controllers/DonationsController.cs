@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
@@ -6,6 +7,7 @@ namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class DonationsController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -31,6 +33,7 @@ public class DonationsController : ControllerBase
         return Ok(donation);
     }
 
+    [AllowAnonymous]
     [HttpGet("total")]
     public async Task<IActionResult> Total()
     {
@@ -120,5 +123,16 @@ public class DonationsController : ControllerBase
         .ToListAsync();
 
         return Ok(results);
+    }
+
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var donation = await _context.Donations.FindAsync(id);
+        if (donation == null) return NotFound();
+        _context.Donations.Remove(donation);
+        await _context.SaveChangesAsync();
+        return NoContent();
     }
 }

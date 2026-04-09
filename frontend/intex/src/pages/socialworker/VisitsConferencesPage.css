@@ -31,8 +31,71 @@
   align-items: start;
 }
 
+/* ── Mobile accordion wiring ── */
+
+/* Desktop: hide the inline panel, show the right-pane .vc-main */
+.vc-inline-panel {
+  display: none;
+}
+
+/* Chevron only visible on mobile */
+.vc-rail-chevron {
+  display: none;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Keep existing rail-item layout working */
+.vc-rail-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 @media (max-width: 800px) {
-  .vc-layout { grid-template-columns: 1fr; }
+  /* Stack the grid but collapse the right panel completely */
+  .vc-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide the desktop right-pane — content is shown inline instead */
+  .vc-main {
+    display: none;
+  }
+
+  /* Rail takes full width; remove sticky/max-height so it expands freely */
+  .vc-rail {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  /* Show chevron on mobile */
+  .vc-rail-chevron {
+    display: inline;
+  }
+
+  /* Rail item is now a row with space-between for the chevron */
+  .vc-rail-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Show the inline panel when a resident is active */
+  .vc-inline-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-top: 2px solid var(--cove-tidal);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-sm);
+  }
 }
 
 /* ---------- Left rail ---------- */
@@ -800,3 +863,30 @@
   color: var(--cove-deep);
   margin-top: 4px;
 }
+
+/* ─── Visit Detail Modal ─────────────────────────────────────────────── */
+.vc-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(44, 74, 82, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: var(--space-md);
+}
+.vc-modal {
+  background: white; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); width: 100%; max-width: 640px;
+  max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.vc-modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl); border-bottom: 1px solid var(--border-light); gap: var(--space-md);
+}
+.vc-modal-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 500; color: var(--cove-deep); margin: 0; }
+.vc-modal-meta { font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0; }
+.vc-modal-close { background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1; flex-shrink: 0; }
+.vc-modal-close:hover { color: var(--cove-deep); }
+.vc-modal-body {
+  flex: 1; overflow-y: auto; padding: var(--space-lg) var(--space-xl);
+  display: flex; flex-direction: column; gap: var(--space-md);
+}
+.vc-modal-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 4px; }
+.vc-modal-section p { margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }

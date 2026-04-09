@@ -218,6 +218,344 @@ namespace WebApplication1.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("WebApplication1.Data.AdmissionChecklist", b =>
+                {
+                    b.Property<int>("ChecklistId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("checklist_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ChecklistId"));
+
+                    b.Property<string>("AdminNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("admin_notes");
+
+                    b.Property<string>("CheckedItems")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("checked_items");
+
+                    b.Property<string>("ResidentCode")
+                        .HasColumnType("text")
+                        .HasColumnName("resident_code");
+
+                    b.Property<int>("ResidentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("resident_id");
+
+                    b.Property<bool>("ResidentInFacility")
+                        .HasColumnType("boolean")
+                        .HasColumnName("resident_in_facility");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("reviewed_by");
+
+                    b.Property<string>("SocialWorkerEmail")
+                        .HasColumnType("text")
+                        .HasColumnName("social_worker_email");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("submitted_at");
+
+                    b.HasKey("ChecklistId");
+
+                    b.HasIndex("ResidentId")
+                        .HasDatabaseName("ix_admission_checklists_resident_id");
+
+                    b.ToTable("admission_checklists");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.Assessment", b =>
+                {
+                    b.Property<int>("AssessmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("assessment_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AssessmentId"));
+
+                    b.Property<string>("AdministeredBy")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("administered_by");
+
+                    b.Property<DateOnly>("AdministeredDate")
+                        .HasColumnType("date")
+                        .HasColumnName("administered_date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ImmediateAction")
+                        .HasColumnType("text")
+                        .HasColumnName("immediate_action");
+
+                    b.Property<string>("Instrument")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("instrument");
+
+                    b.Property<string>("ObservationNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("observation_notes");
+
+                    b.Property<int>("ResidentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("resident_id");
+
+                    b.Property<string>("ResponsesJson")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("responses_json");
+
+                    b.Property<string>("SeverityBand")
+                        .HasColumnType("text")
+                        .HasColumnName("severity_band");
+
+                    b.Property<int?>("TickCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("tick_count");
+
+                    b.Property<decimal?>("TotalScore")
+                        .HasColumnType("numeric")
+                        .HasColumnName("total_score");
+
+                    b.Property<string>("WorstEvent")
+                        .HasColumnType("text")
+                        .HasColumnName("worst_event");
+
+                    b.HasKey("AssessmentId");
+
+                    b.HasIndex("ResidentId")
+                        .HasDatabaseName("ix_assessments_resident_id");
+
+                    b.ToTable("assessments");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.Donation", b =>
+                {
+                    b.Property<int>("DonationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("donation_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DonationId"));
+
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("numeric")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("CampaignName")
+                        .HasColumnType("text")
+                        .HasColumnName("campaign_name");
+
+                    b.Property<string>("ChannelSource")
+                        .HasColumnType("text")
+                        .HasColumnName("channel_source");
+
+                    b.Property<string>("CurrencyCode")
+                        .HasColumnType("text")
+                        .HasColumnName("currency_code");
+
+                    b.Property<DateOnly?>("DonationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("donation_date");
+
+                    b.Property<string>("DonationType")
+                        .HasColumnType("text")
+                        .HasColumnName("donation_type");
+
+                    b.Property<decimal?>("EstimatedValue")
+                        .HasColumnType("numeric")
+                        .HasColumnName("estimated_value");
+
+                    b.Property<string>("ImpactUnit")
+                        .HasColumnType("text")
+                        .HasColumnName("impact_unit");
+
+                    b.Property<bool?>("IsRecurring")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_recurring");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<int?>("SupporterId")
+                        .HasColumnType("integer")
+                        .HasColumnName("supporter_id");
+
+                    b.HasKey("DonationId");
+
+                    b.ToTable("donations");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.DonationAllocation", b =>
+                {
+                    b.Property<int>("AllocationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("allocation_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AllocationId"));
+
+                    b.Property<DateOnly?>("AllocationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("allocation_date");
+
+                    b.Property<string>("AllocationNotes")
+                        .HasColumnType("text")
+                        .HasColumnName("allocation_notes");
+
+                    b.Property<decimal?>("AmountAllocated")
+                        .HasColumnType("numeric")
+                        .HasColumnName("amount_allocated");
+
+                    b.Property<int?>("DonationId")
+                        .HasColumnType("integer")
+                        .HasColumnName("donation_id");
+
+                    b.Property<string>("ProgramArea")
+                        .HasColumnType("text")
+                        .HasColumnName("program_area");
+
+                    b.Property<int?>("SafehouseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("safehouse_id");
+
+                    b.HasKey("AllocationId");
+
+                    b.ToTable("donation_allocations");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.EducationRecord", b =>
+                {
+                    b.Property<int>("EducationRecordId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("education_record_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EducationRecordId"));
+
+                    b.Property<decimal?>("AttendanceRate")
+                        .HasColumnType("numeric")
+                        .HasColumnName("attendance_rate");
+
+                    b.Property<string>("CompletionStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("completion_status");
+
+                    b.Property<string>("EducationLevel")
+                        .HasColumnType("text")
+                        .HasColumnName("education_level");
+
+                    b.Property<string>("EnrollmentStatus")
+                        .HasColumnType("text")
+                        .HasColumnName("enrollment_status");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<decimal?>("ProgressPercent")
+                        .HasColumnType("numeric")
+                        .HasColumnName("progress_percent");
+
+                    b.Property<DateOnly?>("RecordDate")
+                        .HasColumnType("date")
+                        .HasColumnName("record_date");
+
+                    b.Property<int?>("ResidentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("resident_id");
+
+                    b.Property<string>("SchoolName")
+                        .HasColumnType("text")
+                        .HasColumnName("school_name");
+
+                    b.HasKey("EducationRecordId");
+
+                    b.ToTable("education_records");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.HealthWellbeingRecord", b =>
+                {
+                    b.Property<int>("HealthRecordId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("health_record_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HealthRecordId"));
+
+                    b.Property<decimal?>("Bmi")
+                        .HasColumnType("numeric")
+                        .HasColumnName("bmi");
+
+                    b.Property<bool?>("DentalCheckupDone")
+                        .HasColumnType("boolean")
+                        .HasColumnName("dental_checkup_done");
+
+                    b.Property<decimal?>("EnergyLevelScore")
+                        .HasColumnType("numeric")
+                        .HasColumnName("energy_level_score");
+
+                    b.Property<decimal?>("GeneralHealthScore")
+                        .HasColumnType("numeric")
+                        .HasColumnName("general_health_score");
+
+                    b.Property<decimal?>("HeightCm")
+                        .HasColumnType("numeric")
+                        .HasColumnName("height_cm");
+
+                    b.Property<bool?>("MedicalCheckupDone")
+                        .HasColumnType("boolean")
+                        .HasColumnName("medical_checkup_done");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<decimal?>("NutritionScore")
+                        .HasColumnType("numeric")
+                        .HasColumnName("nutrition_score");
+
+                    b.Property<bool?>("PsychologicalCheckupDone")
+                        .HasColumnType("boolean")
+                        .HasColumnName("psychological_checkup_done");
+
+                    b.Property<DateOnly?>("RecordDate")
+                        .HasColumnType("date")
+                        .HasColumnName("record_date");
+
+                    b.Property<int?>("ResidentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("resident_id");
+
+                    b.Property<decimal?>("SleepQualityScore")
+                        .HasColumnType("numeric")
+                        .HasColumnName("sleep_quality_score");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasColumnType("numeric")
+                        .HasColumnName("weight_kg");
+
+                    b.HasKey("HealthRecordId");
+
+                    b.ToTable("health_wellbeing_records");
+                });
+
             modelBuilder.Entity("WebApplication1.Data.HomeVisitation", b =>
                 {
                     b.Property<int>("VisitationId")
@@ -289,6 +627,212 @@ namespace WebApplication1.Migrations
                         .HasDatabaseName("IX_home_visitations_social_worker_id");
 
                     b.ToTable("home_visitations");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.IncidentReport", b =>
+                {
+                    b.Property<int>("IncidentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("incident_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IncidentId"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<bool?>("FollowUpRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("follow_up_required");
+
+                    b.Property<DateOnly?>("IncidentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("incident_date");
+
+                    b.Property<string>("IncidentType")
+                        .HasColumnType("text")
+                        .HasColumnName("incident_type");
+
+                    b.Property<string>("ReportedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("reported_by");
+
+                    b.Property<int?>("ResidentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("resident_id");
+
+                    b.Property<DateOnly?>("ResolutionDate")
+                        .HasColumnType("date")
+                        .HasColumnName("resolution_date");
+
+                    b.Property<bool?>("Resolved")
+                        .HasColumnType("boolean")
+                        .HasColumnName("resolved");
+
+                    b.Property<string>("ResponseTaken")
+                        .HasColumnType("text")
+                        .HasColumnName("response_taken");
+
+                    b.Property<int?>("SafehouseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("safehouse_id");
+
+                    b.Property<string>("Severity")
+                        .HasColumnType("text")
+                        .HasColumnName("severity");
+
+                    b.HasKey("IncidentId");
+
+                    b.ToTable("incident_reports");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.InterventionPlan", b =>
+                {
+                    b.Property<int>("PlanId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("plan_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PlanId"));
+
+                    b.Property<DateOnly?>("CaseConferenceDate")
+                        .HasColumnType("date")
+                        .HasColumnName("case_conference_date");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("PlanCategory")
+                        .HasColumnType("text")
+                        .HasColumnName("plan_category");
+
+                    b.Property<string>("PlanDescription")
+                        .HasColumnType("text")
+                        .HasColumnName("plan_description");
+
+                    b.Property<int?>("ResidentId")
+                        .HasColumnType("integer")
+                        .HasColumnName("resident_id");
+
+                    b.Property<string>("ServicesProvided")
+                        .HasColumnType("text")
+                        .HasColumnName("services_provided");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<DateOnly?>("TargetDate")
+                        .HasColumnType("date")
+                        .HasColumnName("target_date");
+
+                    b.Property<decimal?>("TargetValue")
+                        .HasColumnType("numeric")
+                        .HasColumnName("target_value");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("PlanId");
+
+                    b.ToTable("intervention_plans");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.Notification", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("notification_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("NotificationId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_read");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
+                    b.Property<string>("RecipientEmail")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("recipient_email");
+
+                    b.Property<string>("RelatedResidentCode")
+                        .HasColumnType("text")
+                        .HasColumnName("related_resident_code");
+
+                    b.HasKey("NotificationId");
+
+                    b.ToTable("sw_notifications");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.Partner", b =>
+                {
+                    b.Property<int>("PartnerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("partner_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PartnerId"));
+
+                    b.Property<string>("ContactName")
+                        .HasColumnType("text")
+                        .HasColumnName("contact_name");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PartnerName")
+                        .HasColumnType("text")
+                        .HasColumnName("partner_name");
+
+                    b.Property<string>("PartnerType")
+                        .HasColumnType("text")
+                        .HasColumnName("partner_type");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("Region")
+                        .HasColumnType("text")
+                        .HasColumnName("region");
+
+                    b.Property<string>("RoleType")
+                        .HasColumnType("text")
+                        .HasColumnName("role_type");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.HasKey("PartnerId");
+
+                    b.ToTable("partners");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.ProcessRecording", b =>
@@ -636,6 +1180,127 @@ namespace WebApplication1.Migrations
                     b.ToTable("safehouses");
                 });
 
+            modelBuilder.Entity("WebApplication1.Data.SafehouseMonthlyMetric", b =>
+                {
+                    b.Property<int>("MetricId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("metric_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MetricId"));
+
+                    b.Property<int?>("ActiveResidents")
+                        .HasColumnType("integer")
+                        .HasColumnName("active_residents");
+
+                    b.Property<decimal?>("AvgEducationProgress")
+                        .HasColumnType("numeric")
+                        .HasColumnName("avg_education_progress");
+
+                    b.Property<decimal?>("AvgHealthScore")
+                        .HasColumnType("numeric")
+                        .HasColumnName("avg_health_score");
+
+                    b.Property<int?>("HomeVisitationCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("home_visitation_count");
+
+                    b.Property<int?>("IncidentCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("incident_count");
+
+                    b.Property<DateOnly?>("MonthEnd")
+                        .HasColumnType("date")
+                        .HasColumnName("month_end");
+
+                    b.Property<DateOnly?>("MonthStart")
+                        .HasColumnType("date")
+                        .HasColumnName("month_start");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<int?>("ProcessRecordingCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("process_recording_count");
+
+                    b.Property<int?>("SafehouseId")
+                        .HasColumnType("integer")
+                        .HasColumnName("safehouse_id");
+
+                    b.HasKey("MetricId");
+
+                    b.ToTable("safehouse_monthly_metrics");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.SocialMediaPost", b =>
+                {
+                    b.Property<int>("PostId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("post_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PostId"));
+
+                    b.Property<string>("Caption")
+                        .HasColumnType("text")
+                        .HasColumnName("caption");
+
+                    b.Property<int?>("Comments")
+                        .HasColumnType("integer")
+                        .HasColumnName("comments");
+
+                    b.Property<int?>("EmailsClicked")
+                        .HasColumnType("integer")
+                        .HasColumnName("emails_clicked");
+
+                    b.Property<int?>("EmailsOpened")
+                        .HasColumnType("integer")
+                        .HasColumnName("emails_opened");
+
+                    b.Property<int?>("EmailsSent")
+                        .HasColumnType("integer")
+                        .HasColumnName("emails_sent");
+
+                    b.Property<string>("Hashtags")
+                        .HasColumnType("text")
+                        .HasColumnName("hashtags");
+
+                    b.Property<int?>("Likes")
+                        .HasColumnType("integer")
+                        .HasColumnName("likes");
+
+                    b.Property<decimal?>("OpenRate")
+                        .HasColumnType("numeric")
+                        .HasColumnName("open_rate");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("platform");
+
+                    b.Property<DateOnly>("PostDate")
+                        .HasColumnType("date")
+                        .HasColumnName("post_date");
+
+                    b.Property<int?>("Reach")
+                        .HasColumnType("integer")
+                        .HasColumnName("reach");
+
+                    b.Property<string>("SecondaryLabel")
+                        .HasColumnType("text")
+                        .HasColumnName("secondary_label");
+
+                    b.Property<int?>("SecondaryMetric")
+                        .HasColumnType("integer")
+                        .HasColumnName("secondary_metric");
+
+                    b.HasKey("PostId");
+
+                    b.ToTable("social_media_posts");
+                });
+
             modelBuilder.Entity("WebApplication1.Data.SocialWorker", b =>
                 {
                     b.Property<int>("SocialWorkerId")
@@ -689,6 +1354,76 @@ namespace WebApplication1.Migrations
                         .HasDatabaseName("IX_social_workers_safehouse_id");
 
                     b.ToTable("social_workers");
+                });
+
+            modelBuilder.Entity("WebApplication1.Data.Supporter", b =>
+                {
+                    b.Property<int>("SupporterId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("supporter_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SupporterId"));
+
+                    b.Property<string>("AcquisitionChannel")
+                        .HasColumnType("text")
+                        .HasColumnName("acquisition_channel");
+
+                    b.Property<string>("Country")
+                        .HasColumnType("text")
+                        .HasColumnName("country");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("text")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<DateOnly?>("FirstDonationDate")
+                        .HasColumnType("date")
+                        .HasColumnName("first_donation_date");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("text")
+                        .HasColumnName("first_name");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("text")
+                        .HasColumnName("last_name");
+
+                    b.Property<string>("OrganizationName")
+                        .HasColumnType("text")
+                        .HasColumnName("organization_name");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("Region")
+                        .HasColumnType("text")
+                        .HasColumnName("region");
+
+                    b.Property<string>("RelationshipType")
+                        .HasColumnType("text")
+                        .HasColumnName("relationship_type");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("SupporterType")
+                        .HasColumnType("text")
+                        .HasColumnName("supporter_type");
+
+                    b.HasKey("SupporterId");
+
+                    b.ToTable("supporters");
                 });
 
             modelBuilder.Entity("WebApplication1.Data.User", b =>

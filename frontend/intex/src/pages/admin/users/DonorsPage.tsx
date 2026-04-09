@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
 import type { Supporter, Donation } from '../../../services/apiService'
-import { predictDonorChurn } from '../../../services/mlApi'
+import { DONOR_CHURN_THRESHOLDS } from '../../../config/donorChurnThresholds'
+import type { MlCachedPrediction } from '../../../services/apiService'
+import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
 import '../ManageUsersPage.css'
 
 function fmtAmt(n: number | null, currency?: string | null) {
@@ -16,8 +18,8 @@ type Dir = 'asc' | 'desc'
 
 function getRiskTier(prob: number | undefined): { label: string; className: string } {
   if (prob === undefined) return { label: 'Loading…', className: 'mu-badge-off' }
-  if (prob >= 0.85) return { label: 'Critical', className: 'mu-badge-critical' }
-  if (prob >= 0.50) return { label: 'Moderate', className: 'mu-badge-warn' }
+  if (prob >= DONOR_CHURN_THRESHOLDS.donorsCriticalRisk) return { label: 'Critical', className: 'mu-badge-critical' }
+  if (prob >= DONOR_CHURN_THRESHOLDS.donorsModerateRisk) return { label: 'Moderate', className: 'mu-badge-warn' }
   return { label: 'Low Risk', className: 'mu-badge-ok' }
 }
 
@@ -107,6 +109,8 @@ export default function DonorsPage() {
   const [valueFilter, setValueFilter] = useState('')
   const [showAdd,     setShowAdd]     = useState(false)
   const [churnScores, setChurnScores] = useState<Record<number, number>>({})
+  const [deleteTarget, setDeleteTarget] = useState<Supporter | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => { setValueFilter('') }, [sortCol])
 
@@ -123,48 +127,27 @@ export default function DonorsPage() {
   const totalBySupporter     = (id: number) => donationsBySupporter(id).reduce((s, d) => s + (d.amount ?? 0), 0)
   const isRecurring          = (id: number) => donationsBySupporter(id).some(d => d.isRecurring)
 
+  // Load cached ML predictions instead of calling ML API per-donor at runtime
   useEffect(() => {
-    if (donors.length === 0 || donations.length === 0) return
+    api.getMlPredictions('donor-churn')
+      .then((preds: MlCachedPrediction[]) => {
+        const map: Record<number, number> = {}
+        preds.forEach(p => { map[p.entityId] = p.probability })
+        setChurnScores(map)
+      })
+      .catch(() => { /* predictions unavailable — page still works */ })
+  }, [])
 
-    const runPredictions = async () => {
-      for (const donor of donors) {
-        const donorDonations = donationsBySupporter(donor.supporterId)
-        const total_donation_count = donorDonations.length
-        const total_amount = donorDonations.reduce((sum, d) => sum + (d.amount ?? 0), 0)
-        const avg_donation_amount = total_donation_count > 0 ? total_amount / total_donation_count : 0
-        const firstDonationDate = donor.firstDonationDate
-          ? new Date(donor.firstDonationDate)
-          : donorDonations
-              .map(d => d.donationDate)
-              .filter((d): d is string => Boolean(d))
-              .map(d => new Date(d))
-              .sort((a, b) => a.getTime() - b.getTime())[0]
-        const days_since_first_donation = firstDonationDate
-          ? Math.max(0, Math.floor((Date.now() - firstDonationDate.getTime()) / (1000 * 60 * 60 * 24)))
-          : 999
-        const donation_type_variety = new Set(
-          donorDonations.map(d => d.donationType).filter((t): t is string => Boolean(t)),
-        ).size
-        const is_recurring_donor = donorDonations.some(d => d.isRecurring === true)
-
-        try {
-          const result = await predictDonorChurn({
-            total_donation_count,
-            total_amount,
-            avg_donation_amount,
-            days_since_first_donation,
-            donation_type_variety,
-            is_recurring_donor,
-          })
-          setChurnScores(prev => ({ ...prev, [donor.supporterId]: result.probability }))
-        } catch {
-          // Keep page functional even if one prediction call fails.
-        }
-      }
-    }
-
-    void runPredictions()
-  }, [donors, donations])
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.deleteSupporter(deleteTarget.supporterId)
+      setSupporters(prev => prev.filter(s => s.supporterId !== deleteTarget.supporterId))
+      setDeleteTarget(null)
+    } catch { /* ignore */ }
+    finally { setDeleting(false) }
+  }
 
   function toggleSort(col: SortKey) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -193,7 +176,7 @@ export default function DonorsPage() {
     .filter(d => {
       if (kpiFilter === 'recurring' && !isRecurring(d.supporterId))    return false
       if (kpiFilter === 'active'    && d.status !== 'Active')           return false
-      if (kpiFilter === 'critical'  && (churnScores[d.supporterId] ?? 0) < 0.85) return false
+      if (kpiFilter === 'critical'  && (churnScores[d.supporterId] ?? 0) < DONOR_CHURN_THRESHOLDS.donorsCriticalRisk) return false
       if (valueFilter && pinValue(d) !== valueFilter) return false
       const matchSearch = !search ||
         (d.displayName ?? '').toLowerCase().includes(search.toLowerCase()) ||
@@ -224,6 +207,12 @@ export default function DonorsPage() {
   const recurring   = donors.filter(d => isRecurring(d.supporterId)).length
   return (
     <div className="mu-page">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        itemLabel={deleteTarget ? (deleteTarget.displayName ?? `${deleteTarget.firstName ?? ''} ${deleteTarget.lastName ?? ''}`.trim()) : ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
       {showAdd && (
         <AddDonorModal
           onClose={() => setShowAdd(false)}
@@ -251,7 +240,7 @@ export default function DonorsPage() {
           { label: 'Total Donors',     display: String(donors.length),                                    num: donors.length,                                    den: null,           key: null },
           { label: 'Recurring Donors', display: null,                                                      num: recurring,                                        den: donors.length,  key: 'recurring' },
           { label: 'Active Status',    display: null,                                                      num: donors.filter(d => d.status === 'Active').length, den: donors.length,  key: 'active' },
-          { label: 'Critical Risk',    display: null,                                                      num: donors.filter(d => (churnScores[d.supporterId] ?? 0) >= 0.85).length, den: donors.length,  key: 'critical' },
+          { label: 'Critical Risk',    display: null,                                                      num: donors.filter(d => (churnScores[d.supporterId] ?? 0) >= DONOR_CHURN_THRESHOLDS.donorsCriticalRisk).length, den: donors.length,  key: 'critical' },
           { label: 'Total Raised',     display: fmtAmt(totalRaised, currency),                            num: 0,                                                den: null,           key: null },
         ] as { label: string; display: string | null; num: number; den: number | null; key: string | null }[]).map(k => (
           <div
@@ -313,11 +302,12 @@ export default function DonorsPage() {
                 <SortTh label="Status"      col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <SortTh label="Lapse Risk"  col="risk"      sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <SortTh label="First Gift"  col="firstDate" sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={11} className="mu-empty-cell">No donors found.</td></tr>
+                <tr><td colSpan={12} className="mu-empty-cell">No donors found.</td></tr>
               )}
               {filtered.map(s => {
                 const ds = donationsBySupporter(s.supporterId)
@@ -355,6 +345,16 @@ export default function DonorsPage() {
                       </div>
                     </td>
                     <td>{s.firstDonationDate ? new Date(s.firstDonationDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</td>
+                    <td>
+                      <button
+                        className="mu-btn mu-btn-danger"
+                        onClick={() => setDeleteTarget(s)}
+                        disabled={deleting}
+                        style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem' }}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 )
               })}

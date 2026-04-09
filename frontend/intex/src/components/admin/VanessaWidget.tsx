@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { api } from '../../services/apiService'
 import './VanessaWidget.css'
 
 interface ChatMessage {
@@ -44,22 +45,28 @@ export default function VanessaWidget() {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, thinking, open])
 
-  function send(text?: string) {
+  async function send(text?: string) {
     const msg = (text ?? input).trim()
     if (!msg || thinking) return
     setInput('')
-    setMessages(prev => [...prev, { id: nextId.current++, role: 'user', text: msg }])
+    const userMsg: ChatMessage = { id: nextId.current++, role: 'user', text: msg }
+    setMessages(prev => [...prev, userMsg])
     setThinking(true)
-    setTimeout(() => {
+    try {
+      const history = [...messages, userMsg].map(m => ({ role: m.role, content: m.text }))
+      const { reply } = await api.chatWithVanessa(history)
+      setMessages(prev => [...prev, { id: nextId.current++, role: 'vanessa', text: reply }])
+    } catch {
       setMessages(prev => [
         ...prev,
         {
           id: nextId.current++, role: 'vanessa',
-          text: "Great question! Full AI for Vanessa is coming soon — I'll give you personalized, data-driven advice for Lighthouse Sanctuary. In the meantime, check the Social Media Hub's Best Practices tab for proven strategies.",
+          text: "Sorry, I'm having trouble connecting right now. Please check your connection and try again in a moment.",
         },
       ])
+    } finally {
       setThinking(false)
-    }, 1200)
+    }
   }
 
   return (

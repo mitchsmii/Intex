@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import {
@@ -11,12 +11,13 @@ import {
   fetchInterventionPlans,
   fetchAssessments,
 } from '../../services/socialWorkerService'
+import { api } from '../../services/apiService'
+import type { CaseConferenceRequest } from '../../services/apiService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
-import NextUpHero from '../../components/socialworker/dashboard/NextUpHero'
-import UpcomingSchedule from '../../components/socialworker/dashboard/UpcomingSchedule'
 import ReadinessPipeline from '../../components/socialworker/dashboard/ReadinessPipeline'
-import ActionItems from '../../components/socialworker/dashboard/ActionItems'
-import CriticalAlerts, { type Alert } from '../../components/socialworker/dashboard/CriticalAlerts'
+import { buildAlerts } from '../../components/socialworker/dashboard/CriticalAlerts'
+import TodaysPriorities from '../../components/socialworker/dashboard/TodaysPriorities'
+import WeekCalendar from '../../components/socialworker/dashboard/WeekCalendar'
 import MentalHealthSnapshot from '../../components/socialworker/dashboard/MentalHealthSnapshot'
 import ResidentCard from '../../components/socialworker/dashboard/ResidentCard'
 import type { Resident } from '../../types/Resident'
@@ -45,6 +46,10 @@ function SocialWorkerHomePage() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  type DashTab = 'today' | 'wellbeing' | 'residents'
+  const [tab, setTab] = useState<DashTab>('today')
+  const [confRequests, setConfRequests] = useState<CaseConferenceRequest[]>([])
+  const [confActing, setConfActing] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     fetchResidents()
@@ -69,7 +74,14 @@ function SocialWorkerHomePage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
+    api.getCaseConferenceRequests().then(setConfRequests).catch(() => {})
   }, [])
+
+  // Must sit above any conditional return so hook order stays stable.
+  const mergedAlerts = useMemo(
+    () => buildAlerts({ residents, incidents, visitations, recordings, assessments }),
+    [residents, incidents, visitations, recordings, assessments],
+  )
 
   if (loading) return <LoadingSpinner size="lg" />
   if (error) return <p className="sw-home-error">Error: {error}</p>
@@ -122,57 +134,168 @@ function SocialWorkerHomePage() {
         </div>
       </header>
 
-      <NextUpHero events={events} />
+      <nav className="sw-dash-tabs">
+        <button
+          type="button"
+          className={`sw-dash-tab-btn${tab === 'today' ? ' sw-dash-tab-active' : ''}`}
+          onClick={() => setTab('today')}
+        >
+          Today
+        </button>
+        <button
+          type="button"
+          className={`sw-dash-tab-btn${tab === 'wellbeing' ? ' sw-dash-tab-active' : ''}`}
+          onClick={() => setTab('wellbeing')}
+        >
+          Wellbeing
+        </button>
+        <button
+          type="button"
+          className={`sw-dash-tab-btn${tab === 'residents' ? ' sw-dash-tab-active' : ''}`}
+          onClick={() => setTab('residents')}
+        >
+          Residents
+        </button>
+      </nav>
 
-      <div className="sw-dash-triple">
-        <div className="sw-dash-triple-col">
-          <CriticalAlerts
-            residents={residents}
-            incidents={incidents}
-            visitations={visitations}
-            recordings={recordings}
-            assessments={assessments}
-            onAlertClick={(alert: Alert) =>
-              navigate(`/socialworker/dashboard/residents/${alert.residentId}`, {
-                state: { alert },
-              })
-            }
+      {tab === 'today' && (
+        <div className="sw-dash-tab-content">
+          <TodaysPriorities
+            alerts={mergedAlerts}
+            actions={actions}
+            onSelect={goToResidentById}
+          />
+          {confRequests.filter((r) => ['Pending', 'Counter-Proposed', 'Approved', 'Accepted'].includes(r.status)).length > 0 && (
+            <section className="conf-req-card">
+              <h3 className="conf-req-title">Conference Requests</h3>
+              <ul className="conf-req-list">
+                {confRequests
+                  .filter((r) => ['Pending', 'Counter-Proposed', 'Approved', 'Accepted'].includes(r.status))
+                  .map((r) => {
+                    const fmtDate = (iso: string | null) =>
+                      iso ? new Date(iso.includes('T') ? iso : iso + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'
+                    const isCounter = r.status === 'Counter-Proposed'
+                    const isConfirmed = r.status === 'Approved' || r.status === 'Accepted'
+                    return (
+                      <li key={r.requestId} className={`conf-req-row conf-req-row--${isConfirmed ? 'confirmed' : isCounter ? 'counter' : 'pending'}`}>
+                        <div className="conf-req-info">
+                          <span className={`conf-req-status conf-req-status--${isConfirmed ? 'confirmed' : isCounter ? 'counter' : 'pending'}`}>
+                            {isConfirmed ? 'Confirmed' : isCounter ? 'Counter-Proposed' : 'Awaiting approval'}
+                          </span>
+                          <span className="conf-req-date">
+                            {isCounter
+                              ? `${fmtDate(r.counterDate)} at ${r.counterTime ?? '—'}`
+                              : `${fmtDate(r.requestedDate)} at ${r.requestedTime ?? '—'}`
+                            }
+                          </span>
+                          <span className="conf-req-residents">
+                            {(() => { try { return JSON.parse(r.residentIds).length } catch { return 0 } })()}
+                            {' '}resident{(() => { try { return JSON.parse(r.residentIds).length !== 1 ? 's' : '' } catch { return 's' } })()}
+                          </span>
+                        </div>
+                        {isCounter && (
+                          <div className="conf-req-actions">
+                            <span className="conf-req-hint">Admin suggested a different time</span>
+                            <button
+                              type="button"
+                              className="conf-req-btn conf-req-btn--accept"
+                              disabled={confActing[r.requestId]}
+                              onClick={async () => {
+                                setConfActing((p) => ({ ...p, [r.requestId]: true }))
+                                try {
+                                  const updated = await api.acceptCaseConferenceRequest(r.requestId)
+                                  setConfRequests((prev) => prev.map((x) => x.requestId === r.requestId ? updated : x))
+                                } catch { /* ignore */ }
+                                setConfActing((p) => ({ ...p, [r.requestId]: false }))
+                              }}
+                            >
+                              {confActing[r.requestId] ? '…' : 'Accept'}
+                            </button>
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
+              </ul>
+            </section>
+          )}
+
+          <WeekCalendar
+            events={[
+              ...events,
+              // Inject approved/accepted conference requests as calendar events
+              ...confRequests
+                .filter((r) => r.status === 'Approved' || r.status === 'Accepted')
+                .map((r) => {
+                  // Use counter date/time if accepted, otherwise requested date/time
+                  const date = r.status === 'Accepted' && r.counterDate
+                    ? r.counterDate
+                    : r.requestedDate
+                  const time = r.status === 'Accepted' && r.counterTime
+                    ? r.counterTime
+                    : r.requestedTime
+                  // Parse time string like "1:00 PM" into an ISO date
+                  let isoDate = date ?? ''
+                  if (date && time) {
+                    const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+                    if (match) {
+                      let h = parseInt(match[1])
+                      const m = parseInt(match[2])
+                      const ampm = match[3].toUpperCase()
+                      if (ampm === 'PM' && h !== 12) h += 12
+                      if (ampm === 'AM' && h === 12) h = 0
+                      isoDate = `${date}T${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`
+                    }
+                  }
+                  const residentIds: number[] = (() => { try { return JSON.parse(r.residentIds) } catch { return [] } })()
+                  return {
+                    id: `conf-req-${r.requestId}`,
+                    type: 'CaseConference' as const,
+                    residentId: residentIds[0] ?? 0,
+                    residentCode: residentIds.map((id) => `#${id}`).join(', '),
+                    date: isoDate,
+                    location: 'Safehouse office',
+                  }
+                }),
+            ]}
+            onEventClick={(ev) => goToResidentById(ev.residentId)}
           />
         </div>
-        <div className="sw-dash-triple-col">
-          <ActionItems items={actions} onItemClick={goToResidentById} />
-        </div>
-        <div className="sw-dash-triple-col">
-          <UpcomingSchedule events={events} />
-        </div>
-      </div>
+      )}
 
-      <ReadinessPipeline
-        residents={residents}
-        recordings={recordings}
-        visitations={visitations}
-        plans={plans}
-        assessments={assessments}
-        onResidentClick={goToResidentById}
-      />
-
-      <MentalHealthSnapshot
-        residents={residents}
-        assessments={assessments}
-        onResidentClick={goToResidentById}
-      />
-
-      <section className="sw-dash-section">
-        <header className="sw-dash-section-header">
-          <h2>My Residents</h2>
-          <span className="sw-dash-mock">{residents.length} total</span>
-        </header>
-        <div className="sw-dash-grid">
-          {residents.map((r) => (
-            <ResidentCard key={r.residentId} resident={r} onClick={goToResident} />
-          ))}
+      {tab === 'wellbeing' && (
+        <div className="sw-dash-tab-content">
+          <ReadinessPipeline
+            residents={residents}
+            recordings={recordings}
+            visitations={visitations}
+            plans={plans}
+            assessments={assessments}
+            onResidentClick={goToResidentById}
+          />
+          <MentalHealthSnapshot
+            residents={residents}
+            assessments={assessments}
+            onResidentClick={goToResidentById}
+          />
         </div>
-      </section>
+      )}
+
+      {tab === 'residents' && (
+        <div className="sw-dash-tab-content">
+          <section className="sw-dash-section">
+            <header className="sw-dash-section-header">
+              <h2>My Residents</h2>
+              <span className="sw-dash-mock">{residents.length} total</span>
+            </header>
+            <div className="sw-dash-grid">
+              {residents.map((r) => (
+                <ResidentCard key={r.residentId} resident={r} onClick={goToResident} />
+              ))}
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   )
 }

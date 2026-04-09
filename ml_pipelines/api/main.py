@@ -54,6 +54,10 @@ RESIDENT_RISK_MODEL_PATH = SAVED_MODELS_DIR / "resident_risk_model.pkl"
 RESIDENT_RISK_METADATA_PATH = SAVED_MODELS_DIR / "resident_risk_metadata.json"
 EDUCATION_OUTCOME_MODEL_PATH = SAVED_MODELS_DIR / "education_outcome_model.pkl"
 EDUCATION_OUTCOME_METADATA_PATH = SAVED_MODELS_DIR / "education_outcome_metadata.json"
+REINTEGRATION_KMEANS_PATH = SAVED_MODELS_DIR / "reintegration_journey_kmeans.pkl"
+REINTEGRATION_SCALER_PATH = SAVED_MODELS_DIR / "reintegration_journey_scaler.pkl"
+REINTEGRATION_FEATURES_PATH = SAVED_MODELS_DIR / "reintegration_journey_features.pkl"
+REINTEGRATION_CLUSTER_NAMES_PATH = SAVED_MODELS_DIR / "reintegration_journey_cluster_names.pkl"
 
 
 def _load_feature_list_from_metadata(path: Path, key: str) -> list[str]:
@@ -207,6 +211,33 @@ def _extract_feature_importance(model: Any, feature_names: list[str]) -> list[di
     return pairs
 
 
+def _extract_pipeline_feature_importance(model: Any, feature_names: list[str]) -> list[dict[str, Any]]:
+    """Extract feature importance for plain models or sklearn Pipelines.
+
+    For pipeline models that include a selector step, this maps the final model's
+    importances to only the selected feature names.
+    """
+    if hasattr(model, "named_steps"):
+        selector = model.named_steps.get("select")
+        inner_model = model.named_steps.get("model", model)
+
+        selected_features = feature_names
+        if selector is not None and hasattr(selector, "get_support"):
+            support = selector.get_support()
+            if len(support) != len(feature_names):
+                raise HTTPException(
+                    status_code=500,
+                    detail="Selector mask length does not match feature list length.",
+                )
+            selected_features = [
+                feature for feature, keep in zip(feature_names, support) if bool(keep)
+            ]
+
+        return _extract_feature_importance(inner_model, selected_features)
+
+    return _extract_feature_importance(model, feature_names)
+
+
 @app.get("/feature-importance/social-engagement")
 def social_engagement_feature_importance() -> dict[str, Any]:
     """Return global feature importance for the social engagement donation classifier.
@@ -219,6 +250,29 @@ def social_engagement_feature_importance() -> dict[str, Any]:
     return {"features": _extract_feature_importance(social_model, social_features)}
 
 
+@app.get("/feature-importance/resident-risk")
+def resident_risk_feature_importance() -> dict[str, Any]:
+    """Return global feature importance for the resident risk classifier.
+
+    The model is a Pipeline with SelectFromModel; importances are extracted
+    from the inner RF classifier and matched to the 15 selected features.
+
+    Returns:
+        dict[str, Any]: ``{"features": [{feature, importance}, ...]}``.
+    """
+    pipeline = _load_artifact(RESIDENT_RISK_MODEL_PATH)
+    selected_features = _load_feature_list_from_metadata(
+        RESIDENT_RISK_METADATA_PATH, "selected_features"
+    )
+    # Extract the RF classifier from the pipeline's last step
+    clf = pipeline
+    if hasattr(pipeline, "named_steps"):
+        clf = pipeline.named_steps.get("model", pipeline)
+    elif hasattr(pipeline, "steps"):
+        clf = pipeline.steps[-1][1]
+    return {"features": _extract_feature_importance(clf, selected_features)}
+
+
 @app.get("/feature-importance/donor-churn")
 def donor_churn_feature_importance() -> dict[str, Any]:
     """Return global feature importance for the donor churn model.
@@ -228,7 +282,7 @@ def donor_churn_feature_importance() -> dict[str, Any]:
     """
     donor_model = _load_artifact(DONOR_MODEL_PATH)
     donor_features = list(_load_artifact(DONOR_FEATURES_PATH))
-    return {"features": _extract_feature_importance(donor_model, donor_features)}
+    return {"features": _extract_pipeline_feature_importance(donor_model, donor_features)}
 
 
 @app.post("/predict/donor-churn")
@@ -330,7 +384,10 @@ def predict_resident_risk(payload: dict[str, Any]) -> dict[str, Any]:
 
     aligned = _align_features(payload, features)
     probability = _predict_probability(model, aligned)
-    is_high_risk = probability >= 0.5
+    # Threshold lowered to 0.30 (from 0.50) to improve recall for high-risk cases.
+    # The model was trained on 62 residents with class imbalance — low recall (0.30)
+    # means missing high-risk cases is the bigger risk in a child welfare context.
+    is_high_risk = probability >= 0.30
 
     return {"is_high_risk": bool(is_high_risk), "probability": float(probability)}
 
@@ -355,3 +412,65 @@ def predict_education_outcome(payload: dict[str, Any]) -> dict[str, Any]:
     will_complete = probability >= 0.5
 
     return {"will_complete": bool(will_complete), "probability": float(probability)}
+
+
+@app.post("/predict/reintegration-journey")
+def predict_reintegration_journey(payload: dict[str, Any]) -> dict[str, Any]:
+    """Assign a resident to a journey cluster based on their features.
+
+    Args:
+        payload: JSON payload with resident feature values matching the 28
+                 clustering features (e.g. days_in_care, avg_health_score, …).
+
+    Returns:
+        dict[str, Any]: cluster_id, cluster_name, and distances to each centroid.
+    """
+    kmeans = _load_artifact(REINTEGRATION_KMEANS_PATH)
+    scaler = _load_artifact(REINTEGRATION_SCALER_PATH)
+    feature_names: list[str] = _load_artifact(REINTEGRATION_FEATURES_PATH)
+    cluster_name_map: dict[int, str] = _load_artifact(REINTEGRATION_CLUSTER_NAMES_PATH)
+
+    aligned = _align_features(payload, feature_names)
+    scaled = scaler.transform(aligned)
+
+    cluster_id = int(kmeans.predict(scaled)[0])
+    cluster_name = cluster_name_map.get(cluster_id, f"Cluster {cluster_id}")
+
+    distances = kmeans.transform(scaled)[0]
+    centroid_distances = {
+        cluster_name_map.get(i, f"Cluster {i}"): float(d)
+        for i, d in enumerate(distances)
+    }
+
+    return {
+        "cluster_id": cluster_id,
+        "cluster_name": cluster_name,
+        "centroid_distances": centroid_distances,
+    }
+
+
+@app.get("/feature-importance/reintegration-journey")
+def reintegration_journey_feature_importance() -> dict[str, Any]:
+    """Return pseudo-importance for reintegration clustering features.
+
+    Uses the variance of each feature's centroid values across clusters as a
+    proxy for how much each feature differentiates the clusters.
+
+    Returns:
+        dict[str, Any]: ``{"features": [{feature, importance}, ...]}``.
+    """
+    kmeans = _load_artifact(REINTEGRATION_KMEANS_PATH)
+    feature_names: list[str] = _load_artifact(REINTEGRATION_FEATURES_PATH)
+
+    centroids = kmeans.cluster_centers_
+    variance = np.var(centroids, axis=0)
+    total = float(variance.sum())
+    if total > 0:
+        variance = variance / total
+
+    pairs = [
+        {"feature": name, "importance": float(v)}
+        for name, v in zip(feature_names, variance)
+    ]
+    pairs.sort(key=lambda item: item["importance"], reverse=True)
+    return {"features": pairs}

@@ -26,3 +26,11 @@ public record CreateResidentDto(
     string? SwEmail,
     string RiskLevel
 );
+
+public record UpdateSupporterDto(
+    string? FirstName,
+    string? LastName,
+    string? DisplayName,
+    string? Email,
+    string? Phone
+);
