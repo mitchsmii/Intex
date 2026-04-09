@@ -75,7 +75,7 @@
 /* ── KPI grid ── */
 .rp-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--space-md);
 }
 
@@ -688,11 +688,7 @@
   padding: var(--space-md) 0;
 }
 
-@media (max-width: 1100px) {
-  .rp-kpi-grid { grid-template-columns: repeat(3, 1fr); }
-}
 @media (max-width: 900px) {
-  .rp-kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .rp-two-col  { grid-template-columns: 1fr; }
   .rp-pillars  { grid-template-columns: 1fr; }
 }
@@ -843,6 +839,7 @@
 
 @media (max-width: 1000px) {
   .rrp-layout { grid-template-columns: 1fr; }
+  .rrp-result-col { position: static; }
 }
 
 /* Form sections */
