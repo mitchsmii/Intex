@@ -32,6 +32,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<Assessment> Assessments { get; set; }
     public DbSet<AdmissionChecklist> AdmissionChecklists { get; set; }
+    public DbSet<Partner> Partners { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

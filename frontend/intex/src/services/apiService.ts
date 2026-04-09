@@ -287,6 +287,21 @@ export interface AdmissionChecklist {
   adminNotes: string | null
 }
 
+export interface Partner {
+  partnerId: number
+  partnerName: string | null
+  partnerType: string | null
+  roleType: string | null
+  contactName: string | null
+  email: string | null
+  phone: string | null
+  region: string | null
+  status: string | null
+  startDate: string | null
+  endDate: string | null
+  notes: string | null
+}
+
 export interface SocialMediaPost {
   postId: number
   platform: string
@@ -382,6 +397,7 @@ export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
   getResidents:               () => authGet<Resident[]>('/api/residents'),
   getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
+  getPartners:                () => authGet<Partner[]>('/api/partners'),
   getSupporters:              () => get<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),

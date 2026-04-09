@@ -424,6 +424,11 @@
   color: var(--cove-deep);
 }
 
+.mu-badge-role {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
 /* ── Sortable column headers ── */
 .mu-th-sort {
   cursor: pointer;
