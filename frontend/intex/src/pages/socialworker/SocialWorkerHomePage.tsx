@@ -19,6 +19,7 @@ import { buildAlerts } from '../../components/socialworker/dashboard/CriticalAle
 import TodaysPriorities from '../../components/socialworker/dashboard/TodaysPriorities'
 import WeekCalendar from '../../components/socialworker/dashboard/WeekCalendar'
 import MentalHealthSnapshot from '../../components/socialworker/dashboard/MentalHealthSnapshot'
+import JourneyClusterSection from '../../components/socialworker/dashboard/JourneyClusterSection'
 import ResidentCard from '../../components/socialworker/dashboard/ResidentCard'
 import type { Resident } from '../../types/Resident'
 import type { ScheduleEvent } from '../../types/ScheduleEvent'
@@ -42,7 +43,7 @@ function SocialWorkerHomePage() {
   const [incidents, setIncidents] = useState<IncidentReport[]>([])
   const [visitations, setVisitations] = useState<HomeVisitation[]>([])
   const [recordings, setRecordings] = useState<ProcessRecording[]>([])
-  const [plans, setPlans] = useState<InterventionPlan[]>([])
+  const [, setPlans] = useState<InterventionPlan[]>([])
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -267,10 +268,10 @@ function SocialWorkerHomePage() {
         <div className="sw-dash-tab-content">
           <ReadinessPipeline
             residents={residents}
-            recordings={recordings}
-            visitations={visitations}
-            plans={plans}
-            assessments={assessments}
+            onResidentClick={goToResidentById}
+          />
+          <JourneyClusterSection
+            residents={residents}
             onResidentClick={goToResidentById}
           />
           <MentalHealthSnapshot

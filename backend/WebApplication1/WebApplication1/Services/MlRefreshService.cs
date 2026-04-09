@@ -60,10 +60,11 @@ public class MlRefreshService : BackgroundService
             var donorCount = await RefreshDonorChurn(db, client, now, ct);
             var riskCount = await RefreshResidentRisk(db, client, now, ct);
             var journeyCount = await RefreshReintegrationJourney(db, client, now, ct);
+            var readinessCount = await RefreshReintegrationReadiness(db, client, now, ct);
 
             _logger.LogInformation(
-                "ML refresh complete: {DonorCount} donor-churn, {RiskCount} resident-risk, {JourneyCount} reintegration-journey predictions cached",
-                donorCount, riskCount, journeyCount);
+                "ML refresh complete: {DonorCount} donor-churn, {RiskCount} resident-risk, {JourneyCount} reintegration-journey, {ReadinessCount} reintegration-readiness predictions cached",
+                donorCount, riskCount, journeyCount, readinessCount);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -270,6 +271,63 @@ public class MlRefreshService : BackgroundService
         {
             var old = await db.MlPredictions
                 .Where(p => p.ModelName == "reintegration-journey")
+                .ToListAsync(ct);
+            db.MlPredictions.RemoveRange(old);
+            db.MlPredictions.AddRange(predictions);
+            await db.SaveChangesAsync(ct);
+        }
+
+        return predictions.Count;
+    }
+
+    // ── Reintegration Readiness (supervised) ────────────────────────────────
+
+    private async Task<int> RefreshReintegrationReadiness(AppDbContext db, HttpClient client, DateTime now, CancellationToken ct)
+    {
+        var residents = await db.Residents.Where(r => r.CaseStatus == "Active").ToListAsync(ct);
+        var allRecordings = await db.ProcessRecordings.ToListAsync(ct);
+        var allHealth = await db.HealthWellbeingRecords.ToListAsync(ct);
+        var allEducation = await db.EducationRecords.ToListAsync(ct);
+        var allIncidents = await db.IncidentReports.ToListAsync(ct);
+        var allVisits = await db.HomeVisitations.ToListAsync(ct);
+        var allPlans = await db.InterventionPlans.ToListAsync(ct);
+        var predictions = new List<MlPrediction>();
+
+        foreach (var r in residents)
+        {
+            ct.ThrowIfCancellationRequested();
+            var recs = allRecordings.Where(p => p.ResidentId == r.ResidentId).ToList();
+            var health = allHealth.Where(h => h.ResidentId == r.ResidentId).ToList();
+            var edu = allEducation.Where(e => e.ResidentId == r.ResidentId).ToList();
+            var incidents = allIncidents.Where(i => i.ResidentId == r.ResidentId).ToList();
+            var visits = allVisits.Where(v => v.ResidentId == r.ResidentId).ToList();
+            var plans = allPlans.Where(p => p.ResidentId == r.ResidentId).ToList();
+
+            var input = BuildReintegrationInput(r, recs, health, edu, incidents, visits, plans);
+
+            try
+            {
+                var resp = await PostMl(client, "/predict/reintegration-readiness", input, ct);
+                if (resp != null)
+                {
+                    predictions.Add(new MlPrediction
+                    {
+                        ModelName = "reintegration-readiness",
+                        EntityId = r.ResidentId,
+                        IsPositive = resp.Value.GetProperty("is_ready").GetBoolean(),
+                        Probability = resp.Value.GetProperty("probability").GetDouble(),
+                        ComputedAt = now,
+                    });
+                }
+            }
+            catch (OperationCanceledException) { throw; }
+            catch { /* skip individual failures */ }
+        }
+
+        if (predictions.Count > 0)
+        {
+            var old = await db.MlPredictions
+                .Where(p => p.ModelName == "reintegration-readiness")
                 .ToListAsync(ct);
             db.MlPredictions.RemoveRange(old);
             db.MlPredictions.AddRange(predictions);
