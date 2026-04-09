@@ -46,15 +46,16 @@ export const authService = {
     return res.json()
   },
 
-  async googleLogin(idToken: string): Promise<LoginResponse> {
-    const res = await fetch(`${API_URL}/api/auth/google`, {
+  async register(email: string, password: string, firstName: string, lastName: string): Promise<LoginResult> {
+    const res = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken }),
+      body: JSON.stringify({ email, password, confirmPassword: password, firstName, lastName }),
     })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.message || 'Google sign-in failed')
-    return data
+    let data: { message?: string; token?: string; user?: AuthUser }
+    try { data = await res.json() } catch { throw new Error(`Server error (${res.status}) — please try again`) }
+    if (!res.ok) throw new Error(data.message || 'Registration failed')
+    return { type: 'success', token: data.token!, user: data.user! }
   },
 
   async verifyTwoFactor(userId: string, code: string): Promise<LoginResponse> {

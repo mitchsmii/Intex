@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -19,7 +19,6 @@ public class AuthController : ControllerBase
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly IConfiguration _configuration;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly AppDbContext _context;
     private readonly IEmailSender _emailSender;
 
@@ -27,29 +26,39 @@ public class AuthController : ControllerBase
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
         IConfiguration configuration,
-        IHttpClientFactory httpClientFactory,
         AppDbContext context,
         IEmailSender emailSender)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _configuration = configuration;
-        _httpClientFactory = httpClientFactory;
         _context = context;
         _emailSender = emailSender;
+    }
+
+    private static string Sanitize(string? input, int maxLength = 500)
+    {
+        if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+        var cleaned = Regex.Replace(input, "<[^>]+>", string.Empty);
+        cleaned = cleaned.Trim();
+        if (cleaned.Length > maxLength) cleaned = cleaned[..maxLength];
+        return cleaned;
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+        var username = Sanitize(request.Username);
+        var password = Sanitize(request.Password);
+
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             return BadRequest(new { message = "Username and password are required." });
 
-        var user = await _userManager.FindByNameAsync(request.Username);
+        var user = await _userManager.FindByNameAsync(username);
         if (user == null)
             return Unauthorized(new { message = "Invalid username or password" });
 
-        var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: false);
+        var result = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: false);
         if (!result.Succeeded)
             return Unauthorized(new { message = "Invalid username or password" });
 
@@ -83,14 +92,17 @@ public class AuthController : ControllerBase
     [HttpPost("2fa/verify")]
     public async Task<IActionResult> VerifyTwoFactor([FromBody] TwoFactorVerifyRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.UserId) || string.IsNullOrWhiteSpace(request.Code))
+        var userId = Sanitize(request.UserId);
+        var code = Sanitize(request.Code);
+
+        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(code))
             return BadRequest(new { message = "UserId and Code are required." });
 
-        var user = await _userManager.FindByIdAsync(request.UserId);
+        var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
             return Unauthorized(new { message = "Invalid request." });
 
-        var valid = await _userManager.VerifyTwoFactorTokenAsync(user, "Email", request.Code);
+        var valid = await _userManager.VerifyTwoFactorTokenAsync(user, "Email", code);
         if (!valid)
             return Unauthorized(new { message = "Invalid or expired code." });
 
@@ -110,67 +122,63 @@ public class AuthController : ControllerBase
         });
     }
 
-    [HttpPost("google")]
-    public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.IdToken))
-            return BadRequest(new { message = "idToken is required." });
+        var email = Sanitize(request.Email);
+        var password = request.Password ?? "";
+        var confirmPassword = request.ConfirmPassword ?? "";
+        var firstName = Sanitize(request.FirstName);
+        var lastName = Sanitize(request.LastName);
 
-        // Validate the Google ID token via Google's tokeninfo endpoint
-        var httpClient = _httpClientFactory.CreateClient();
-        var response = await httpClient.GetAsync(
-            $"https://oauth2.googleapis.com/tokeninfo?id_token={Uri.EscapeDataString(request.IdToken)}");
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(email) ||
+            string.IsNullOrWhiteSpace(password) ||
+            string.IsNullOrWhiteSpace(confirmPassword) ||
+            string.IsNullOrWhiteSpace(firstName) ||
+            string.IsNullOrWhiteSpace(lastName))
+            return BadRequest(new { message = "All fields are required." });
 
-        if (!response.IsSuccessStatusCode)
-            return Unauthorized(new { message = "Invalid Google token." });
+        // Validate email format
+        if (!Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+            return BadRequest(new { message = "Invalid email format." });
 
-        var json = await response.Content.ReadAsStringAsync();
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
+        // Validate password length
+        if (password.Length < 14)
+            return BadRequest(new { message = "Password must be at least 14 characters." });
 
-        // Verify audience matches our client ID
-        var configuredClientId = _configuration["Google:ClientId"];
-        if (root.TryGetProperty("aud", out var audProp))
+        // Validate passwords match
+        if (password != confirmPassword)
+            return BadRequest(new { message = "Passwords do not match." });
+
+        // Check if email already taken
+        var existingUser = await _userManager.FindByEmailAsync(email);
+        if (existingUser != null)
+            return Conflict(new { message = "An account with that email already exists." });
+
+        // Create Identity user
+        var user = new IdentityUser
         {
-            var aud = audProp.GetString();
-            if (aud != configuredClientId)
-                return Unauthorized(new { message = "Token audience mismatch." });
-        }
-        else
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true
+        };
+
+        var createResult = await _userManager.CreateAsync(user, password);
+        if (!createResult.Succeeded)
         {
-            return Unauthorized(new { message = "Invalid token claims." });
+            var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+            return BadRequest(new { message = errors });
         }
 
-        var email = root.TryGetProperty("email", out var emailProp) ? emailProp.GetString() : null;
-        var firstName = root.TryGetProperty("given_name", out var fnProp) ? fnProp.GetString() : null;
-        var lastName = root.TryGetProperty("family_name", out var lnProp) ? lnProp.GetString() : null;
+        // Add to Donor role
+        await _userManager.AddToRoleAsync(user, "Donor");
 
-        if (string.IsNullOrWhiteSpace(email))
-            return BadRequest(new { message = "Google account must have an email address." });
-
-        // Find or create user
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user == null)
-        {
-            user = new IdentityUser
-            {
-                UserName = email,
-                Email = email,
-                EmailConfirmed = true
-            };
-            var createResult = await _userManager.CreateAsync(user);
-            if (!createResult.Succeeded)
-                return StatusCode(500, new { message = "Failed to create user account." });
-
-            // Add to Donor role
-            await _userManager.AddToRoleAsync(user, "Donor");
-
-            // Create a supporter row
-            await _context.Database.ExecuteSqlRawAsync(
-                "INSERT INTO supporters (supporter_type, first_name, last_name, email, status, created_at) " +
-                "VALUES ({0}, {1}, {2}, {3}, {4}, {5})",
-                "Individual", firstName ?? "", lastName ?? "", email, "Active", DateTime.UtcNow);
-        }
+        // Create supporter row
+        await _context.Database.ExecuteSqlRawAsync(
+            "INSERT INTO supporters (supporter_type, first_name, last_name, email, status, created_at) " +
+            "VALUES ({0}, {1}, {2}, {3}, {4}, {5})",
+            "Individual", firstName, lastName, email, "Active", DateTime.UtcNow);
 
         var roles = await _userManager.GetRolesAsync(user);
         var token = GenerateJwtToken(user, roles);
@@ -251,7 +259,11 @@ public class TwoFactorVerifyRequest
     public string Code { get; set; } = "";
 }
 
-public class GoogleLoginRequest
+public class RegisterRequest
 {
-    public string IdToken { get; set; } = "";
+    public string Email { get; set; } = "";
+    public string Password { get; set; } = "";
+    public string ConfirmPassword { get; set; } = "";
+    public string FirstName { get; set; } = "";
+    public string LastName { get; set; } = "";
 }

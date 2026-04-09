@@ -10,7 +10,7 @@ export interface AuthContextType {
   // The login form manages its own submitting state independently.
   isLoading: boolean
   login: (username: string, password: string) => Promise<{ requires2FA: boolean; userId?: string }>
-  googleLogin: (idToken: string) => Promise<void>
+  register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>
   verifyTwoFactor: (userId: string, code: string) => Promise<void>
   logout: () => void
 }
@@ -52,8 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { requires2FA: false }
   }, [])
 
-  const googleLogin = useCallback(async (idToken: string) => {
-    const { token: t, user: u } = await authService.googleLogin(idToken)
+  const register = useCallback(async (email: string, password: string, firstName: string, lastName: string) => {
+    const { token: t, user: u } = await authService.register(email, password, firstName, lastName)
     localStorage.setItem('cove_token', t)
     setToken(t)
     setUser(u)
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, googleLogin, verifyTwoFactor, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, verifyTwoFactor, logout }}>
       {children}
     </AuthContext.Provider>
   )

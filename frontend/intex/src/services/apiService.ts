@@ -13,6 +13,7 @@ async function authGet<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
+  handle401(res)
   if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }
@@ -346,6 +347,14 @@ async function post<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+function handle401(res: Response): void {
+  if (res.status === 401) {
+    localStorage.removeItem('cove_token')
+    window.location.href = '/login'
+    throw new Error('Session expired')
+  }
+}
+
 async function authPost<T>(path: string, body: unknown): Promise<T> {
   const token = localStorage.getItem('cove_token')
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -356,6 +365,7 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
   })
+  handle401(res)
   if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }
@@ -366,15 +376,17 @@ async function authDelete(path: string): Promise<void> {
     method: 'DELETE',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
+  handle401(res)
   if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
 }
 
 async function authPatch(path: string): Promise<void> {
   const token = localStorage.getItem('cove_token')
-  await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     method: 'PATCH',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
+  handle401(res)
 }
 
 async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
@@ -387,6 +399,7 @@ async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
   })
+  handle401(res)
   if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
   return res.json() as Promise<T>
 }

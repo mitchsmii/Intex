@@ -32,7 +32,6 @@ function Navbar() {
         </div>
 
         <div className="navbar-links">
-          <span className="navbar-desktop-only"><ThemeToggle /></span>
           <Link to="/login" className="navbar-signin navbar-desktop-link">Sign In</Link>
 
           <button

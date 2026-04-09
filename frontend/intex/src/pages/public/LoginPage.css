@@ -238,6 +238,73 @@
   color: var(--text-secondary);
 }
 
+/* ---- Mode tabs ---- */
+
+.login-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border-light);
+  margin-bottom: var(--space-xl);
+  gap: 0;
+}
+
+.login-tab {
+  flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+
+.login-tab:hover {
+  color: var(--text-primary);
+}
+
+.login-tab--active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* ---- Inline name fields (register) ---- */
+
+.login-inline-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+/* ---- Field hint text ---- */
+
+.login-field__hint {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: var(--space-xs);
+}
+
+/* ---- Inline link button ---- */
+
+.login-card__link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-link);
+  font-size: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  text-decoration: underline;
+}
+
+.login-card__link-btn:hover {
+  color: var(--color-primary);
+}
+
 /* ---- Full-page loading state ---- */
 
 .login-loading {
