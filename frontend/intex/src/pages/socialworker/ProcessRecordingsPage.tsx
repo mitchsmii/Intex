@@ -97,6 +97,7 @@ function ProcessRecordingsPage() {
 
   const [filter, setFilter] = useState<RecordingFilter>('all')
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null)
+  const [modalRecording, setModalRecording] = useState<ProcessRecording | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -407,21 +408,27 @@ function ProcessRecordingsPage() {
                   <div className="pr-form-row">
                     <label className="pr-field">
                       <span>Emotional State Observed</span>
-                      <input
-                        type="text"
-                        placeholder="e.g. Anxious, withdrawn"
+                      <select
                         value={form.emotionalStateObserved}
                         onChange={(e) => updateField('emotionalStateObserved', e.target.value)}
-                      />
+                      >
+                        <option value="">Select…</option>
+                        {['Distressed', 'Crying', 'Aggressive', 'Sad', 'Withdrawn', 'Anxious', 'Fearful', 'Neutral', 'Flat', 'Calm', 'Stable', 'Content', 'Positive', 'Happy', 'Joyful'].map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
                     </label>
                     <label className="pr-field">
                       <span>Emotional State at End</span>
-                      <input
-                        type="text"
-                        placeholder="e.g. Calm, hopeful"
+                      <select
                         value={form.emotionalStateEnd}
                         onChange={(e) => updateField('emotionalStateEnd', e.target.value)}
-                      />
+                      >
+                        <option value="">Select…</option>
+                        {['Distressed', 'Crying', 'Aggressive', 'Sad', 'Withdrawn', 'Anxious', 'Fearful', 'Neutral', 'Flat', 'Calm', 'Stable', 'Content', 'Positive', 'Happy', 'Joyful'].map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
                     </label>
                   </div>
 
@@ -435,15 +442,33 @@ function ProcessRecordingsPage() {
                     />
                   </label>
 
-                  <label className="pr-field">
+                  <div className="pr-field">
                     <span>Interventions Applied</span>
-                    <textarea
-                      rows={3}
-                      placeholder="Techniques, exercises, referrals discussed..."
-                      value={form.interventionsApplied}
-                      onChange={(e) => updateField('interventionsApplied', e.target.value)}
-                    />
-                  </label>
+                    <div className="pr-interventions-grid">
+                      {['Counseling', 'Teaching', 'Caring', 'Healing', 'Legal Services', 'Medical referral', 'School enrollment', 'Family mediation', 'Crisis intervention', 'Spiritual support'].map((svc) => {
+                        const selected = form.interventionsApplied
+                          .split(',')
+                          .map((s) => s.trim())
+                          .filter(Boolean)
+                        const isChecked = selected.includes(svc)
+                        return (
+                          <label key={svc} className="pr-intervention-opt">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const next = e.target.checked
+                                  ? [...selected, svc]
+                                  : selected.filter((s) => s !== svc)
+                                updateField('interventionsApplied', next.join(', '))
+                              }}
+                            />
+                            <span>{svc}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
 
                   <label className="pr-field">
                     <span>Follow-Up Actions</span>
@@ -547,10 +572,7 @@ function ProcessRecordingsPage() {
                           <button
                             type="button"
                             className="pr-row"
-                            onClick={() =>
-                              setExpandedRowId((cur) => (cur === r.recordingId ? null : r.recordingId))
-                            }
-                            aria-expanded={isExpanded}
+                            onClick={() => setModalRecording(r)}
                           >
                             <div className="pr-row-date">{formatDate(r.sessionDate)}</div>
                             <div className="pr-row-type">
@@ -690,6 +712,69 @@ function ProcessRecordingsPage() {
           )}
         </section>
       </div>
+
+      {modalRecording && (() => {
+        const r = modalRecording
+        const fmtDate = (iso: string | null) =>
+          iso ? new Date(iso).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '—'
+        return (
+          <div className="pr-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalRecording(null) }}>
+            <div className="pr-modal">
+              <header className="pr-modal-header">
+                <div>
+                  <h2 className="pr-modal-title">Session Details</h2>
+                  <p className="pr-modal-meta">
+                    {fmtDate(r.sessionDate)}
+                    {r.sessionType && ` · ${r.sessionType}`}
+                    {r.socialWorker && ` · ${r.socialWorker}`}
+                    {r.sessionDurationMinutes != null && ` · ${r.sessionDurationMinutes} min`}
+                  </p>
+                </div>
+                <button type="button" className="pr-modal-close" onClick={() => setModalRecording(null)} aria-label="Close">×</button>
+              </header>
+              <div className="pr-modal-body">
+                {(r.emotionalStateObserved || r.emotionalStateEnd) && (
+                  <div className="pr-modal-section">
+                    <div className="pr-modal-label">Emotional State</div>
+                    <p>
+                      {r.emotionalStateObserved ?? '—'} → {r.emotionalStateEnd ?? '—'}
+                    </p>
+                  </div>
+                )}
+                {r.sessionNarrative && (
+                  <div className="pr-modal-section">
+                    <div className="pr-modal-label">Session Narrative</div>
+                    <p>{r.sessionNarrative}</p>
+                  </div>
+                )}
+                {r.interventionsApplied && (
+                  <div className="pr-modal-section">
+                    <div className="pr-modal-label">Interventions Applied</div>
+                    <p>{r.interventionsApplied}</p>
+                  </div>
+                )}
+                {r.followUpActions && (
+                  <div className="pr-modal-section">
+                    <div className="pr-modal-label">Follow-up Actions</div>
+                    <p>{r.followUpActions}</p>
+                  </div>
+                )}
+                <div className="pr-modal-section">
+                  <div className="pr-modal-label">Flags</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {r.progressNoted && <span className="pr-flag pr-flag--progress">P</span>}
+                    {r.concernsFlagged && <span className="pr-flag pr-flag--concern">C</span>}
+                    {r.referralMade && <span className="pr-flag pr-flag--referral">R</span>}
+                    {!r.progressNoted && !r.concernsFlagged && !r.referralMade && (
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>None</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

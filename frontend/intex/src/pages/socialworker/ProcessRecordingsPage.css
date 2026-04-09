@@ -303,7 +303,8 @@
 }
 
 .pr-field input,
-.pr-field textarea {
+.pr-field textarea,
+.pr-field select {
   font: inherit;
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border-light, #d1d5db);
@@ -314,7 +315,8 @@
 }
 
 .pr-field input:focus,
-.pr-field textarea:focus {
+.pr-field textarea:focus,
+.pr-field select:focus {
   outline: none;
   border-color: var(--cove-tidal);
 }
@@ -761,5 +763,72 @@
   background: white;
   font-size: 0.8rem;
   color: var(--cove-deep);
+  cursor: pointer;
+}
+
+/* ─── Process Recording Detail Modal ─────────────────────────────────── */
+.pr-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(44, 74, 82, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: var(--space-md);
+}
+.pr-modal {
+  background: white; border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); width: 100%; max-width: 640px;
+  max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
+}
+.pr-modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: var(--space-lg) var(--space-xl); border-bottom: 1px solid var(--border-light);
+  gap: var(--space-md);
+}
+.pr-modal-title {
+  font-family: var(--font-display); font-size: 1.15rem;
+  font-weight: 500; color: var(--cove-deep); margin: 0;
+}
+.pr-modal-meta { font-size: 0.8rem; color: var(--text-muted); margin: 4px 0 0; }
+.pr-modal-close {
+  background: none; border: none; font-size: 1.5rem;
+  color: var(--text-muted); cursor: pointer; line-height: 1; flex-shrink: 0;
+}
+.pr-modal-close:hover { color: var(--cove-deep); }
+.pr-modal-body {
+  flex: 1; overflow-y: auto; padding: var(--space-lg) var(--space-xl);
+  display: flex; flex-direction: column; gap: var(--space-md);
+}
+.pr-modal-label {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 4px;
+}
+.pr-modal-section p {
+  margin: 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;
+}
+
+/* ─── Interventions Applied checkbox grid ────────────────────────────── */
+.pr-interventions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-xs) var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--cove-seafoam, #eaf5f1);
+  border: 1px solid var(--cove-seaglass, #d6e8e2);
+  border-radius: var(--radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.pr-intervention-opt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.8rem;
+  color: var(--cove-deep);
+  cursor: pointer;
+  user-select: none;
+}
+
+.pr-intervention-opt input[type="checkbox"] {
+  accent-color: var(--cove-tidal);
   cursor: pointer;
 }

@@ -298,3 +298,109 @@
   .ap-actions { flex-direction: column; align-items: stretch; }
   .ap-action-btns { justify-content: flex-end; }
 }
+
+/* ─── Section toggle ─────────────────────────────────────────────────── */
+.ap-section-toggle {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-lg);
+}
+
+.ap-section-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  background: white;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.ap-section-btn:hover { background: var(--cove-seafoam); color: var(--cove-deep); }
+.ap-section-btn--active {
+  background: var(--cove-tidal);
+  color: white;
+  border-color: var(--cove-tidal);
+}
+
+.ap-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-warning);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.ap-section-btn--active .ap-badge {
+  background: white;
+  color: var(--cove-tidal);
+}
+
+/* ─── Conference request details ─────────────────────────────────────── */
+.ap-conf-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-page);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  margin: var(--space-sm) 0;
+  font-size: 0.85rem;
+}
+
+.ap-conf-row {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.ap-conf-label {
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 120px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Counter-propose form ───────────────────────────────────────────── */
+.ap-counter-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+  margin: var(--space-sm) 0;
+}
+
+.ap-counter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.ap-counter-field input,
+.ap-counter-field select {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.ap-btn--counter {
+  background: var(--cove-tidal);
+  color: white;
+}
+.ap-btn--counter:hover:not(:disabled) { background: var(--cove-deep); }
+.ap-btn--counter:disabled { opacity: 0.5; }

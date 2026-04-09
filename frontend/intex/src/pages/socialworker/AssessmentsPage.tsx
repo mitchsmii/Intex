@@ -8,6 +8,8 @@ import AssessmentForm from '../../components/socialworker/AssessmentForm'
 import type { Resident } from '../../types/Resident'
 import type { Assessment, Instrument } from '../../types/Assessment'
 import { severityBucket } from '../../utils/assessmentScoring'
+import AssessmentResultsModal from '../../components/socialworker/AssessmentResultsModal'
+import '../../components/socialworker/AssessmentResultsModal.css'
 import './AssessmentsPage.css'
 
 const INSTRUMENTS: Array<{ id: Instrument; name: string }> = [
@@ -45,6 +47,7 @@ function AssessmentsPage() {
   const [pickerOpen, setPickerOpen] = useState(false)
   const [filter, setFilter] = useState<FilterId>('All')
   const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [modalAssessment, setModalAssessment] = useState<Assessment | null>(null)
 
   useEffect(() => {
     fetchResidents()
@@ -301,10 +304,7 @@ function AssessmentsPage() {
                                 <button
                                   type="button"
                                   className="ap-row"
-                                  onClick={() =>
-                                    setExpandedId((cur) => (cur === a.assessmentId ? null : a.assessmentId))
-                                  }
-                                  aria-expanded={isExpanded}
+                                  onClick={() => setModalAssessment(a)}
                                 >
                                   <div className="ap-row-date">{formatDate(a.administeredDate)}</div>
                                   <div className="ap-row-instrument">
@@ -356,6 +356,13 @@ function AssessmentsPage() {
           )}
         </section>
       </div>
+
+      {modalAssessment && (
+        <AssessmentResultsModal
+          assessment={modalAssessment}
+          onClose={() => setModalAssessment(null)}
+        />
+      )}
     </div>
   )
 }

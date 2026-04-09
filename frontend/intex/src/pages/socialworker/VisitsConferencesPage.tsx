@@ -80,6 +80,7 @@ function VisitsConferencesPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
 
   const [expandedRowId, setExpandedRowId] = useState<number | null>(null)
+  const [modalVisit, setModalVisit] = useState<HomeVisitation | null>(null)
   const [page, setPage] = useState(1)
   const pageSize = 10
 
@@ -278,21 +279,27 @@ function VisitsConferencesPage() {
                       <div className="vc-form-row">
                         <label className="vc-field">
                           <span>Location Visited</span>
-                          <input
-                            type="text"
-                            placeholder="e.g. Family residence, school"
+                          <select
                             value={form.locationVisited}
                             onChange={(e) => updateField('locationVisited', e.target.value)}
-                          />
+                          >
+                            <option value="">Select…</option>
+                            {['Family residence', 'School', 'Safehouse office', 'Barangay hall', 'Hospital / clinic', 'Church', 'Workplace', 'Other'].map((l) => (
+                              <option key={l} value={l}>{l}</option>
+                            ))}
+                          </select>
                         </label>
                         <label className="vc-field">
                           <span>Family Members Present</span>
-                          <input
-                            type="text"
-                            placeholder="e.g. Mother, sibling"
+                          <select
                             value={form.familyMembersPresent}
                             onChange={(e) => updateField('familyMembersPresent', e.target.value)}
-                          />
+                          >
+                            <option value="">Select…</option>
+                            {['Mother', 'Father', 'Both parents', 'Sibling(s)', 'Grandparent(s)', 'Aunt / Uncle', 'Guardian', 'Multiple family members', 'None present'].map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                            ))}
+                          </select>
                         </label>
                         <label className="vc-field">
                           <span>Family Cooperation</span>
@@ -309,12 +316,15 @@ function VisitsConferencesPage() {
 
                       <label className="vc-field">
                         <span>Purpose</span>
-                        <input
-                          type="text"
-                          placeholder="Why this visit"
+                        <select
                           value={form.purpose}
                           onChange={(e) => updateField('purpose', e.target.value)}
-                        />
+                        >
+                          <option value="">Select…</option>
+                          {['Routine follow-up', 'Safety assessment', 'Reintegration assessment', 'Family reunification', 'Post-placement monitoring', 'Court-ordered visit', 'Crisis response', 'Initial home assessment', 'Other'].map((p) => (
+                            <option key={p} value={p}>{p}</option>
+                          ))}
+                        </select>
                       </label>
 
                       <label className="vc-field">
@@ -360,12 +370,15 @@ function VisitsConferencesPage() {
 
                       <label className="vc-field">
                         <span>Visit Outcome</span>
-                        <input
-                          type="text"
-                          placeholder="e.g. Stable, Concerning, Action required"
+                        <select
                           value={form.visitOutcome}
                           onChange={(e) => updateField('visitOutcome', e.target.value)}
-                        />
+                        >
+                          <option value="">Select…</option>
+                          {['Stable', 'Improving', 'Concerning', 'Critical — action required', 'Reintegration ready', 'Incomplete — reschedule needed'].map((o) => (
+                            <option key={o} value={o}>{o}</option>
+                          ))}
+                        </select>
                       </label>
 
                       {submitError && <div className="vc-form-error">{submitError}</div>}
@@ -410,7 +423,7 @@ function VisitsConferencesPage() {
                                   type="button"
                                   className="vc-row"
                                   onClick={() =>
-                                    setExpandedRowId((cur) => (cur === v.visitationId ? null : v.visitationId))
+                                    setModalVisit(v)
                                   }
                                   aria-expanded={isExpanded}
                                 >
@@ -533,6 +546,86 @@ function VisitsConferencesPage() {
           )}
         </section>
       </div>
+
+      {modalVisit && (() => {
+        const v = modalVisit
+        const fmtDate = (iso: string | null) =>
+          iso ? new Date(iso).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '—'
+        return (
+          <div className="vc-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalVisit(null) }}>
+            <div className="vc-modal">
+              <header className="vc-modal-header">
+                <div>
+                  <h2 className="vc-modal-title">Home Visit Details</h2>
+                  <p className="vc-modal-meta">
+                    {fmtDate(v.visitDate)}
+                    {v.visitType && ` · ${v.visitType}`}
+                    {v.socialWorker && ` · ${v.socialWorker}`}
+                  </p>
+                </div>
+                <button type="button" className="vc-modal-close" onClick={() => setModalVisit(null)} aria-label="Close">×</button>
+              </header>
+              <div className="vc-modal-body">
+                {v.locationVisited && (
+                  <div className="vc-modal-section">
+                    <div className="vc-modal-label">Location</div>
+                    <p>{v.locationVisited}</p>
+                  </div>
+                )}
+                {v.purpose && (
+                  <div className="vc-modal-section">
+                    <div className="vc-modal-label">Purpose</div>
+                    <p>{v.purpose}</p>
+                  </div>
+                )}
+                {v.familyMembersPresent && (
+                  <div className="vc-modal-section">
+                    <div className="vc-modal-label">Family Members Present</div>
+                    <p>{v.familyMembersPresent}</p>
+                  </div>
+                )}
+                {v.familyCooperationLevel && (
+                  <div className="vc-modal-section">
+                    <div className="vc-modal-label">Family Cooperation Level</div>
+                    <p>{v.familyCooperationLevel}</p>
+                  </div>
+                )}
+                {v.observations && (
+                  <div className="vc-modal-section">
+                    <div className="vc-modal-label">Observations</div>
+                    <p>{v.observations}</p>
+                  </div>
+                )}
+                {v.visitOutcome && (
+                  <div className="vc-modal-section">
+                    <div className="vc-modal-label">Visit Outcome</div>
+                    <p>{v.visitOutcome}</p>
+                  </div>
+                )}
+                {v.followUpNotes && (
+                  <div className="vc-modal-section">
+                    <div className="vc-modal-label">Follow-up Notes</div>
+                    <p>{v.followUpNotes}</p>
+                  </div>
+                )}
+                <div className="vc-modal-section">
+                  <div className="vc-modal-label">Flags</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <span style={{ fontSize: '0.85rem', color: v.safetyConcernsNoted ? 'var(--color-error)' : 'var(--color-success)', fontWeight: 600 }}>
+                      {v.safetyConcernsNoted ? 'Safety concerns noted' : 'No safety concerns'}
+                    </span>
+                    {v.followUpNeeded && (
+                      <span style={{ fontSize: '0.85rem', color: 'var(--color-warning)', fontWeight: 600 }}>
+                        · Follow-up needed
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

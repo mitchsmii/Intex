@@ -378,6 +378,22 @@ async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
 
 // ── API calls ──────────────────────────────────────────────────────────────
 
+export interface CaseConferenceRequest {
+  requestId: number
+  residentIds: string // JSON array of ints
+  requestedBy: string | null
+  requestedDate: string | null
+  requestedTime: string | null
+  agenda: string // JSON array of { residentId, notes }
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Counter-Proposed' | 'Accepted'
+  adminNotes: string | null
+  counterDate: string | null
+  counterTime: string | null
+  reviewedBy: string | null
+  reviewedAt: string | null
+  submittedAt: string
+}
+
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
   getResidents:               () => authGet<Resident[]>('/api/residents'),
@@ -447,4 +463,19 @@ export const api = {
   // Update supporter profile
   updateSupporter:            (id: number, body: Partial<{ firstName: string; lastName: string; displayName: string; email: string; phone: string }>) =>
     authPatchWithBody<Supporter>(`/api/supporters/${id}`, body),
+
+  // Case conference requests
+  getCaseConferenceRequests:     (status?: string) =>
+    authGet<CaseConferenceRequest[]>(`/api/caseconferencerequests${status ? `?status=${status}` : ''}`),
+  getPendingConferenceCount:     () => authGet<number>('/api/caseconferencerequests/pending-count'),
+  submitCaseConferenceRequest:   (body: { residentIds: number[]; requestedDate: string; requestedTime: string; agenda: { residentId: number; notes: string }[] }) =>
+    authPost<CaseConferenceRequest>('/api/caseconferencerequests', body),
+  approveCaseConferenceRequest:  (id: number, notes?: string) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/approve`, { notes }),
+  rejectCaseConferenceRequest:   (id: number, notes?: string) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/reject`, { notes }),
+  counterProposeConference:      (id: number, body: { counterDate: string; counterTime: string; notes?: string }) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/counter-propose`, body),
+  acceptCaseConferenceRequest:   (id: number) =>
+    authPatchWithBody<CaseConferenceRequest>(`/api/caseconferencerequests/${id}/accept`, {}),
 }
