@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import './DonateNowPage.css'
 
 // Goal is stored in USD; all display converts from USD
-const GOAL_USD = 100_000
+const GOAL_USD = 1_000_000
 
 // Preset tiers in USD — converted to selected currency for display
 const PRESET_AMOUNTS_USD = [25, 55, 100, 250, 1000]
@@ -213,7 +213,7 @@ export default function DonateNowPage() {
             </div>
             {currency.code !== 'USD' && (
               <div className="progress-note">
-                Amounts shown in {currency.label} ({currency.code}) · Goal is $100,000 USD
+                Amounts shown in {currency.label} ({currency.code}) · Goal is $1,000,000 USD
               </div>
             )}
           </div>
