@@ -73,6 +73,10 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             .Property(a => a.ChecklistId)
             .ValueGeneratedOnAdd();
 
+        modelBuilder.Entity<CaseConferenceRequest>()
+            .Property(c => c.RequestId)
+            .ValueGeneratedOnAdd();
+
         modelBuilder.Entity<AdmissionChecklist>()
             .HasIndex(a => a.ResidentId)
             .HasDatabaseName("ix_admission_checklists_resident_id");
