@@ -71,6 +71,7 @@ function ResidentDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [journeyCluster, setJourneyCluster] = useState<{ clusterId: number; clusterName: string } | null>(null)
+  const [readinessScore, setReadinessScore] = useState<number | null>(null)
 
   // Admin-only state
   const [showEdit, setShowEdit] = useState(false)
@@ -128,7 +129,14 @@ function ResidentDetailPage() {
           })
         }
       })
-      .catch(() => { /* no cached prediction yet */ })
+      .catch(() => {})
+
+    api.getMlPredictions('reintegration-readiness')
+      .then((preds) => {
+        const mine = preds.find((p) => p.entityId === residentId)
+        if (mine && !cancelled) setReadinessScore(mine.probability)
+      })
+      .catch(() => {})
 
     return () => { cancelled = true }
   }, [residentId])
@@ -587,6 +595,27 @@ function ResidentDetailPage() {
                     <span className={`rd-journey-chip rd-journey-chip--${journeyCluster.clusterName.includes('Onboarding') ? 'onboarding' : journeyCluster.clusterName.includes('Active') ? 'active' : 'developing'}`}>
                       {journeyCluster.clusterName}
                     </span>
+                  </dd>
+                </>
+              )}
+              {readinessScore != null && (
+                <>
+                  <dt>Reintegration Readiness</dt>
+                  <dd>
+                    <div className="rd-readiness-bar-wrap">
+                      <div className="rd-readiness-bar">
+                        <div
+                          className={`rd-readiness-fill ${
+                            readinessScore >= 0.7 ? 'rd-readiness-fill--good'
+                              : readinessScore >= 0.5 ? 'rd-readiness-fill--mid'
+                              : readinessScore >= 0.3 ? 'rd-readiness-fill--building'
+                              : 'rd-readiness-fill--low'
+                          }`}
+                          style={{ width: `${Math.round(readinessScore * 100)}%` }}
+                        />
+                      </div>
+                      <span className="rd-readiness-label">{Math.round(readinessScore * 100)}/100</span>
+                    </div>
                   </dd>
                 </>
               )}

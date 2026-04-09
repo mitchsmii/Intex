@@ -622,6 +622,35 @@
   color: #383d41;
 }
 
+/* ---------- Readiness bar ---------- */
+.rd-readiness-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.rd-readiness-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--cove-sand);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.rd-readiness-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+.rd-readiness-fill--good { background: #28a745; }
+.rd-readiness-fill--mid { background: #5e9ea0; }
+.rd-readiness-fill--building { background: #ffc107; }
+.rd-readiness-fill--low { background: #dc3545; }
+.rd-readiness-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--cove-muted);
+  white-space: nowrap;
+}
+
 /* ---------- Score bars ---------- */
 .rd-scores {
   display: flex;
