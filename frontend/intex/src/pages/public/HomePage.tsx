@@ -64,6 +64,23 @@ function HomePage() {
         </div>
       </section>
 
+      {/* ── Holistic Needs ── */}
+      <section className="hp-holistic">
+        <div className="hp-holistic-inner">
+          <div className="hp-holistic-content">
+            <h2>Comprehensive Care for Whole-Person Healing</h2>
+            <p className="hp-holistic-intro">
+              True healing addresses every dimension of a person's life.
+              Our holistic approach meets survivors where they are and walks
+              with them every step of the way.
+            </p>
+          </div>
+          <div className="hp-holistic-img">
+            <img src={handsImg} alt="Hands reaching out in support" />
+          </div>
+        </div>
+      </section>
+
       {/* ── Four Pillars ── */}
       <section className="hp-pillars">
         <div className="hp-section-header">
@@ -80,23 +97,6 @@ function HomePage() {
               <p>{p.description}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ── Holistic Needs ── */}
-      <section className="hp-holistic">
-        <div className="hp-holistic-inner">
-          <div className="hp-holistic-img">
-            <img src={handsImg} alt="Hands reaching out in support" />
-          </div>
-          <div className="hp-holistic-content">
-            <h2>Comprehensive Care for Whole-Person Healing</h2>
-            <p className="hp-holistic-intro">
-              True healing addresses every dimension of a person's life.
-              Our holistic approach meets survivors where they are and walks
-              with them every step of the way.
-            </p>
-          </div>
         </div>
       </section>
 

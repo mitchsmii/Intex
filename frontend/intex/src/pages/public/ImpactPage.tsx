@@ -129,7 +129,7 @@ export default function ImpactPage() {
             <h1 className="ip-hero-title">See Your Impact</h1>
             <p className="ip-hero-sub">
               Every contribution moves lives forward. Here's a real-time look at
-              what the Lighthouse Sanctuary community has achieved together — and
+              what the Cove community has achieved together — and
               how far we still have to go.
             </p>
             <div className="ip-hero-actions ip-hero-actions-stack">
@@ -372,7 +372,7 @@ export default function ImpactPage() {
             <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
           </div>
           <p className="ip-cta-note">
-            Lighthouse Sanctuary · 501(c)(3) nonprofit · EIN: 81-3220618 · Tax-deductible to the full extent of the law.
+            Cove · 501(c)(3) nonprofit · EIN: 81-3220618 · Tax-deductible to the full extent of the law.
           </p>
         </div>
       </section>
