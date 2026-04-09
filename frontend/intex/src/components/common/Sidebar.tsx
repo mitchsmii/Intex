@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import logoImg from '../../assets/intex_logo.png'
+import logoImg from '../../assets/intex_logo.webp'
 import './Sidebar.css'
 
 export interface NavItem {
@@ -116,7 +116,7 @@ function Sidebar({ items }: SidebarProps) {
       {/* Desktop sidebar */}
       <aside className="sidebar">
         <NavLink to="/" className="sidebar-logo">
-          <img src={logoImg} alt="Cove" className="sidebar-logo-img" />
+          <img src={logoImg} alt="Cove" className="sidebar-logo-img" width="2816" height="1536" />
         </NavLink>
         <nav className="sidebar-nav">{navItems}</nav>
         <div className="sidebar-user">
@@ -128,7 +128,7 @@ function Sidebar({ items }: SidebarProps) {
       {/* Mobile top bar */}
       <header className="mobile-topbar">
         <NavLink to="/" className="mobile-topbar-logo" onClick={closeMenu}>
-          <img src={logoImg} alt="Cove" className="mobile-topbar-logo-img" />
+          <img src={logoImg} alt="Cove" className="mobile-topbar-logo-img" width="2816" height="1536" />
         </NavLink>
         <button
           className="mobile-hamburger"

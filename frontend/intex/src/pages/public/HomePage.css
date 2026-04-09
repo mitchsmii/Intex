@@ -1,14 +1,28 @@
 /* ─────── Hero ─────── */
 .hp-hero {
+  position: relative;
+  overflow: hidden;
   min-height: 88vh;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
   display: flex;
   align-items: center;
 }
 
+/* Real <img> element so the browser can paint it the moment bytes arrive
+   without waiting for React to apply a JS inline backgroundImage style.
+   Visually identical to the previous CSS-background approach. */
+.hp-hero-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 0;
+}
+
 .hp-hero-overlay {
+  position: relative;
+  z-index: 1;
   width: 100%;
   min-height: 88vh;
   background: linear-gradient(

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import logoImg from '../../assets/intex_logo.png'
+import logoImg from '../../assets/intex_logo.webp'
 import ThemeToggle from './ThemeToggle'
 import './Navbar.css'
 
@@ -24,7 +24,7 @@ function Navbar() {
       <div className="navbar-inner">
         <div className="navbar-left">
           <Link to="/" className="navbar-logo">
-            <img src={logoImg} alt="Cove" className="navbar-logo-img" />
+            <img src={logoImg} alt="Cove" className="navbar-logo-img" width="2816" height="1536" />
           </Link>
           <Link to="/" className="navbar-home navbar-desktop-link">Home</Link>
           <Link to="/impact" className="navbar-impact navbar-desktop-link">Our Impact</Link>

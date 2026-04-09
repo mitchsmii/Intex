@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
-import shelterImg from '../../assets/shelter.webp'
-import handsImg from '../../assets/hands.png'
-import girlsJumpingFieldImg from '../../assets/girls-jumping-field.png'
+// Shelter is served from public/ so the <link rel="preload"> in index.html
+// can reference the same stable URL (/shelter.webp) before React renders.
+const shelterImg = '/shelter.webp'
+import handsImg from '../../assets/hands.webp'
+import girlsJumpingFieldImg from '../../assets/girls-jumping-field.webp'
 import './HomePage.css'
 
 const pillars = [
@@ -45,11 +47,18 @@ function HomePage() {
   return (
     <>
       {/* ── Hero ── */}
-      <section
-        className="hp-hero"
-        style={{ backgroundImage: `url(${shelterImg})` }}
-        aria-label="Hero"
-      >
+      <section className="hp-hero" aria-label="Hero">
+        {/* Real <img> so the browser can paint it as soon as bytes arrive,
+            matching the /shelter.webp preload hint in index.html */}
+        <img
+          src={shelterImg}
+          alt=""
+          aria-hidden="true"
+          className="hp-hero-bg-img"
+          fetchPriority="high"
+          width="2816"
+          height="1536"
+        />
         <div className="hp-hero-overlay">
           <div className="hp-hero-content">
             <p className="hp-hero-eyebrow">Safety · Healing · Justice · Empowerment</p>
@@ -76,7 +85,7 @@ function HomePage() {
             </p>
           </div>
           <div className="hp-holistic-img">
-            <img src={handsImg} alt="Hands reaching out in support" />
+            <img src={handsImg} alt="Hands reaching out in support" fetchPriority="high" width="2650" height="1450" />
           </div>
         </div>
       </section>
@@ -104,7 +113,7 @@ function HomePage() {
       <section className="hp-impact-banner">
         <div className="hp-impact-inner">
           <div className="hp-impact-image">
-            <img src={girlsJumpingFieldImg} alt="Girls jumping in a field" />
+            <img src={girlsJumpingFieldImg} alt="Girls jumping in a field" loading="lazy" />
           </div>
           <div className="hp-impact-content">
             <div className="hp-impact-text">
