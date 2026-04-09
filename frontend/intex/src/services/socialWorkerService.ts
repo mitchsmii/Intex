@@ -63,7 +63,14 @@ export async function createProcessRecording(
     },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error(`Failed to create process recording: ${res.status}`);
+  if (!res.ok) {
+    let message = `Failed to create process recording: ${res.status}`;
+    try {
+      const body = await res.json();
+      if (body?.error) message = `${body.error}${body.inner ? ' — ' + body.inner : ''}`;
+    } catch { /* ignore */ }
+    throw new Error(message);
+  }
   return res.json();
 }
 
@@ -261,20 +268,4 @@ export async function fetchActionItems(
         residentCode: r.internalCode ?? `#${r.residentId}`,
         reason: "high-risk",
         severity: "high",
-        detail: "Flagged as high risk — review case",
-      });
-    }
-  });
-  // Mock a couple of overdue visits / plan reviews from the first few residents
-  residents.slice(0, 2).forEach((r, i) => {
-    items.push({
-      residentId: r.residentId,
-      residentCode: r.internalCode ?? `#${r.residentId}`,
-      reason: i === 0 ? "overdue-visit" : "plan-review",
-      severity: "medium",
-      detail:
-        i === 0 ? "No home visit in 30+ days" : "Intervention plan due for review",
-    });
-  });
-  return items;
-}
+        detail: "Flagged as high risk — review 

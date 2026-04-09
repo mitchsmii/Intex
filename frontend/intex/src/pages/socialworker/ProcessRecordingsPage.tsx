@@ -41,8 +41,9 @@ const emptyForm = (): FormState => ({
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  const d = new Date(iso)
-  return d.toLocaleDateString(undefined, {
+  // Append T00:00:00 to date-only strings so they parse as local time, not UTC
+  const safe = iso.includes('T') ? iso : `${iso}T00:00:00`
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -96,7 +97,8 @@ function ProcessRecordingsPage() {
   const [draftRestored, setDraftRestored] = useState(false)
 
   const [filter, setFilter] = useState<RecordingFilter>('all')
-  const [expandedRowId, setExpandedRowId] = useState<number | null>(null)
+  const [expandedRowId] = useState<number | null>(null)
+  const [modalRecording, setModalRecording] = useState<ProcessRecording | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
 
@@ -234,13 +236,16 @@ function ProcessRecordingsPage() {
         concernsFlagged: form.concernsFlagged,
         referralMade: form.referralMade,
       }
-      const created = await createProcessRecording(payload)
-      setRecordings((prev) => [created, ...prev])
+      await createProcessRecording(payload)
+      // Re-fetch from server so shape matches GET projection and sort is correct
+      const fresh = await fetchProcessRecordings({ residentId: selectedId })
+      setRecordings(fresh)
       if (selectedId != null) {
         localStorage.removeItem(draftKey(selectedId))
       }
       setDraftRestored(false)
       setShowForm(false)
+      setPage(1)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to save recording')
     } finally {
@@ -407,21 +412,27 @@ function ProcessRecordingsPage() {
                   <div className="pr-form-row">
                     <label className="pr-field">
                       <span>Emotional State Observed</span>
-                      <input
-                        type="text"
-                        placeholder="e.g. Anxious, withdrawn"
+                      <select
                         value={form.emotionalStateObserved}
                         onChange={(e) => updateField('emotionalStateObserved', e.target.value)}
-                      />
+                      >
+                        <option value="">Select…</option>
+                        {['Distressed', 'Crying', 'Aggressive', 'Sad', 'Withdrawn', 'Anxious', 'Fearful', 'Neutral', 'Flat', 'Calm', 'Stable', 'Content', 'Positive', 'Happy', 'Joyful'].map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
                     </label>
                     <label className="pr-field">
                       <span>Emotional State at End</span>
-                      <input
-                        type="text"
-                        placeholder="e.g. Calm, hopeful"
+                      <select
                         value={form.emotionalStateEnd}
                         onChange={(e) => updateField('emotionalStateEnd', e.target.value)}
-                      />
+                      >
+                        <option value="">Select…</option>
+                        {['Distressed', 'Crying', 'Aggressive', 'Sad', 'Withdrawn', 'Anxious', 'Fearful', 'Neutral', 'Flat', 'Calm', 'Stable', 'Content', 'Positive', 'Happy', 'Joyful'].map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
                     </label>
                   </div>
 
@@ -435,15 +446,33 @@ function ProcessRecordingsPage() {
                     />
                   </label>
 
-                  <label className="pr-field">
+                  <div className="pr-field">
                     <span>Interventions Applied</span>
-                    <textarea
-                      rows={3}
-                      placeholder="Techniques, exercises, referrals discussed..."
-                      value={form.interventionsApplied}
-                      onChange={(e) => updateField('interventionsApplied', e.target.value)}
-                    />
-                  </label>
+                    <div className="pr-interventions-grid">
+                      {['Counseling', 'Teaching', 'Caring', 'Healing', 'Legal Services', 'Medical referral', 'School enrollment', 'Family mediation', 'Crisis intervention', 'Spiritual support'].map((svc) => {
+                        const selected = form.interventionsApplied
+                          .split(',')
+                          .map((s) => s.trim())
+                          .filter(Boolean)
+                        const isChecked = selected.includes(svc)
+                        return (
+                          <label key={svc} className="pr-intervention-opt">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                const next = e.target.checked
+                                  ? [...selected, svc]
+                                  : selected.filter((s) => s !== svc)
+                                updateField('interventionsApplied', next.join(', '))
+                              }}
+                            />
+                            <span>{svc}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
 
                   <label className="pr-field">
                     <span>Follow-Up Actions</span>
@@ -547,10 +576,7 @@ function ProcessRecordingsPage() {
                           <button
                             type="button"
                             className="pr-row"
-                            onClick={() =>
-                              setExpandedRowId((cur) => (cur === r.recordingId ? null : r.recordingId))
-                            }
-                            aria-expanded={isExpanded}
+                            onClick={() => setModalRecording(r)}
                           >
                             <div className="pr-row-date">{formatDate(r.sessionDate)}</div>
                             <div className="pr-row-type">
@@ -628,70 +654,4 @@ function ProcessRecordingsPage() {
                 {filteredRecordings.length > 0 && (
                 <div className="pr-pagination">
                   <div className="pr-pagination-info">
-                    Showing {(safePage - 1) * pageSize + 1}–
-                    {Math.min(safePage * pageSize, filteredRecordings.length)} of{' '}
-                    {filteredRecordings.length}
-                  </div>
-                  <div className="pr-pagination-controls">
-                    <button
-                      type="button"
-                      className="pr-page-btn"
-                      onClick={() => setPage(1)}
-                      disabled={safePage === 1}
-                    >
-                      « First
-                    </button>
-                    <button
-                      type="button"
-                      className="pr-page-btn"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={safePage === 1}
-                    >
-                      ‹ Prev
-                    </button>
-                    <span className="pr-page-current">
-                      Page {safePage} of {totalPages}
-                    </span>
-                    <button
-                      type="button"
-                      className="pr-page-btn"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={safePage === totalPages}
-                    >
-                      Next ›
-                    </button>
-                    <button
-                      type="button"
-                      className="pr-page-btn"
-                      onClick={() => setPage(totalPages)}
-                      disabled={safePage === totalPages}
-                    >
-                      Last »
-                    </button>
-                    <select
-                      className="pr-page-size"
-                      value={pageSize}
-                      onChange={(e) => setPageSize(Number(e.target.value))}
-                    >
-                      {[5, 10, 25, 50].map((n) => (
-                        <option key={n} value={n}>
-                          {n} / page
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                )}
-                </>
-              )}
-            </>
-          ) : (
-            <p className="pr-empty">Select a resident from the left to view their recordings.</p>
-          )}
-        </section>
-      </div>
-    </div>
-  )
-}
-
-export default ProcessRecordingsPage
+                    Showing {(safePage - 1) *

@@ -22,6 +22,7 @@ public class SupportersController : ControllerBase
 
     // Find supporter by email, or create one if they don't exist yet.
     // Returns the supporter record (existing or newly created).
+    [AllowAnonymous]
     [HttpPost("upsert")]
     public async Task<IActionResult> Upsert([FromBody] UpsertSupporterDto dto)
     {
@@ -51,6 +52,7 @@ public class SupportersController : ControllerBase
         return Ok(supporter);
     }
 
+    [AllowAnonymous]
     [HttpGet("lookup")]
     public async Task<IActionResult> Lookup(
         [FromQuery] string firstName,
@@ -89,7 +91,7 @@ public class SupportersController : ControllerBase
     }
 
     [HttpPatch("{id:int}")]
-    [Authorize]
+    [Authorize(Roles = "Admin,Donor")]
     public async Task<IActionResult> UpdatePartial(int id, [FromBody] UpdateSupporterDto dto)
     {
         var supporter = await _context.Supporters.FindAsync(id);
@@ -112,8 +114,4 @@ public class SupportersController : ControllerBase
         var supporter = await _context.Supporters.FindAsync(id);
         if (supporter == null) return NotFound();
         _context.Supporters.Remove(supporter);
-        await _context.SaveChangesAsync();
-        return NoContent();
-    }
-}
-
+        await _con

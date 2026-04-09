@@ -1,25 +1,27 @@
+<<<<<<< HEAD
 import { Link } from 'react-router-dom'
 import logoImg from '../../assets/intex_logo.png'
+=======
+import { useState, useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import logoImg from '../../assets/intex_logo.webp'
+import ThemeToggle from './ThemeToggle'
+>>>>>>> c8d0a00dd3e3f94c41d98d639fe53be3f440995f
 import './Navbar.css'
 
 function Navbar() {
-  return (
-    <nav className="navbar">
-      <div className="navbar-inner">
-        <div className="navbar-left">
-          <Link to="/" className="navbar-logo">
-            <img src={logoImg} alt="Cove" className="navbar-logo-img" />
-          </Link>
-          <Link to="/" className="navbar-home">Home</Link>
-          <Link to="/impact" className="navbar-impact">Our Impact</Link>
-          <Link to="/donate" className="navbar-donate-link">Donate</Link>
-        </div>
-        <div className="navbar-links">
-          <Link to="/login" className="navbar-signin">Sign In</Link>
-        </div>
-      </div>
-    </nav>
-  )
-}
+  const [menuOpen, setMenuOpen] = useState(false)
+  const location = useLocation()
 
-export default Navbar
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [location.pathname])
+
+  // Prevent body scroll when menu is open
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [menuOpen])
+
+  return (

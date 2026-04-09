@@ -31,8 +31,71 @@
   align-items: start;
 }
 
+/* ── Mobile accordion wiring ── */
+
+/* Desktop: hide the inline panel, show the right-pane .vc-main */
+.vc-inline-panel {
+  display: none;
+}
+
+/* Chevron only visible on mobile */
+.vc-rail-chevron {
+  display: none;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Keep existing rail-item layout working */
+.vc-rail-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 @media (max-width: 800px) {
-  .vc-layout { grid-template-columns: 1fr; }
+  /* Stack the grid but collapse the right panel completely */
+  .vc-layout {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide the desktop right-pane — content is shown inline instead */
+  .vc-main {
+    display: none;
+  }
+
+  /* Rail takes full width; remove sticky/max-height so it expands freely */
+  .vc-rail {
+    position: static;
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  /* Show chevron on mobile */
+  .vc-rail-chevron {
+    display: inline;
+  }
+
+  /* Rail item is now a row with space-between for the chevron */
+  .vc-rail-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Show the inline panel when a resident is active */
+  .vc-inline-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-top: 2px solid var(--cove-tidal);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-sm);
+  }
 }
 
 /* ---------- Left rail ---------- */
@@ -684,119 +747,4 @@
   gap: var(--space-md);
   padding-top: var(--space-md);
   margin-top: var(--space-md);
-  border-top: 1px solid var(--border-light, #e5e7eb);
-  flex-wrap: wrap;
-}
-
-.vc-pagination-info {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.vc-pagination-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  flex-wrap: wrap;
-}
-
-.vc-page-btn {
-  padding: 4px var(--space-sm);
-  border: 1px solid var(--border-light, #d1d5db);
-  background: white;
-  color: var(--cove-deep);
-  border-radius: var(--radius-sm);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.vc-page-btn:hover:not(:disabled) {
-  background: var(--cove-seafoam);
-  border-color: var(--cove-tidal);
-}
-
-.vc-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.vc-page-current {
-  font-size: 0.8rem;
-  color: var(--cove-deep);
-  font-weight: 600;
-  padding: 0 var(--space-sm);
-}
-
-/* ---------- Conferences ---------- */
-.vc-conferences {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xl);
-}
-
-.vc-conf-section h3 {
-  margin: 0 0 var(--space-sm);
-  font-size: 1rem;
-  color: var(--cove-deep);
-}
-
-.vc-conf-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.vc-conf-card {
-  display: grid;
-  grid-template-columns: 130px 1fr;
-  gap: var(--space-md);
-  background: white;
-  border: 1px solid var(--border-light, #e5e7eb);
-  border-left: 3px solid var(--text-muted);
-  border-radius: var(--radius-md);
-  padding: var(--space-md) var(--space-lg);
-  box-shadow: var(--shadow-sm);
-  align-items: start;
-}
-
-.vc-conf-card--upcoming {
-  border-left-color: var(--cove-tidal);
-  background: var(--cove-seafoam);
-}
-
-.vc-conf-date {
-  font-weight: 700;
-  color: var(--cove-deep);
-  font-size: 0.9rem;
-}
-
-.vc-conf-body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.vc-conf-cat {
-  font-weight: 600;
-  color: var(--cove-deep);
-  font-size: 0.9rem;
-}
-
-.vc-conf-body p {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--text-primary);
-}
-
-.vc-conf-status {
-  align-self: flex-start;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  padding: 2px var(--space-sm);
-  border-radius: var(--radius-full);
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
-  margin-top: 4px;
-}
+  border-top: 1px solid 

@@ -401,41 +401,25 @@
   cursor: not-allowed;
 }
 
-/* SW email notification field */
-.wizard-sw-email {
-  margin-top: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
+@media (max-width: 480px) {
+  .wizard-modal {
+    max-height: 100vh;
+    border-radius: var(--radius-md);
+  }
 
-.wizard-sw-email-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
+  .wizard-header {
+    padding: var(--space-md);
+  }
 
-.wizard-sw-email-optional {
-  font-weight: 400;
-  text-transform: none;
-  color: var(--text-tertiary);
-}
+  .wizard-steps {
+    padding: var(--space-sm) var(--space-md);
+    gap: 0;
+  }
 
-.wizard-sw-email-input {
-  width: 100%;
-  padding: var(--space-sm) var(--space-md);
-  border: 1.5px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  background: var(--bg-card);
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-}
+  .wizard-step {
+    font-size: 0.72rem;
+  }
 
-.wizard-sw-email-input:focus {
-  outline: none;
-  border-color: var(--cove-tidal);
-}
+  /* Shrink connectors between steps */
+  .wizard-step + .wizard-step::before {
+    width: 1

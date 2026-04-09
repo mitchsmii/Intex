@@ -303,7 +303,8 @@
 }
 
 .pr-field input,
-.pr-field textarea {
+.pr-field textarea,
+.pr-field select {
   font: inherit;
   padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--border-light, #d1d5db);
@@ -314,7 +315,8 @@
 }
 
 .pr-field input:focus,
-.pr-field textarea:focus {
+.pr-field textarea:focus,
+.pr-field select:focus {
   outline: none;
   border-color: var(--cove-tidal);
 }
@@ -726,40 +728,4 @@
 }
 
 .pr-page-btn {
-  padding: 4px var(--space-sm);
-  border: 1px solid var(--border-light, #d1d5db);
-  background: white;
-  color: var(--cove-deep);
-  border-radius: var(--radius-sm);
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.pr-page-btn:hover:not(:disabled) {
-  background: var(--cove-seafoam);
-  border-color: var(--cove-tidal);
-}
-
-.pr-page-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.pr-page-current {
-  font-size: 0.8rem;
-  color: var(--cove-deep);
-  font-weight: 600;
-  padding: 0 var(--space-sm);
-}
-
-.pr-page-size {
-  margin-left: var(--space-sm);
-  padding: 4px var(--space-sm);
-  border: 1px solid var(--border-light, #d1d5db);
-  border-radius: var(--radius-sm);
-  background: white;
-  font-size: 0.8rem;
-  color: var(--cove-deep);
-  cursor: pointer;
-}
+  padd

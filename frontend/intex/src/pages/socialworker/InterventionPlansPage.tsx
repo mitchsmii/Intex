@@ -60,7 +60,8 @@ const NOT_IN_FACILITY_ITEMS = [
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -81,6 +82,7 @@ function InterventionPlansPage() {
   const [plans, setPlans] = useState<InterventionPlan[]>([])
   const [knownServices, setKnownServices] = useState<string[]>([])
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [modalPlan, setModalPlan] = useState<InterventionPlan | null>(null)
   const [filter, setFilter] = useState<StatusFilter>('All')
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -364,14 +366,6 @@ function InterventionPlansPage() {
                             onChange={(e) => updateField('targetDate', e.target.value)}
                           />
                         </label>
-                        <label className="ip-field">
-                          <span>Case Conference Date</span>
-                          <input
-                            type="date"
-                            value={form.caseConferenceDate}
-                            onChange={(e) => updateField('caseConferenceDate', e.target.value)}
-                          />
-                        </label>
                       </div>
 
                       <label className="ip-field">
@@ -476,7 +470,7 @@ function InterventionPlansPage() {
                               key={p.planId}
                               className={`ip-row-wrap${overdue ? ' ip-row-wrap--overdue' : ''}`}
                             >
-                              <div className="ip-row">
+                              <div className="ip-row" onClick={() => setModalPlan(p)} style={{ cursor: 'pointer' }}>
                                 <div className="ip-row-cat">
                                   <span className="ip-plan-cat">{p.planCategory ?? 'Plan'}</span>
                                 </div>
@@ -496,7 +490,7 @@ function InterventionPlansPage() {
                                     <span className="ip-row-muted">—</span>
                                   )}
                                 </div>
-                                <div className="ip-row-status">
+                                <div className="ip-row-status" onClick={(e) => e.stopPropagation()}>
                                   <select
                                     className="ip-plan-status"
                                     value={p.status ?? ''}
@@ -635,22 +629,4 @@ function InterventionPlansPage() {
                               ? 'Submitting…'
                               : allChecked
                                 ? 'Submit for Approval'
-                                : `Submit ${checkedItems.size} item${checkedItems.size !== 1 ? 's' : ''} for Approval`}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
-            </>
-          ) : (
-            <p className="ip-empty">Select a resident from the left to view their intervention plans.</p>
-          )}
-        </section>
-      </div>
-    </div>
-  )
-}
-
-export default InterventionPlansPage
+                                : `Submit ${checkedItems.size} item${check

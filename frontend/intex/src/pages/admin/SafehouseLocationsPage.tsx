@@ -492,7 +492,6 @@ export default function SafehouseLocationsPage() {
               : 'Dominican Republic · VAW Rate Analysis · 2026 Projections'}
           </p>
         </div>
-        <span className="sl-demo-badge">Demo Data</span>
       </div>
 
       {/* Country toggle */}
@@ -1036,25 +1035,4 @@ export default function SafehouseLocationsPage() {
           {/* Data sources note */}
           {country === 'PH' ? (
             <p className="sl-data-note">
-              Population: PSA estimates (10 key regions updated Apr 2026; remainder PSA 2020 Census).
-              Income: PSA FIES 2021 average family income.
-              † VAWC rate (per 100k): NCR, CAR, I, II, III, IV-A, VI, VII, XI, and BARMM use
-              verified PNP/PSA figures. CAR (65.8) has the highest reporting rate; BARMM (4.3)
-              is likely underreported. Remaining 7 regions use mid-range estimates (~14–17/100k)
-              — replace with official PNP regional data when available.
-              Candidate scoring normalizes VAWC to CAR's rate as the regional maximum.
-            </p>
-          ) : (
-            <p className="sl-data-note">
-              VAW data: 2026 projections based on Fiscalía and INTEC research.
-              Existing facility list sourced from PROFAMILIA, government shelters, and NGO directories (Apr 2026).
-              Candidate scoring weights VAW rate (60%) and population (40%).
-            </p>
-          )}
-
-        </div>
-      </div>
-
-    </div>
-  )
-}
+              Population: PSA estimates (10 key region

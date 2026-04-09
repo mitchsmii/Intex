@@ -148,7 +148,8 @@ const QUICK_PROMPTS = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function engRate(post: Post): number {
@@ -948,39 +949,4 @@ export default function SocialMediaPage() {
     api.getSocialMediaPosts()
       .then(data => {
         const mapped = data.map(fromApi)
-        setPosts(mapped.length > 0 ? mapped : MOCK_POSTS)
-      })
-      .catch(() => setPosts(MOCK_POSTS))
-      .finally(() => setLoading(false))
-  }, [])
-
-  return (
-    <div className="sm-page">
-      <div className="sm-page-header">
-        <div>
-          <h1 className="sm-page-title">Social Media Hub</h1>
-          <p className="sm-page-sub">Track post performance, learn platform best practices, and get advice from Vanessa.</p>
-        </div>
-      </div>
-
-      <div className="sm-tabs">
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            className={`sm-tab${tab === t.key ? ' sm-tab-active' : ''}`}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="sm-tab-content">
-        {tab === 'analytics' && <AnalyticsTab posts={posts} loading={loading} />}
-        {tab === 'tips'      && <TipsTab />}
-        {tab === 'insights'  && <InsightsTab />}
-        {tab === 'vanessa'   && <VanessaTab />}
-      </div>
-    </div>
-  )
-}
+        setPosts(mapped.length > 0 ? mapped 

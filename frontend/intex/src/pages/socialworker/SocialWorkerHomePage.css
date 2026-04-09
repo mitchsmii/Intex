@@ -103,10 +103,4 @@
 .case-card-updated {
   margin: var(--space-xs) 0 0;
   font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.sw-home-error {
-  color: var(--color-error);
-  padding: var(--space-lg);
-}
+  

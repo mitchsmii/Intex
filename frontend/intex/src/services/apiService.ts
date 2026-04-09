@@ -287,6 +287,21 @@ export interface AdmissionChecklist {
   adminNotes: string | null
 }
 
+export interface Partner {
+  partnerId: number
+  partnerName: string | null
+  partnerType: string | null
+  roleType: string | null
+  contactName: string | null
+  email: string | null
+  phone: string | null
+  region: string | null
+  status: string | null
+  startDate: string | null
+  endDate: string | null
+  notes: string | null
+}
+
 export interface SocialMediaPost {
   postId: number
   platform: string
@@ -378,21 +393,46 @@ async function authPatchWithBody<T>(path: string, body: unknown): Promise<T> {
 
 // ── API calls ──────────────────────────────────────────────────────────────
 
+export interface CaseConferenceRequest {
+  requestId: number
+  residentIds: string // JSON array of ints
+  requestedBy: string | null
+  requestedDate: string | null
+  requestedTime: string | null
+  agenda: string // JSON array of { residentId, notes }
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Counter-Proposed' | 'Accepted'
+  adminNotes: string | null
+  counterDate: string | null
+  counterTime: string | null
+  reviewedBy: string | null
+  reviewedAt: string | null
+  submittedAt: string
+}
+
+export interface MlCachedPrediction {
+  entityId: number
+  isPositive: boolean
+  probability: number
+  computedAt: string
+}
+
 export const api = {
   getSafehouses:              () => get<Safehouse[]>('/api/safehouses'),
+  getSafehousesAdmin:         () => authGet<Safehouse[]>('/api/safehouses/admin'),
   getResidents:               () => authGet<Resident[]>('/api/residents'),
   getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
-  getSupporters:              () => get<Supporter[]>('/api/supporters'),
+  getPartners:                () => authGet<Partner[]>('/api/partners'),
+  getSupporters:              () => authGet<Supporter[]>('/api/supporters'),
   lookupSupporter:            (firstName: string, lastName: string, email: string) =>
     get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
   lookupSupporterByEmail:     (email: string) =>
     authGet<Supporter>(`/api/supporters/lookup-by-email?email=${encodeURIComponent(email)}`),
   chatWithVanessa:            (messages: { role: 'vanessa' | 'user'; content: string }[]) =>
     authPost<{ reply: string }>('/api/vanessa/chat', { messages }),
-  getDonations:               () => get<Donation[]>('/api/donations'),
-  getDonationsBySupporter:    (id: number) => get<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
-  getDonationsMonthlySummary: () => get<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
-  getTopSupporters:           (top = 5) => get<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
+  getDonations:               () => authGet<Donation[]>('/api/donations'),
+  getDonationsBySupporter:    (id: number) => authGet<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
+  getDonationsMonthlySummary: () => authGet<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
+  getTopSupporters:           (top = 5) => authGet<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
   getDonationsTotal:          () => get<{ total: number }>('/api/donations/total'),
   upsertSupporter:            (body: { firstName: string; lastName: string; email: string; phone?: string; displayName?: string }) =>
     post<Supporter>('/api/supporters/upsert', body),
@@ -404,7 +444,7 @@ export const api = {
   getIncidentReports:         () => authGet<IncidentReport[]>('/api/incidentreports'),
   getUpcomingPlans:           () => authGet<UpcomingPlan[]>('/api/interventionplans/upcoming'),
   getResidentPublicCounts:    () => get<{ totalServed: number; activeResidents: number; reintegrated: number }>('/api/residents/public-counts'),
-  getSocialWorkers:           () => get<SocialWorker[]>('/api/socialworkers'),
+  getSocialWorkers:           () => authGet<SocialWorker[]>('/api/socialworkers'),
   getInterventionPlans:       () => get<InterventionPlan[]>('/api/interventionplans'),
   getNextResidentCode:        () => authGet<{ internalCode: string; caseControlNo: string }>('/api/residents/next-code'),
   createResident:             (body: { age: number; safehouseId: number; assignedSocialWorker: string; swEmail?: string; riskLevel: string; caseStatus?: string }) =>
@@ -419,6 +459,7 @@ export const api = {
   getProcessRecordingsByResident: (id: number) => authGet<ProcessRecording[]>(`/api/processrecordings?residentId=${id}`),
   getHealthRecordsByResident:     (id: number) => authGet<HealthRecord[]>(`/api/healthwellbeingrecords?residentId=${id}`),
   getHomeVisitationsByResident:   (id: number) => authGet<HomeVisitation[]>(`/api/homevisitations?residentId=${id}`),
+  getEducationRecords:             () => authGet<EducationRecord[]>('/api/educationrecords'),
   getEducationRecordsByResident:  (id: number) => authGet<EducationRecord[]>(`/api/educationrecords?residentId=${id}`),
   getIncidentsByResident:         (id: number) => authGet<IncidentReport[]>(`/api/incidentreports?residentId=${id}`),
   getSocialMediaPosts:        () => get<SocialMediaPost[]>('/api/socialmediaposts'),
@@ -428,23 +469,4 @@ export const api = {
     authPatchWithBody<Resident>(`/api/residents/${id}`, body),
   getAdmissionChecklists:     (status?: string) =>
     authGet<AdmissionChecklist[]>(`/api/admissionchecklists${status ? `?status=${encodeURIComponent(status)}` : ''}`),
-  getPendingChecklistCount:   () => authGet<number>('/api/admissionchecklists/pending-count'),
-  submitAdmissionChecklist:   (body: { residentId: number; residentInFacility: boolean; checkedItems: string[] }) =>
-    authPost<AdmissionChecklist>('/api/admissionchecklists', body),
-  approveChecklist:           (id: number, notes?: string) =>
-    authPatchWithBody<AdmissionChecklist>(`/api/admissionchecklists/${id}/approve`, { notes: notes ?? null }),
-  rejectChecklist:            (id: number, notes?: string) =>
-    authPatchWithBody<AdmissionChecklist>(`/api/admissionchecklists/${id}/reject`, { notes: notes ?? null }),
-
-  // Admin-only: full safehouse data including capacity/occupancy
-  getAdminSafehouses:         () => authGet<Safehouse[]>('/api/safehouses/admin'),
-
-  // Delete operations (Admin only — require confirmed token)
-  deleteSupporter:            (id: number) => authDelete(`/api/supporters/${id}`),
-  deleteSocialWorker:         (id: number) => authDelete(`/api/socialworkers/${id}`),
-  deleteDonation:             (id: number) => authDelete(`/api/donations/${id}`),
-
-  // Update supporter profile
-  updateSupporter:            (id: number, body: Partial<{ firstName: string; lastName: string; displayName: string; email: string; phone: string }>) =>
-    authPatchWithBody<Supporter>(`/api/supporters/${id}`, body),
-}
+  getPendingChecklistCount:   () => authGet<number>('/api/admissionchecklists/pending-count

@@ -4,6 +4,7 @@ import {
   fetchResidents,
   fetchInterventionPlans,
 } from '../../services/socialWorkerService'
+import { api } from '../../services/apiService'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import type { Resident } from '../../types/Resident'
 import type { InterventionPlan } from '../../types/InterventionPlan'
@@ -16,7 +17,8 @@ type Conference = {
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -43,6 +45,17 @@ function CaseConferencesPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [expandedDate, setExpandedDate] = useState<string | null>(null)
+  const [modalConference, setModalConference] = useState<Conference | null>(null)
+  const [approvedRequests, setApprovedRequests] = useState<import('../../services/apiService').CaseConferenceRequest[]>([])
+
+  // ── Schedule request form state ──
+  const [showRequestForm, setShowRequestForm] = useState(false)
+  const [reqDate, setReqDate] = useState('')
+  const [reqTime, setReqTime] = useState('')
+  const [reqResidents, setReqResidents] = useState<Set<number>>(new Set())
+  const [reqAgenda, setReqAgenda] = useState<Record<number, string>>({})
+  const [reqSubmitting, setReqSubmitting] = useState(false)
+  const [reqError, setReqError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchResidents()
@@ -65,6 +78,9 @@ function CaseConferencesPage() {
       .then(setPlans)
       .catch((err) => setError(err.message))
       .finally(() => setDetailLoading(false))
+    api.getCaseConferenceRequests()
+      .then((reqs) => setApprovedRequests(reqs.filter((r) => r.status === 'Approved' || r.status === 'Accepted')))
+      .catch(() => {})
   }, [selectedId])
 
   const selectedResident = useMemo(
@@ -83,8 +99,22 @@ function CaseConferencesPage() {
       bucket.push(p)
       byDate.set(key, bucket)
     }
-    return Array.from(byDate.entries()).map(([date, plans]) => ({ date, plans }))
-  }, [plans])
+    const result = Array.from(byDate.entries()).map(([date, plans]) => ({ date, plans }))
+
+    // Merge approved conference requests only if the selected resident is included
+    const existingDates = new Set(result.map((c) => c.date))
+    for (const req of approvedRequests) {
+      const ids: number[] = (() => { try { return JSON.parse(req.residentIds) } catch { return [] } })()
+      if (selectedId != null && !ids.includes(selectedId)) continue
+      const date = (req.status === 'Accepted' && req.counterDate) ? req.counterDate : req.requestedDate
+      if (date && !existingDates.has(date)) {
+        result.push({ date, plans: [] })
+        existingDates.add(date)
+      }
+    }
+
+    return result
+  }, [plans, approvedRequests])
 
   const todayMs = new Date().setHours(0, 0, 0, 0)
 
@@ -191,9 +221,16 @@ function CaseConferencesPage() {
                 <button
                   type="button"
                   className="cc-schedule-btn"
-                  onClick={() => navigate('/socialworker/dashboard/intervention-plans')}
+                  onClick={() => {
+                    setReqDate('')
+                    setReqTime('')
+                    setReqResidents(new Set())
+                    setReqAgenda({})
+                    setReqError(null)
+                    setShowRequestForm(true)
+                  }}
                 >
-                  + Schedule Conference
+                  + Request Conference
                 </button>
               </div>
 
@@ -234,11 +271,7 @@ function CaseConferencesPage() {
                               conference={c}
                               upcoming
                               expanded={expandedDate === `up-${c.date}`}
-                              onToggle={() =>
-                                setExpandedDate((cur) =>
-                                  cur === `up-${c.date}` ? null : `up-${c.date}`,
-                                )
-                              }
+                              onToggle={() => setModalConference(c)}
                               onOpenPlans={() =>
                                 navigate('/socialworker/dashboard/intervention-plans')
                               }
@@ -271,11 +304,7 @@ function CaseConferencesPage() {
                               conference={c}
                               upcoming={false}
                               expanded={expandedDate === `past-${c.date}`}
-                              onToggle={() =>
-                                setExpandedDate((cur) =>
-                                  cur === `past-${c.date}` ? null : `past-${c.date}`,
-                                )
-                              }
+                              onToggle={() => setModalConference(c)}
                               onOpenPlans={() =>
                                 navigate('/socialworker/dashboard/intervention-plans')
                               }
@@ -293,83 +322,23 @@ function CaseConferencesPage() {
           )}
         </section>
       </div>
-    </div>
-  )
-}
 
-interface RowProps {
-  conference: Conference
-  upcoming: boolean
-  expanded: boolean
-  onToggle: () => void
-  onOpenPlans: () => void
-}
-
-function ConferenceRow({ conference, upcoming, expanded, onToggle, onOpenPlans }: RowProps) {
-  const categories = Array.from(
-    new Set(conference.plans.map((p) => p.planCategory).filter(Boolean) as string[]),
-  )
-  const days = upcoming ? daysFromToday(new Date(conference.date)) : null
-
-  return (
-    <li className={`cc-row-wrap${upcoming ? ' cc-row-wrap--upcoming' : ''}${expanded ? ' cc-row-wrap--open' : ''}`}>
-      <button
-        type="button"
-        className={`cc-row${upcoming ? '' : ' cc-row--past'}`}
-        onClick={onToggle}
-        aria-expanded={expanded}
-      >
-        <div className="cc-row-date">{formatDate(conference.date)}</div>
-        {upcoming && (
-          <div className="cc-row-when">
-            {days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : `In ${days} days`}
-          </div>
-        )}
-        <div className="cc-row-plans-count">
-          {conference.plans.length} {conference.plans.length === 1 ? 'plan' : 'plans'}
-        </div>
-        <div className="cc-row-cats">
-          {categories.length === 0 ? (
-            <span className="cc-row-muted">—</span>
-          ) : (
-            categories.map((c) => (
-              <span key={c} className="cc-cat-chip">{c}</span>
-            ))
-          )}
-        </div>
-      </button>
-
-      {expanded && (
-        <div className="cc-row-detail">
-          <div className="cc-detail-summary">
-            <strong>Conference on {formatDate(conference.date)}</strong> produced {conference.plans.length}{' '}
-            {conference.plans.length === 1 ? 'intervention plan' : 'intervention plans'}:
-          </div>
-          <ul className="cc-detail-plans">
-            {conference.plans.map((p) => (
-              <li key={p.planId} className="cc-detail-plan">
-                <div className="cc-detail-plan-head">
-                  <span className="cc-cat-chip">{p.planCategory ?? 'Plan'}</span>
-                  {p.status && <span className="cc-status-pill">{p.status}</span>}
+      {modalConference && (() => {
+        const c = modalConference
+        return (
+          <div className="cc-modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setModalConference(null) }}>
+            <div className="cc-modal">
+              <header className="cc-modal-header">
+                <div>
+                  <h2 className="cc-modal-title">Case Conference</h2>
+                  <p className="cc-modal-meta">
+                    {formatDate(c.date)} · {c.plans.length} {c.plans.length === 1 ? 'plan' : 'plans'}
+                  </p>
                 </div>
-                {p.planDescription && <p className="cc-detail-plan-desc">{p.planDescription}</p>}
-                {p.servicesProvided && (
-                  <div className="cc-detail-plan-services">
-                    <strong>Services:</strong> {p.servicesProvided}
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-          <div className="cc-detail-actions">
-            <button type="button" className="cc-detail-link" onClick={onOpenPlans}>
-              Open in Intervention Plans →
-            </button>
-          </div>
-        </div>
-      )}
-    </li>
-  )
-}
-
-export default CaseConferencesPage
+                <button type="button" className="cc-modal-close" onClick={() => setModalConference(null)} aria-label="Close">×</button>
+              </header>
+              <div className="cc-modal-body">
+                {c.plans.map((p) => (
+                  <div key={p.planId} className="cc-modal-plan">
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                      <sp

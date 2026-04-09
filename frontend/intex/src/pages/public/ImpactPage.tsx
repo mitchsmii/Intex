@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import type { SafehouseMonthlyMetric, Safehouse } from '../../services/apiService'
-import shelterImg    from '../../assets/shelter.webp'
-import kidsJumping   from '../../assets/kids-jumping.png'
-import kidsCircle    from '../../assets/kids-circle.png'
-import girlsHandsRaised from '../../assets/girls-hands-raised.png'
+// Served from public/ to match the preload hint in index.html
+const shelterImg = '/shelter.webp'
+import kidsJumping   from '../../assets/kids-jumping.webp'
+import kidsCircle    from '../../assets/kids-circle.webp'
+import girlsHandsRaised from '../../assets/girls-hands-raised.webp'
 import './ImpactPage.css'
 
 // ─── Animated counter ────────────────────────────────────────────────────────
@@ -122,14 +123,23 @@ export default function ImpactPage() {
     <div className="ip-page">
 
       {/* ── Hero ── */}
-      <section className="ip-hero" style={{ backgroundImage: `url(${shelterImg})` }}>
+      <section className="ip-hero">
+        <img
+          src={shelterImg}
+          alt=""
+          aria-hidden="true"
+          className="ip-hero-bg-img"
+          loading="lazy"
+          width="2816"
+          height="1536"
+        />
         <div className="ip-hero-overlay">
           <div className="ip-hero-inner">
             <p className="ip-hero-eyebrow">Transparency · Trust · Impact</p>
             <h1 className="ip-hero-title">See Your Impact</h1>
             <p className="ip-hero-sub">
               Every contribution moves lives forward. Here's a real-time look at
-              what the Lighthouse Sanctuary community has achieved together — and
+              what the Cove community has achieved together — and
               how far we still have to go.
             </p>
             <div className="ip-hero-actions ip-hero-actions-stack">
@@ -219,7 +229,7 @@ export default function ImpactPage() {
           </div>
           <div className="ip-photo-break-img-wrap">
             {/* Replace src with girls-together image when ready */}
-            <img src={kidsJumping} alt="Girls celebrating together" className="ip-photo-break-img" />
+            <img src={kidsJumping} alt="Girls celebrating together" className="ip-photo-break-img" loading="lazy" />
           </div>
         </div>
       </section>
@@ -320,11 +330,11 @@ export default function ImpactPage() {
 
             <div className="ip-fund-photos">
               <div className="ip-fund-photo-wrap ip-photo-wide">
-                <img src={kidsJumping} alt="Children jumping together in a field" className="ip-fund-photo" />
+                <img src={kidsJumping} alt="Children jumping together in a field" className="ip-fund-photo" loading="lazy" />
                 <div className="ip-photo-caption">Joy restored — children in our care</div>
               </div>
               <div className="ip-fund-photo-wrap ip-photo-narrow">
-                <img src={kidsCircle} alt="Children sitting together in a circle" className="ip-fund-photo" />
+                <img src={kidsCircle} alt="Children sitting together in a circle" className="ip-fund-photo" loading="lazy" />
                 <div className="ip-photo-caption">Community &amp; belonging</div>
               </div>
             </div>
@@ -354,7 +364,7 @@ export default function ImpactPage() {
 
       {/* ── Photo break 2 ── */}
       <section className="ip-photo-full">
-        <img src={girlsHandsRaised} alt="Girls with hands raised together in front of a Philippine church" className="ip-photo-full-img" />
+        <img src={girlsHandsRaised} alt="Girls with hands raised together in front of a Philippine church" className="ip-photo-full-img" loading="lazy" />
         <div className="ip-photo-full-overlay">
           <p className="ip-photo-full-quote">"Every child deserves safety, healing, and a future."</p>
         </div>
@@ -369,14 +379,4 @@ export default function ImpactPage() {
             for survivors of abuse and trafficking in the Philippines.
           </p>
           <div className="ip-cta-actions ip-cta-actions-stack">
-            <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
-          </div>
-          <p className="ip-cta-note">
-            Lighthouse Sanctuary · 501(c)(3) nonprofit · EIN: 81-3220618 · Tax-deductible to the full extent of the law.
-          </p>
-        </div>
-      </section>
-
-    </div>
-  )
-}
+            <Link to="/donate" className="hp-btn-primary">Donate Now</Link

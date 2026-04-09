@@ -106,31 +106,21 @@ public class ProcessRecordingsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,SocialWorker")]
     public async Task<ActionResult<ProcessRecording>> CreateProcessRecording(ProcessRecording recording)
     {
-        _context.ProcessRecordings.Add(recording);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetProcessRecording), new { id = recording.RecordingId }, recording);
-    }
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateProcessRecording(int id, ProcessRecording recording)
-    {
-        if (id != recording.RecordingId) return BadRequest();
-
-        _context.Entry(recording).State = EntityState.Modified;
-
         try
         {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.ProcessRecordings.AnyAsync(p => p.RecordingId == id))
-                return NotFound();
-            throw;
-        }
+            // Let the database assign the primary key
+            recording.RecordingId = 0;
 
-        return NoContent();
-    }
-}
+            // If a social_worker username was provided but no social_worker_id,
+            // try to resolve the ID from the SocialWorkers table.
+            if (recording.SocialWorkerId == null && !string.IsNullOrEmpty(recording.SocialWorker))
+            {
+                var sw = await _context.SocialWorkers
+                    .FirstOrDefaultAsync(s => s.FullName == recording.SocialWorker);
+                if (sw != null) recording.SocialWorkerId = sw.SocialWorkerId;
+            }
+
+ 

@@ -130,7 +130,4 @@ export interface EducationOutcomeResult {
 }
 
 export function predictEducationOutcome(
-  input: EducationOutcomeInput,
-): Promise<EducationOutcomeResult> {
-  return mlPost<EducationOutcomeResult>('/predict/education-outcome', input)
-}
+  input: Educati

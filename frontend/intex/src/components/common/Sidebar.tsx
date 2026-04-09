@@ -2,8 +2,12 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+<<<<<<< HEAD
 import ThemeToggle from './ThemeToggle'
 import logoImg from '../../assets/intex_logo.png'
+=======
+import logoImg from '../../assets/intex_logo.webp'
+>>>>>>> c8d0a00dd3e3f94c41d98d639fe53be3f440995f
 import './Sidebar.css'
 
 export interface NavItem {
@@ -117,7 +121,7 @@ function Sidebar({ items }: SidebarProps) {
       {/* Desktop sidebar */}
       <aside className="sidebar">
         <NavLink to="/" className="sidebar-logo">
-          <img src={logoImg} alt="Cove" className="sidebar-logo-img" />
+          <img src={logoImg} alt="Cove" className="sidebar-logo-img" width="2816" height="1536" />
         </NavLink>
         <nav className="sidebar-nav">{navItems}</nav>
         <div className="sidebar-theme-row">
@@ -144,7 +148,7 @@ function Sidebar({ items }: SidebarProps) {
       {/* Mobile top bar */}
       <header className="mobile-topbar">
         <NavLink to="/" className="mobile-topbar-logo" onClick={closeMenu}>
-          <img src={logoImg} alt="Cove" className="mobile-topbar-logo-img" />
+          <img src={logoImg} alt="Cove" className="mobile-topbar-logo-img" width="2816" height="1536" />
         </NavLink>
         <button
           className="mobile-hamburger"
@@ -170,17 +174,4 @@ function Sidebar({ items }: SidebarProps) {
       {/* Mobile dropdown drawer */}
       {mobileOpen && (
         <div className="mobile-nav-overlay" onClick={closeMenu}>
-          <div className="mobile-nav-drawer" onClick={e => e.stopPropagation()}>
-            <nav className="sidebar-nav mobile-nav-items">{navItems}</nav>
-            <div className="sidebar-user mobile-nav-user">
-              <span className="sidebar-user-name">{user?.username ?? 'User'}</span>
-              {logoutBtn}
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-export default Sidebar
+          <div className="mobile-nav-drawer" onClick={e => e.stopPropaga

@@ -27,7 +27,8 @@ import './ResidentDetailPage.css'
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -69,6 +70,7 @@ function ResidentDetailPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [journeyCluster, setJourneyCluster] = useState<{ clusterId: number; clusterName: string } | null>(null)
 
   // Admin-only state
   const [showEdit, setShowEdit] = useState(false)
@@ -103,6 +105,32 @@ function ResidentDetailPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
+  }, [residentId])
+
+  // ── Reintegration journey cluster (from cached predictions) ────────────
+  const CLUSTER_NAMES: Record<number, string> = {
+    0: 'Newly Admitted \u2014 Onboarding Needed',
+    1: 'Established \u2014 Active Care',
+  }
+
+  useEffect(() => {
+    if (!residentId) return
+    let cancelled = false
+
+    api.getMlPredictions('reintegration-journey')
+      .then((preds) => {
+        const mine = preds.find((p) => p.entityId === residentId)
+        if (mine && !cancelled) {
+          const clusterId = Math.round(mine.probability)
+          setJourneyCluster({
+            clusterId,
+            clusterName: CLUSTER_NAMES[clusterId] ?? `Developing Profile \u2014 Monitor & Support`,
+          })
+        }
+      })
+      .catch(() => { /* no cached prediction yet */ })
+
+    return () => { cancelled = true }
   }, [residentId])
 
   const latestHealth = useMemo<HealthWellbeingRecord | null>(() => {
@@ -552,6 +580,16 @@ function ResidentDetailPage() {
                 {resident.reintegrationType ?? '—'}
                 {resident.reintegrationStatus ? ` · ${resident.reintegrationStatus}` : ''}
               </dd>
+              {journeyCluster && (
+                <>
+                  <dt>Journey Profile</dt>
+                  <dd>
+                    <span className={`rd-journey-chip rd-journey-chip--${journeyCluster.clusterName.includes('Onboarding') ? 'onboarding' : journeyCluster.clusterName.includes('Active') ? 'active' : 'developing'}`}>
+                      {journeyCluster.clusterName}
+                    </span>
+                  </dd>
+                </>
+              )}
               <dt>Length of Stay</dt>
               <dd>{resident.lengthOfStay ?? '—'}</dd>
               <dt>Assigned SW</dt>
@@ -677,75 +715,4 @@ function ResidentDetailPage() {
               >
                 <option value="">— Unchanged —</option>
                 <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-                <option value="Critical">Critical</option>
-              </select>
-            </div>
-
-            <div className="rd-modal-actions">
-              <button className="rd-modal-cancel" onClick={() => setShowEdit(false)}>Cancel</button>
-              <button className="rd-modal-save" onClick={handleSaveEdit} disabled={saving}>
-                {saving ? 'Saving…' : 'Save Changes'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function ScoreBar({ label, value }: { label: string; value: number | null }) {
-  const pct = value != null ? Math.max(0, Math.min(100, (value / 10) * 100)) : 0
-  return (
-    <div className="rd-score">
-      <div className="rd-score-row">
-        <span>{label}</span>
-        <span className="rd-score-val">{value != null ? value.toFixed(1) : '—'}/10</span>
-      </div>
-      <div className="rd-score-bar">
-        <div
-          className={`rd-score-fill ${
-            pct >= 70 ? 'rd-score-fill--good'
-              : pct >= 40 ? 'rd-score-fill--mid'
-              : 'rd-score-fill--low'
-          }`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function PercentBar({ label, value }: { label: string; value: number | null }) {
-  const pct = value != null ? Math.max(0, Math.min(100, value)) : 0
-  return (
-    <div className="rd-score">
-      <div className="rd-score-row">
-        <span>{label}</span>
-        <span className="rd-score-val">{value != null ? `${value.toFixed(0)}%` : '—'}</span>
-      </div>
-      <div className="rd-score-bar">
-        <div
-          className={`rd-score-fill ${
-            pct >= 85 ? 'rd-score-fill--good'
-              : pct >= 70 ? 'rd-score-fill--mid'
-              : 'rd-score-fill--low'
-          }`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-    </div>
-  )
-}
-
-function CheckupChip({ label, done }: { label: string; done: boolean | null }) {
-  return (
-    <span className={`rd-checkup ${done ? 'rd-checkup--done' : 'rd-checkup--due'}`}>
-      {done ? '✓' : '·'} {label}
-    </span>
-  )
-}
-
-export default ResidentDetailPage
+                <opti

@@ -3,16 +3,21 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
 import {
-  predictDonorChurn, fetchDonorChurnFeatureImportance,
-  predictResidentRisk, fetchResidentRiskFeatureImportance,
+  fetchDonorChurnFeatureImportance,
+  predictResidentRisk,
+  fetchResidentRiskFeatureImportance,
+  predictEducationOutcome,
 } from '../../services/mlApi'
-import type { DonorChurnInput, ResidentRiskInput, FeatureImportance } from '../../services/mlApi'
+import type { DonorChurnInput, ResidentRiskInput, FeatureImportance, EducationOutcomeInput } from '../../services/mlApi'
+import type { MlCachedPrediction } from '../../services/apiService'
 import type {
   Donation, MonthlyDonationSummary, TopSupporter,
   AllocationSummary, SafehouseMonthlyMetric, Safehouse, Resident, ResidentMlFeatures,
   ProcessRecording, HealthRecord, HomeVisitation, EducationRecord,
 } from '../../services/apiService'
+import { DONOR_CHURN_THRESHOLDS } from '../../config/donorChurnThresholds'
 import './ReportsPage.css'
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,6 +131,109 @@ interface LapseRow {
   reasons: string[]
 }
 
+// ── Lapse-risk localStorage cache ────────────────────────────────────────────
+const LAPSE_CACHE_KEY = 'cove_lapse_risk_v1'
+
+function loadLapseCache(): { rows: LapseRow[]; ts: number } | null {
+  try {
+    const raw = localStorage.getItem(LAPSE_CACHE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as { rows: LapseRow[]; ts: number }
+  } catch { return null }
+}
+
+function saveLapseCache(rows: LapseRow[]) {
+  try {
+    localStorage.setItem(LAPSE_CACHE_KEY, JSON.stringify({ rows, ts: Date.now() }))
+  } catch { /* storage quota / private mode */ }
+}
+
+function cacheAgeLabel(ts: number): string {
+  const mins = Math.round((Date.now() - ts) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  return `${Math.round(hrs / 24)}d ago`
+}
+
+function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapseRows: LapseRow[] }) {
+  const { retentionRate, priorYearCount, highRiskCount } = useMemo(() => {
+    const now = new Date()
+    const last12Start = new Date(now)
+    last12Start.setFullYear(now.getFullYear() - 1)
+    const prior12Start = new Date(now)
+    prior12Start.setFullYear(now.getFullYear() - 2)
+
+    const priorYearDonors = new Set<number>()
+    const recentDonors = new Set<number>()
+
+    for (const d of donations) {
+      if (d.supporterId == null || !d.donationDate) continue
+      const ts = new Date(d.donationDate).getTime()
+      if (Number.isNaN(ts)) continue
+
+      if (ts >= prior12Start.getTime() && ts < last12Start.getTime()) {
+        priorYearDonors.add(d.supporterId)
+      }
+      if (ts >= last12Start.getTime() && ts <= now.getTime()) {
+        recentDonors.add(d.supporterId)
+      }
+    }
+
+    let retained = 0
+    for (const id of priorYearDonors) {
+      if (recentDonors.has(id)) retained += 1
+    }
+
+    const retention = priorYearDonors.size > 0 ? (retained / priorYearDonors.size) * 100 : 0
+    const highRisk = lapseRows.filter(r => r.probability >= DONOR_CHURN_THRESHOLDS.donorsCriticalRisk).length
+
+    return {
+      retentionRate: retention,
+      priorYearCount: priorYearDonors.size,
+      highRiskCount: highRisk,
+    }
+  }, [donations, lapseRows])
+
+  const retentionStatus = retentionRate >= 40 ? 'ok' : retentionRate >= 25 ? 'warn' : 'bad'
+  const retentionProgress = Math.min(100, Math.max(0, (retentionRate / 40) * 100))
+
+  const highRiskStatus = highRiskCount <= 10 ? 'ok' : highRiskCount <= 20 ? 'warn' : 'bad'
+  const highRiskProgress = highRiskCount <= 10
+    ? 100
+    : Math.max(0, Math.min(100, ((20 - highRiskCount) / 10) * 100))
+
+  return (
+    <section className="rp-okr-banner" aria-label="Donor OKR summary">
+      <div className="rp-okr-grid">
+        <article className="rp-okr-card">
+          <div className="rp-okr-label">OBJECTIVE</div>
+          <p className="rp-okr-objective"><strong>Retain existing donors</strong></p>
+          <div className="rp-okr-value">{Math.round(retentionRate)}%</div>
+          <p className="rp-okr-target">
+            Target: 40%
+            {priorYearCount > 0 ? ` (${priorYearCount} prior-year donors)` : ''}
+          </p>
+          <div className="rp-okr-track">
+            <div className={`rp-okr-fill rp-okr-fill-${retentionStatus}`} style={{ width: `${retentionProgress}%` }} />
+          </div>
+        </article>
+
+        <article className="rp-okr-card">
+          <div className="rp-okr-label">OBJECTIVE</div>
+          <p className="rp-okr-objective"><strong>Reduce high-risk donor lapse</strong></p>
+          <div className="rp-okr-value">{highRiskCount} donors</div>
+          <p className="rp-okr-target">Target: fewer than 10 · {highRiskCount} donors need outreach</p>
+          <div className="rp-okr-track">
+            <div className={`rp-okr-fill rp-okr-fill-${highRiskStatus}`} style={{ width: `${highRiskProgress}%` }} />
+          </div>
+        </article>
+      </div>
+    </section>
+  )
+}
+
 function resolveAcquisitionChannel(raw: unknown): string {
   const s = raw as {
     acquisitionChannel?: string | null
@@ -212,7 +320,11 @@ function deriveReasons(input: {
 type RiskFilter = 'all' | 'high' | 'medium' | 'low'
 
 function riskOf(p: number): 'high' | 'medium' | 'low' {
-  return p >= 0.7 ? 'high' : p >= 0.4 ? 'medium' : 'low'
+  return p >= DONOR_CHURN_THRESHOLDS.reportsHighRisk
+    ? 'high'
+    : p >= DONOR_CHURN_THRESHOLDS.reportsMediumRisk
+      ? 'medium'
+      : 'low'
 }
 
 const FEATURE_LABELS: Record<string, string> = {
@@ -280,9 +392,23 @@ function buildChurnInput(rows: Donation[]): DonorChurnInput {
 
 const LAPSE_PAGE_SIZE = 10
 
-function LapseRiskPanel({ donations, currency }: { donations: Donation[]; currency: string }) {
-  const [rows, setRows] = useState<LapseRow[]>([])
-  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+function LapseRiskPanel({
+  donations,
+  currency,
+  onRowsChange,
+}: {
+  donations: Donation[]
+  currency: string
+  onRowsChange?: (rows: LapseRow[]) => void
+}) {
+  // Seed state from cache immediately so the table is visible on first render
+  const initialCache = loadLapseCache()
+  const [rows, setRows] = useState<LapseRow[]>(initialCache?.rows ?? [])
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>(
+    initialCache ? 'done' : 'idle',
+  )
+  const [cacheTs, setCacheTs] = useState<number | null>(initialCache?.ts ?? null)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const [filter, setFilter] = useState<RiskFilter>('all')
@@ -291,6 +417,10 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
   const [channelMap, setChannelMap] = useState<Map<number, string>>(new Map())
   const [showModelDrivers, setShowModelDrivers] = useState(false)
   const [showInsights, setShowInsights] = useState(false)
+
+  useEffect(() => {
+    onRowsChange?.(rows)
+  }, [rows, onRowsChange])
 
   useEffect(() => {
     fetchDonorChurnFeatureImportance()
@@ -330,63 +460,85 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
     return map
   }, [donations])
 
-  async function runPredictions() {
-    setStatus('loading')
-    setError(null)
+  async function runPredictions(background = false) {
+    if (background) {
+      setRefreshing(true)
+    } else {
+      setStatus('loading')
+      setError(null)
+    }
     try {
+      const cached = await api.getMlPredictions('donor-churn') as MlCachedPrediction[]
+      const predMap = new Map(cached.map(p => [p.entityId, p.probability]))
       const entries = Array.from(perDonor.entries())
-      const results = await Promise.all(
-        entries.map(async ([supporterId, { name, rows }]) => {
-          const input = buildChurnInput(rows)
-          const res = await predictDonorChurn(input)
-          const lastTs = rows
-            .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
-            .filter(n => !Number.isNaN(n))
-          const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
-          const reasons = deriveReasons({
-            count: input.total_donation_count,
-            avg: input.avg_donation_amount,
-            lastDonation,
-            daysSinceFirst: input.days_since_first_donation,
-            variety: input.donation_type_variety,
-            recurring: input.is_recurring_donor,
-          })
-          return {
-            supporterId,
-            name,
-            email: emailMap.get(supporterId) ?? null,
-            total: input.total_amount,
-            count: input.total_donation_count,
-            avg: input.avg_donation_amount,
-            lastDonation,
-            daysSinceFirst: input.days_since_first_donation,
-            variety: input.donation_type_variety,
-            recurring: input.is_recurring_donor,
-            probability: res.probability,
-            reasons,
-          }
-        }),
-      )
+      const results: LapseRow[] = []
+
+      for (const [supporterId, { name, rows: dRows }] of entries) {
+        const input = buildChurnInput(dRows)
+        const probability = predMap.get(supporterId)
+        if (probability === undefined) continue
+
+        const lastTs = dRows
+          .map(d => (d.donationDate ? new Date(d.donationDate).getTime() : NaN))
+          .filter(n => !Number.isNaN(n))
+        const lastDonation = lastTs.length ? new Date(Math.max(...lastTs)).toISOString() : null
+        const reasons = deriveReasons({
+          count: input.total_donation_count,
+          avg: input.avg_donation_amount,
+          lastDonation,
+          daysSinceFirst: input.days_since_first_donation,
+          variety: input.donation_type_variety,
+          recurring: input.is_recurring_donor,
+        })
+        results.push({
+          supporterId,
+          name,
+          email: emailMap.get(supporterId) ?? null,
+          total: input.total_amount,
+          count: input.total_donation_count,
+          avg: input.avg_donation_amount,
+          lastDonation,
+          daysSinceFirst: input.days_since_first_donation,
+          variety: input.donation_type_variety,
+          recurring: input.is_recurring_donor,
+          probability,
+          reasons,
+        })
+      }
+
+      if (results.length === 0 && !background) {
+        setError('No cached predictions available — an admin can trigger a refresh from the dashboard.')
+        setStatus('error')
+        return
+      }
       results.sort((a, b) => b.probability - a.probability)
+      saveLapseCache(results)
+      setCacheTs(null)
       setRows(results)
       setPage(0)
       setFilter('all')
       setStatus('done')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Prediction failed')
-      setStatus('error')
+      if (!background) {
+        setError(e instanceof Error ? e.message : 'Prediction failed')
+        setStatus('error')
+      }
+      // background failure: keep showing cached rows silently
+    } finally {
+      setRefreshing(false)
     }
   }
 
   // Auto-run scoring once donor data is available.
+  // If we have cached rows, run a silent background refresh instead of blocking.
   useEffect(() => {
     if (hasAutoRun.current) return
     if (perDonor.size === 0) return
-    if (status !== 'idle') return
     hasAutoRun.current = true
-    void runPredictions()
+    const hasCached = rows.length > 0
+    void runPredictions(hasCached)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [perDonor, status])
+  }, [perDonor])
 
   const counts = useMemo(() => {
     let high = 0, medium = 0, low = 0
@@ -416,7 +568,7 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
       const scored = ids
         .filter(id => idsWithScores.has(id))
         .map(id => scoreById.get(id) ?? 0)
-      const lapsed = scored.filter(p => p >= 0.5).length
+      const lapsed = scored.filter(p => p >= DONOR_CHURN_THRESHOLDS.lapsedProxy).length
       const count = scored.length
       if (count === 0) return null
       const lapseRate = (lapsed / count) * 100
@@ -524,15 +676,31 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
           <p className="rp-empty" style={{ textAlign: 'left', margin: 0, padding: 0 }}>
             Donors most likely to stop giving, ranked from highest to lowest risk.
           </p>
+          {cacheTs && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Showing cached scores from {cacheAgeLabel(cacheTs)}
+              {refreshing ? ' · Updating in background…' : ''}
+            </p>
+          )}
+          {!cacheTs && refreshing && (
+            <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Refreshing scores…
+            </p>
+          )}
         </div>
-        {status === 'done' && (
+        {status === 'done' && !refreshing && (
           <button
             type="button"
             className="rp-tab-btn rp-refresh-btn"
-            onClick={runPredictions}
+            onClick={() => runPredictions(false)}
           >
             Refresh scores
           </button>
+        )}
+        {refreshing && (
+          <span style={{ fontSize: '0.8rem', color: 'var(--cove-tidal)', fontWeight: 600 }}>
+            Updating…
+          </span>
         )}
       </div>
       {status === 'loading' && (
@@ -760,8 +928,8 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
             {filteredRows.slice(page * LAPSE_PAGE_SIZE, (page + 1) * LAPSE_PAGE_SIZE).map(r => {
               const pct = Math.round(r.probability * 100)
               const tone =
-                r.probability >= 0.7 ? 'var(--color-error)'
-                : r.probability >= 0.4 ? 'var(--color-warning)'
+                r.probability >= DONOR_CHURN_THRESHOLDS.reportsHighRisk ? 'var(--color-error)'
+                : r.probability >= DONOR_CHURN_THRESHOLDS.reportsMediumRisk ? 'var(--color-warning)'
                 : 'var(--color-success)'
               return (
                 <tr key={r.supporterId}>
@@ -797,7 +965,11 @@ function LapseRiskPanel({ donations, currency }: { donations: Donation[]; curren
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{pct}%</span>
                   </td>
                   <td style={{ color: tone, fontWeight: 600 }}>
-                    {r.probability >= 0.7 ? 'High' : r.probability >= 0.4 ? 'Medium' : 'Low'}
+                    {r.probability >= DONOR_CHURN_THRESHOLDS.reportsHighRisk
+                      ? 'High'
+                      : r.probability >= DONOR_CHURN_THRESHOLDS.reportsMediumRisk
+                        ? 'Medium'
+                        : 'Low'}
                   </td>
                 </tr>
               )
@@ -874,13 +1046,15 @@ const RANGE_LABELS: Record<TrendRange, string> = {
 // ─── Tab: Donations ────────────────────────────────────────────────────────────
 
 function DonationsTab({
-  donations, monthly, topDonors, allocation, loading,
+  donations, monthly, topDonors, allocation, loading, onLapseRowsChange, lapseRows,
 }: {
   donations: Donation[]
   monthly: MonthlyDonationSummary[]
   topDonors: TopSupporter[]
   allocation: AllocationSummary | null
   loading: boolean
+  onLapseRowsChange?: (rows: LapseRow[]) => void
+  lapseRows: LapseRow[]
 }) {
   const [trendRange,   setTrendRange]   = useState<TrendRange>('1Y')
   /** Default index 1 = "Full Capacity" ($25,000) — users pick other presets via buttons only. */
@@ -919,6 +1093,10 @@ function DonationsTab({
 
   return (
     <div className="rp-tab-content">
+      {lapseRows.length > 0 && (
+        <DonorOKRBanner donations={donations} lapseRows={lapseRows} />
+      )}
+
       <div className="rp-kpi-grid">
         {[
           { label: 'YTD Total', value: fmtAmt(ytd, currency), sub: `${monthly.filter(m => m.year === curYear).reduce((s, m) => s + m.count, 0)} donations` },
@@ -1054,7 +1232,7 @@ function DonationsTab({
         </div>
       )}
 
-      <LapseRiskPanel donations={donations} currency={currency} />
+      <LapseRiskPanel donations={donations} currency={currency} onRowsChange={onLapseRowsChange} />
 
       <div className="rp-section">
         <h3 className="rp-section-title">Funding Thresholds</h3>
@@ -1528,53 +1706,38 @@ function OutcomesTab({
     setRiskLoading(true)
     setRiskError(null)
 
-    const activeIds = new Set(activeResidents.map(r => r.residentId))
+    const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
 
-    api.getResidentMlFeatures()
-      .then(async (allFeatures: ResidentMlFeatures[]) => {
-        const features = allFeatures.filter(f => activeIds.has(f.resident_id))
-        const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
-
-        return Promise.all(
-          features.map(async (f) => {
-            // Strip metadata fields; forward only the model's input columns.
-            const {
-              resident_id: _id,
-              internal_code: _ic,
-              case_control_no: _cc,
-              current_risk_level: _crl,
-              assigned_social_worker: _sw,
-              last_action_date: _lad,
-              last_action_type: _lat,
-              ...input
-            } = f
-            void _id; void _ic; void _cc; void _crl; void _sw; void _lad; void _lat
-            try {
-              const res = await predictResidentRisk(input as unknown as ResidentRiskInput)
-              return {
-                resident: residentById.get(f.resident_id)!,
-                features: f,
-                probability: res.probability,
-                isHighRisk: res.is_high_risk,
-              }
-            } catch {
-              return {
-                resident: residentById.get(f.resident_id)!,
-                features: f,
-                probability: 0,
-                isHighRisk: false,
-              }
-            }
-          }),
-        )
-      })
-      .then((results) => {
+    // Load cached predictions + ML features in parallel
+    Promise.all([
+      api.getMlPredictions('resident-risk') as Promise<MlCachedPrediction[]>,
+      api.getResidentMlFeatures(),
+    ])
+      .then(([cached, allFeatures]) => {
         if (cancelled) return
+        const predMap = new Map(cached.map(p => [p.entityId, p]))
+        const activeIds = new Set(activeResidents.map(r => r.residentId))
+        const features = allFeatures.filter(f => activeIds.has(f.resident_id))
+
+        const results: RiskRow[] = features
+          .map(f => {
+            const pred = predMap.get(f.resident_id)
+            const resident = residentById.get(f.resident_id)
+            if (!resident) return null
+            return {
+              resident,
+              features: f,
+              probability: pred?.probability ?? 0,
+              isHighRisk: pred?.isPositive ?? false,
+            }
+          })
+          .filter((r): r is RiskRow => r !== null)
+
         results.sort((a, b) => b.probability - a.probability)
         setRiskPreds(results)
       })
       .catch((err) => {
-        if (!cancelled) setRiskError(err instanceof Error ? err.message : 'Prediction failed')
+        if (!cancelled) setRiskError(err instanceof Error ? err.message : 'Failed to load predictions')
       })
       .finally(() => {
         if (!cancelled) setRiskLoading(false)
@@ -1585,6 +1748,76 @@ function OutcomesTab({
   }, [residents.length])
 
   const modelHighRiskCount = riskPreds.filter(p => p.isHighRisk).length
+
+  // ── ML: Education outcome predictions ──────────────────────────────────────
+  type EduRow = { resident: Resident; probability: number; willComplete: boolean }
+  const [eduPreds, setEduPreds] = useState<EduRow[]>([])
+  const [eduLoading, setEduLoading] = useState(false)
+  const [eduError, setEduError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (activeResidents.length === 0) return
+    let cancelled = false
+    setEduLoading(true)
+    setEduError(null)
+
+    api.getEducationRecords()
+      .then(async (allRecords) => {
+        // Group records by resident, sorted earliest first
+        const byResident = new Map<number, typeof allRecords>()
+        allRecords.forEach(r => {
+          if (r.residentId == null) return
+          const arr = byResident.get(r.residentId) ?? []
+          arr.push(r)
+          byResident.set(r.residentId, arr)
+        })
+        byResident.forEach((recs, id) =>
+          byResident.set(id, recs.sort((a, b) =>
+            new Date(a.recordDate ?? 0).getTime() - new Date(b.recordDate ?? 0).getTime()
+          ))
+        )
+
+        const residentById = new Map(activeResidents.map(r => [r.residentId, r]))
+        const rows = await Promise.all(
+          activeResidents
+            .filter(r => (byResident.get(r.residentId)?.length ?? 0) > 0)
+            .map(async (r) => {
+              const recs = (byResident.get(r.residentId) ?? []).slice(0, 3)
+              const attRates = recs.map(rec => rec.attendanceRate ?? 0.8)
+              const progPcts  = recs.map(rec => (rec.progressPercent ?? 50) / 100)
+              const early_attendance_mean = attRates.reduce((s, v) => s + v, 0) / attRates.length
+              const early_progress_mean   = progPcts.reduce((s, v) => s + v, 0) / progPcts.length
+              const initial_progress      = progPcts[0]
+              const early_attendance_slope = attRates.length >= 2
+                ? (attRates[attRates.length - 1] - attRates[0]) / (attRates.length - 1)
+                : 0
+              const input: EducationOutcomeInput = {
+                early_health_mean: 3.5,               // approximated — health records fetched separately
+                early_attendance_mean,
+                early_progress_mean,
+                early_emotional_improvement_rate: 0.5, // approximated — process recordings fetched separately
+                early_attendance_slope,
+                initial_progress,
+              }
+              try {
+                const res = await predictEducationOutcome(input)
+                return { resident: residentById.get(r.residentId)!, probability: res.probability, willComplete: res.will_complete }
+              } catch {
+                return { resident: residentById.get(r.residentId)!, probability: 0.5, willComplete: false }
+              }
+            })
+        )
+        return rows.sort((a, b) => b.probability - a.probability)
+      })
+      .then(rows => { if (!cancelled) setEduPreds(rows) })
+      .catch(err => { if (!cancelled) setEduError(err instanceof Error ? err.message : 'Prediction failed') })
+      .finally(() => { if (!cancelled) setEduLoading(false) })
+
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [residents.length])
+
+  const eduCompleteCount = eduPreds.filter(p => p.willComplete).length
 
   // ── Filters ────────────────────────────────────────────────────────────────
   const [filterSafehouse, setFilterSafehouse] = useState<string>('all')
@@ -1749,6 +1982,7 @@ function OutcomesTab({
           { label: 'Avg. Education Progress', value: avgEdu ? `${Math.round(avgEdu)}%` : '—', sub: 'across all safehouses' },
           { label: 'Reintegration Pipeline', value: String(reintegrated.length), sub: `${highRisk.length} high-risk residents` },
           { label: 'ML-Flagged High Risk', value: riskLoading ? '…' : String(modelHighRiskCount), sub: 'predicted by resident risk model' },
+          { label: 'ML: Predicted to Complete Edu.', value: eduLoading ? '…' : String(eduCompleteCount), sub: `of ${eduPreds.length} scored residents` },
         ].map(k => (
           <div key={k.label} className="rp-kpi">
             <div className="rp-kpi-label">{k.label}</div>
@@ -2013,345 +2247,61 @@ function OutcomesTab({
             )}
           </div>
 
-          <div className="rp-two-col">
-            <div className="rp-card">
-              <h3 className="rp-card-title">Residents by Risk Level</h3>
-              <BarChart
-                data={['Low', 'Medium', 'High', 'Critical'].map(lvl => ({
-                  label: lvl,
-                  count: residents.filter(r => r.currentRiskLevel === lvl && !r.dateClosed).length,
-                }))}
-                labelKey="label"
-                valueKey="count"
-                color="var(--cove-seaglass)"
-              />
-            </div>
-            <div className="rp-card">
-              <h3 className="rp-card-title">Reintegration Status</h3>
-              <BarChart
-                data={['Not Started', 'In Progress', 'Completed', 'Reintegrated'].map(s => ({
-                  label: s,
-                  count: residents.filter(r => (r.reintegrationStatus ?? 'Not Started') === s).length,
-                }))}
-                labelKey="label"
-                valueKey="count"
-                color="var(--cove-tidal)"
-              />
-            </div>
-          </div>
-
-          <ResidentRiskPredictor residents={residents} />
-        </>
-      )}
-    </div>
-  )
-}
-
-// ─── Tab: Safehouse Performance ────────────────────────────────────────────────
-
-function SafehouseTab({
-  safehouses, metrics, loading,
-}: {
-  safehouses: Safehouse[]
-  metrics: SafehouseMonthlyMetric[]
-  loading: boolean
-}) {
-  const active = safehouses.filter(s => s.status === 'Active')
-  const totalCap = safehouses.reduce((s, h) => s + (h.capacityGirls ?? 0), 0)
-  const totalOcc = safehouses.reduce((s, h) => s + (h.currentOccupancy ?? 0), 0)
-
-  return (
-    <div className="rp-tab-content">
-      <div className="rp-kpi-grid">
-        {[
-          { label: 'Active Safehouses', value: String(active.length), sub: `of ${safehouses.length} total locations` },
-          { label: 'Total Capacity', value: String(totalCap), sub: 'approved shelter beds' },
-          { label: 'Current Occupancy', value: String(totalOcc), sub: `${totalCap > 0 ? Math.round((totalOcc / totalCap) * 100) : 0}% system-wide` },
-          { label: 'Available Beds', value: String(totalCap - totalOcc), sub: 'open placements' },
-        ].map(k => (
-          <div key={k.label} className="rp-kpi">
-            <div className="rp-kpi-label">{k.label}</div>
-            <div className="rp-kpi-value">{k.value}</div>
-            <div className="rp-kpi-sub">{k.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {loading ? <p className="rp-empty">Loading…</p> : (
-        <div className="rp-section">
-          <h3 className="rp-section-title">Safehouse Comparison</h3>
-          <table className="rp-table rp-table-wide">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Location</th>
-                <th>Status</th>
-                <th>Occupancy</th>
-                <th>Capacity</th>
-                <th>Fill Rate</th>
-                <th>Staff Cap.</th>
-                <th>Health Score</th>
-                <th>Edu Progress</th>
-                <th>Incidents</th>
-                <th>Process Recs.</th>
-                <th>Home Visits</th>
-              </tr>
-            </thead>
-            <tbody>
-              {safehouses.map(h => {
-                const m = metrics.find(x => x.safehouseId === h.safehouseId)
-                const occ = h.currentOccupancy ?? 0
-                const cap = h.capacityGirls ?? 0
-                const fillPct = cap > 0 ? Math.round((occ / cap) * 100) : 0
-                return (
-                  <tr key={h.safehouseId}>
-                    <td className="rp-td-name">{h.safehouseCode ?? `SH${h.safehouseId}`}</td>
-                    <td>{[h.city, h.region].filter(Boolean).join(', ')}</td>
-                    <td>
-                      <span className={`rp-badge ${h.status === 'Active' ? 'rp-badge-ok' : 'rp-badge-off'}`}>
-                        {h.status ?? '—'}
-                      </span>
-                    </td>
-                    <td className="rp-td-num">{occ}</td>
-                    <td className="rp-td-num">{cap}</td>
-                    <td>
-                      <div className="rp-mini-track">
-                        <div className="rp-mini-fill" style={{
-                          width: `${fillPct}%`,
-                          background: fillPct >= 100 ? 'var(--color-error)' : fillPct >= 80 ? 'var(--color-warning)' : 'var(--cove-tidal)',
-                        }} />
-                      </div>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{fillPct}%</span>
-                    </td>
-                    <td className="rp-td-num">{h.capacityStaff ?? '—'}</td>
-                    <td className="rp-td-num">{m?.avgHealthScore != null ? Number(m.avgHealthScore).toFixed(1) : '—'}</td>
-                    <td className="rp-td-num">{m?.avgEducationProgress != null ? `${Math.round(Number(m.avgEducationProgress))}%` : '—'}</td>
-                    <td className="rp-td-num" style={{ color: (m?.incidentCount ?? 0) > 0 ? 'var(--color-warning)' : 'inherit' }}>
-                      {m?.incidentCount ?? 0}
-                    </td>
-                    <td className="rp-td-num">{m?.processRecordingCount ?? '—'}</td>
-                    <td className="rp-td-num">{m?.homeVisitationCount ?? '—'}</td>
+          <div className="rp-section">
+            <h3 className="rp-section-title">ML Education Outcome Predictions</h3>
+            <p className="rp-empty" style={{ marginTop: 0 }}>
+              Predicts whether each active resident is on track to complete their education program,
+              based on early attendance and progress trends. Use as a guidance tool — social workers
+              should review individual case context.
+            </p>
+            {eduError && <p className="rp-empty" style={{ color: 'var(--color-warning)' }}>{eduError}</p>}
+            {eduLoading ? (
+              <p className="rp-empty">Scoring residents…</p>
+            ) : eduPreds.length === 0 ? (
+              <p className="rp-empty">No education records available to score.</p>
+            ) : (
+              <table className="rp-table rp-table-wide">
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Resident</th>
+                    <th>Safehouse</th>
+                    <th>Completion Probability</th>
+                    <th>Progress Bar</th>
+                    <th>Prediction</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Tab: Annual Accomplishment Report ────────────────────────────────────────
-
-function AnnualTab({
-  residents, metrics, donations, safehouses, loading,
-}: {
-  residents: Resident[]
-  metrics: SafehouseMonthlyMetric[]
-  donations: Donation[]
-  safehouses: Safehouse[]
-  loading: boolean
-}) {
-  const now = new Date()
-  const year = now.getFullYear()
-
-  const admittedThisYear = residents.filter(r => r.dateOfAdmission && new Date(r.dateOfAdmission).getFullYear() === year)
-  const reintegratedThisYear = residents.filter(r =>
-    r.reintegrationStatus === 'Reintegrated' || r.reintegrationStatus === 'Completed'
-  )
-  const activeNow = residents.filter(r => !r.dateClosed)
-  const totalProc = metrics.reduce((s, m) => s + (m.processRecordingCount ?? 0), 0)
-  const totalVisits = metrics.reduce((s, m) => s + (m.homeVisitationCount ?? 0), 0)
-  const totalIncidents = metrics.reduce((s, m) => s + (m.incidentCount ?? 0), 0)
-  const ytdDonations = donations.filter(d => d.donationDate && new Date(d.donationDate).getFullYear() === year)
-  const ytdTotal = ytdDonations.reduce((s, d) => s + (d.amount ?? 0), 0)
-  const currency = donations[0]?.currencyCode ?? 'PHP'
-
-  const pillars: { title: string; subtitle: string; color: string; icon: ReactNode; stats: { label: string; value: string }[] }[] = [
-    {
-      title: 'CARING',
-      subtitle: 'Safe Shelter & Basic Needs',
-      color: 'var(--cove-tidal)',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-      ),
-      stats: [
-        { label: 'Children Currently in Care', value: String(activeNow.length) },
-        { label: 'New Admissions This Year', value: String(admittedThisYear.length) },
-        { label: 'Active Safehouses', value: String(safehouses.filter(s => s.status === 'Active').length) },
-        { label: 'Total Bed Capacity', value: String(safehouses.reduce((s, h) => s + (h.capacityGirls ?? 0), 0)) },
-      ],
-    },
-    {
-      title: 'HEALING',
-      subtitle: 'Psychosocial & Health Services',
-      color: 'var(--cove-seaglass)',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-        </svg>
-      ),
-      stats: [
-        { label: 'Process Recordings Completed', value: String(totalProc) },
-        { label: 'Home / Family Visitations', value: String(totalVisits) },
-        { label: 'Incident Reports Filed', value: String(totalIncidents) },
-        { label: 'Avg. Health Score', value: metrics.length ? `${(metrics.reduce((s, m) => s + (m.avgHealthScore ?? 0), 0) / metrics.filter(m => m.avgHealthScore != null).length).toFixed(1)} / 5` : '—' },
-      ],
-    },
-    {
-      title: 'TEACHING',
-      subtitle: 'Education & Skills Development',
-      color: 'var(--cove-seafoam)',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-        </svg>
-      ),
-      stats: [
-        { label: 'Avg. Education Progress', value: metrics.length ? `${Math.round(metrics.reduce((s, m) => s + (m.avgEducationProgress ?? 0), 0) / metrics.filter(m => m.avgEducationProgress != null).length)}%` : '—' },
-        { label: 'Residents in Education Programs', value: String(activeNow.length) },
-        { label: 'Case Conferences Held', value: 'See Upcoming Plans' },
-        { label: 'Social Workers Active', value: '—' },
-      ],
-    },
-    {
-      title: 'BENEFICIARIES',
-      subtitle: 'Reintegration & Outcomes',
-      color: 'var(--cove-sand)',
-      icon: (
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-      ),
-      stats: [
-        { label: 'Reintegrated Survivors', value: String(reintegratedThisYear.length) },
-        { label: 'Donors / Supporters', value: '—' },
-        { label: `Total Raised ${year} (YTD)`, value: fmtAmt(ytdTotal, currency) },
-        { label: 'Total Donations This Year', value: String(ytdDonations.length) },
-      ],
-    },
-  ]
-
-  return (
-    <div className="rp-tab-content">
-      <div className="rp-annual-header">
-        <h2 className="rp-annual-title">Philippine Annual Accomplishment Report</h2>
-        <p className="rp-annual-subtitle">
-          Lighthouse Sanctuary Philippines · Year {year} · Department of Social Welfare and Development Format
-        </p>
-      </div>
-
-      {loading ? <p className="rp-empty">Loading data…</p> : (
-        <div className="rp-pillars">
-          {pillars.map(p => (
-            <div key={p.title} className="rp-pillar" style={{ '--pillar-color': p.color } as React.CSSProperties}>
-              <div className="rp-pillar-header">
-                <span className="rp-pillar-icon">{p.icon}</span>
-                <div>
-                  <div className="rp-pillar-title">{p.title}</div>
-                  <div className="rp-pillar-sub">{p.subtitle}</div>
-                </div>
-              </div>
-              <div className="rp-pillar-stats">
-                {p.stats.map(s => (
-                  <div key={s.label} className="rp-pillar-stat">
-                    <span className="rp-pillar-stat-label">{s.label}</span>
-                    <span className="rp-pillar-stat-value">{s.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="rp-annual-note">
-        <strong>Note:</strong> This report reflects data currently captured in the Cove system.
-        Additional narrative sections (success stories, challenges, recommendations) should be
-        added manually before submission to DSWD.
-      </div>
-    </div>
-  )
-}
-
-// ─── Main Component ────────────────────────────────────────────────────────────
-
-export default function ReportsPage() {
-  const [tab, setTab] = useState<Tab>('donations')
-
-  const [donations,  setDonations]  = useState<Donation[]>([])
-  const [monthly,    setMonthly]    = useState<MonthlyDonationSummary[]>([])
-  const [topDonors,  setTopDonors]  = useState<TopSupporter[]>([])
-  const [allocation, setAllocation] = useState<AllocationSummary | null>(null)
-  const [metrics,    setMetrics]    = useState<SafehouseMonthlyMetric[]>([])
-  const [safehouses, setSafehouses] = useState<Safehouse[]>([])
-  const [residents,  setResidents]  = useState<Resident[]>([])
-  const [loading,    setLoading]    = useState(true)
-
-  useEffect(() => {
-    Promise.allSettled([
-      api.getDonations().then(setDonations),
-      api.getDonationsMonthlySummary().then(setMonthly),
-      api.getTopSupporters(10).then(setTopDonors),
-      api.getAllocationSummary().then(setAllocation),
-      api.getLatestMetrics().then(setMetrics),
-      api.getSafehouses().then(setSafehouses),
-      api.getResidents().then(setResidents),
-    ]).finally(() => setLoading(false))
-  }, [])
-
-  const TABS: { key: Tab; label: string }[] = [
-    { key: 'donations', label: 'Donations' },
-    { key: 'outcomes',  label: 'Resident Outcomes' },
-    { key: 'safehouses', label: 'Safehouse Performance' },
-    { key: 'annual',    label: 'Annual Report' },
-  ]
-
-  return (
-    <div className="rp-page">
-      <div className="rp-header">
-        <div>
-          <h1 className="rp-title">Reports &amp; Analytics</h1>
-          <p className="rp-subtitle">
-            Lighthouse Sanctuary Philippines ·{' '}
-            {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-          </p>
-        </div>
-        {loading && <span className="rp-loading-badge">Loading…</span>}
-      </div>
-
-      <div className="rp-tabs">
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            className={`rp-tab-btn${tab === t.key ? ' rp-tab-active' : ''}`}
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {tab === 'donations' && (
-        <DonationsTab donations={donations} monthly={monthly} topDonors={topDonors} allocation={allocation} loading={loading} />
-      )}
-      {tab === 'outcomes' && (
-        <OutcomesTab metrics={metrics} safehouses={safehouses} residents={residents} loading={loading} />
-      )}
-      {tab === 'safehouses' && (
-        <SafehouseTab safehouses={safehouses} metrics={metrics} loading={loading} />
-      )}
-      {tab === 'annual' && (
-        <AnnualTab residents={residents} metrics={metrics} donations={donations} safehouses={safehouses} loading={loading} />
-      )}
-    </div>
-  )
-}
+                </thead>
+                <tbody>
+                  {eduPreds.map((p, idx) => {
+                    const pct = Math.round(p.probability * 100)
+                    const color = p.willComplete
+                      ? 'var(--color-success)'
+                      : p.probability >= 0.4
+                        ? 'var(--cove-tidal)'
+                        : 'var(--color-warning)'
+                    const safehouseCode = safehouseCodeById.get(p.resident.safehouseId ?? -1) ?? '—'
+                    return (
+                      <tr key={p.resident.residentId}>
+                        <td className="rp-td-num">{idx + 1}</td>
+                        <td className="rp-td-name">
+                          <Link
+                            className="rp-ml-link"
+                            to={`/admin/residents/${p.resident.residentId}`}
+                          >
+                            {p.resident.internalCode ?? p.resident.caseControlNo ?? `#${p.resident.residentId}`}
+                          </Link>
+                        </td>
+                        <td>{safehouseCode}</td>
+                        <td className="rp-td-num">{pct}%</td>
+                        <td>
+                          <div className="rp-mini-track">
+                            <div className="rp-mini-fill" style={{ width: `${pct}%`, background: color }} />
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`rp-ml-flag ${p.willComplete ? 'rp-ml-flag--ok' : 'rp-ml-flag--high'}`}>
+                            {p.willComplete ? 'On Track' : 'Needs Support'}
+                          </span>
+                        </td>
+                      </tr>
+    

@@ -18,7 +18,8 @@ function fmtAmount(amount: number | null, currency: string | null) {
 
 function fmtDate(iso: string | null) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 function memberSince(createdAt: string | null, donations: DonationRaw[]) {
@@ -338,19 +339,4 @@ export default function DonationHistoryPage() {
             {sorted.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ color: 'var(--text-muted)', padding: '0.75rem' }}>
-                  No donations found for this account.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <p className="dh-tax-note">
-        Lighthouse Sanctuary is a registered 501(c)(3) nonprofit · EIN: 81-3220618 ·
-        All donations are tax-deductible. For official tax receipts contact Info@LighthouseSanctuary.org.
-      </p>
-
-    </div>
-  )
-}
+                 

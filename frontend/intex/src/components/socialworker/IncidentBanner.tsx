@@ -12,7 +12,8 @@ interface Props {
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString(undefined, {
+  const safe = iso.includes('T') ? iso : iso + 'T00:00:00'
+  return new Date(safe).toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -198,17 +199,4 @@ function IncidentBanner({ incident, residentId, onResolved }: Props) {
                       className="ib-resolve-btn"
                       disabled={submitting || !resolutionNotes.trim()}
                     >
-                      {submitting ? 'Resolving…' : 'Confirm Resolve'}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-export default IncidentBanner
+        

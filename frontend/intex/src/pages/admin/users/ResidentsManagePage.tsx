@@ -38,7 +38,7 @@ export default function ResidentsManagePage() {
   useEffect(() => {
     Promise.allSettled([
       api.getResidents().then(setResidents),
-      api.getSafehouses().then(setSafehouses),
+      api.getAdminSafehouses().then(setSafehouses),
     ]).finally(() => setLoading(false))
   }, [])
 
@@ -266,13 +266,4 @@ export default function ResidentsManagePage() {
                   <td><span className={`mu-badge ${riskClass(r.currentRiskLevel)}`}>{r.currentRiskLevel ?? '—'}</span></td>
                   <td>{r.reintegrationStatus ?? '—'}</td>
                   <td><span className={`mu-badge ${statusBadgeClass(r)}`}>{statusLabel(r)}</span></td>
-                  <td>{r.dateOfAdmission ? new Date(r.dateOfAdmission).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-}
+              

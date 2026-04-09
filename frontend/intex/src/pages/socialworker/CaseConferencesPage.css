@@ -413,30 +413,4 @@
   }
 }
 
-@media (max-width: 700px) {
-  .cc-list-head {
-    display: none;
-  }
-  .cc-row,
-  .cc-row--past {
-    grid-template-columns: 1fr auto;
-    gap: var(--space-xs);
-  }
-  .cc-row-when,
-  .cc-row-plans-count {
-    display: none;
-  }
-  .cc-row-date {
-    grid-column: 1;
-    font-size: 0.8rem;
-  }
-  .cc-row-cats {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 700px) {
-  .cc-card {
-    grid-template-columns: 1fr;
-  }
-}
+@medi

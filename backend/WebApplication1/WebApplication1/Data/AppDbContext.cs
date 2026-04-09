@@ -32,6 +32,9 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<Assessment> Assessments { get; set; }
     public DbSet<AdmissionChecklist> AdmissionChecklists { get; set; }
+    public DbSet<CaseConferenceRequest> CaseConferenceRequests { get; set; }
+    public DbSet<MlPrediction> MlPredictions { get; set; }
+    public DbSet<Partner> Partners { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,32 +55,22 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             .Property(n => n.NotificationId)
             .ValueGeneratedOnAdd();
 
+        // process_recordings.recording_id uses a sequence — let DB auto-generate
+        modelBuilder.Entity<ProcessRecording>()
+            .Property(p => p.RecordingId)
+            .ValueGeneratedOnAdd();
+
         modelBuilder.Entity<ProcessRecording>()
             .HasIndex(p => p.SocialWorkerId)
             .HasDatabaseName("IX_process_recordings_social_worker_id");
+
+        // home_visitations.visitation_id uses a sequence — let DB auto-generate
+        modelBuilder.Entity<HomeVisitation>()
+            .Property(h => h.VisitationId)
+            .ValueGeneratedOnAdd();
 
         modelBuilder.Entity<HomeVisitation>()
             .HasIndex(h => h.SocialWorkerId)
             .HasDatabaseName("IX_home_visitations_social_worker_id");
 
-        modelBuilder.Entity<SocialWorker>()
-            .HasIndex(s => s.SafehouseId)
-            .HasDatabaseName("IX_social_workers_safehouse_id");
-
-        modelBuilder.Entity<Assessment>()
-            .Property(a => a.AssessmentId)
-            .ValueGeneratedOnAdd();
-
-        modelBuilder.Entity<Assessment>()
-            .HasIndex(a => a.ResidentId)
-            .HasDatabaseName("ix_assessments_resident_id");
-
-        modelBuilder.Entity<AdmissionChecklist>()
-            .Property(a => a.ChecklistId)
-            .ValueGeneratedOnAdd();
-
-        modelBuilder.Entity<AdmissionChecklist>()
-            .HasIndex(a => a.ResidentId)
-            .HasDatabaseName("ix_admission_checklists_resident_id");
-    }
-}
+        modelBuilder.Entity<Social

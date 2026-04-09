@@ -106,31 +106,20 @@ public class HomeVisitationsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin,SocialWorker")]
     public async Task<ActionResult<HomeVisitation>> CreateHomeVisitation(HomeVisitation visitation)
     {
-        _context.HomeVisitations.Add(visitation);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetHomeVisitation), new { id = visitation.VisitationId }, visitation);
-    }
-
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateHomeVisitation(int id, HomeVisitation visitation)
-    {
-        if (id != visitation.VisitationId) return BadRequest();
-
-        _context.Entry(visitation).State = EntityState.Modified;
-
         try
         {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.HomeVisitations.AnyAsync(h => h.VisitationId == id))
-                return NotFound();
-            throw;
-        }
+            visitation.VisitationId = 0;
 
-        return NoContent();
-    }
-}
+            if (visitation.SocialWorkerId == null && !string.IsNullOrEmpty(visitation.SocialWorker))
+            {
+                var sw = await _context.SocialWorkers
+                    .FirstOrDefaultAsync(s => s.FullName == visitation.SocialWorker);
+                if (sw != null) visitation.SocialWorkerId = sw.SocialWorkerId;
+            }
+
+            _context.HomeVisitations.Add(visitation);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetHomeVisitation), new { id = visitation.VisitationId 
