@@ -9,12 +9,18 @@
   background-repeat: no-repeat;
 }
 
+[data-theme="dark"] .donate-page-wrap {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.60), rgba(0, 0, 0, 0.68)),
+    url('../../assets/girls-hands-raised.png');
+}
+
 /* ── Hero banner ── */
 .donate-hero-banner {
   position: relative;
   width: 100%;
   min-height: 96px;
-  background: linear-gradient(180deg, #ecf6f2 0%, var(--cove-seafoam) 100%);
+  background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-accent) 100%);
   overflow: hidden;
 }
 
@@ -55,11 +61,11 @@
 
 /* ===== LEFT - Story card ===== */
 .story-card {
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--bg-card);
   border-radius: var(--radius-lg);
   padding: 2rem;
-  box-shadow: 0 14px 28px rgba(44, 74, 82, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
   backdrop-filter: blur(3px);
   display: flex;
   flex-direction: column;
@@ -145,11 +151,11 @@
 
 /* ===== RIGHT - Donation form card ===== */
 .donation-card {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--bg-card);
   border-radius: var(--radius-lg);
   padding: 2rem;
-  box-shadow: 0 14px 28px rgba(44, 74, 82, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-light);
   backdrop-filter: blur(4px);
   display: flex;
   flex-direction: column;
@@ -205,7 +211,7 @@ label {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-medium);
   font-size: 0.9rem;
-  background: white;
+  background: var(--bg-card);
   color: var(--text-primary);
   box-sizing: border-box;
   font-family: inherit;
@@ -508,6 +514,33 @@ label {
   }
 }
 
+/* ── Dark mode overrides ── */
+[data-theme="dark"] .donate-hero-quote,
+[data-theme="dark"] .field-group h3,
+[data-theme="dark"] .donation-card h2,
+[data-theme="dark"] .story-card h1,
+[data-theme="dark"] .story-card h3 { color: var(--text-primary); }
+
+[data-theme="dark"] .freq-btn:not(.freq-active) {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border-color: var(--border-medium);
+}
+
+[data-theme="dark"] .currency-select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--border-medium);
+}
+
+[data-theme="dark"] .donate-page input[type='text'],
+[data-theme="dark"] .donate-page input[type='email'],
+[data-theme="dark"] .donate-page input[type='number'],
+[data-theme="dark"] .donate-page input[type='tel'] {
+  background: var(--bg-page);
+  border-color: var(--border-medium);
+}
+
 /* ── Account prompt / linked banners ── */
 .account-linked-banner {
   display: flex;
@@ -530,8 +563,8 @@ label {
 .account-prompt-banner {
   margin-top: 0.75rem;
   padding: 0.75rem 1rem;
-  background: #f8f4ee;
-  border: 1px solid var(--cove-sand);
+  background: var(--bg-accent);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   font-size: 0.85rem;
 }

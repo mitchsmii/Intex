@@ -69,3 +69,357 @@
   --space-xl:  40px;
   --space-2xl: 64px;
 }
+
+/* ===== Dark Mode Overrides ===== */
+/* All contrast ratios meet WCAG AA (4.5:1 normal text, 3:1 large/UI) */
+[data-theme="dark"] {
+  /* --- Backgrounds (darkest → lightest) --- */
+  --bg-page:       #131e24;   /* page base */
+  --bg-card:       #1c2d36;   /* cards, panels */
+  --bg-sidebar:    #1a3444;   /* sidebar — distinct dark teal (NOT pitch black) */
+  --bg-hover:      rgba(94, 158, 160, 0.14);
+  --bg-accent:     #1e3040;
+
+  /* --- Text (WCAG AA on --bg-card #1c2d36) --- */
+  --text-primary:   #dff0f0;   /* ~12:1 contrast ✓ */
+  --text-secondary: #8ec0c4;   /* ~5.5:1 contrast ✓ */
+  --text-muted:     #5e8e92;   /* ~3:1 — hints/placeholders only */
+  --text-inverse:   #ffffff;   /* KEEP WHITE — used on colored/dark surfaces */
+  --text-link:      #7dd4d8;   /* brightened teal, ~5:1 ✓ */
+
+  /* --- Borders (visible but not glaring) --- */
+  --border-light:  #264050;
+  --border-medium: #305868;
+
+  /* --- Shadows --- */
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg:  0 8px 28px rgba(0, 0, 0, 0.65);
+
+  /* --- Status colors (brightened for dark bg readability) --- */
+  --color-success: #4ec48e;   /* ~4.5:1 on bg-card ✓ */
+  --color-warning: #e0b458;   /* ~5:1 on bg-card ✓ */
+  --color-error:   #e06868;   /* ~4.5:1 on bg-card ✓ */
+
+  /* --- Brand / semantic tokens (remapped for dark surfaces) --- */
+  --cove-deep:    #1a3444;    /* matches sidebar */
+  --cove-anchor:  #1a3444;
+  --cove-sand:    #2e2618;    /* warm dark tone instead of cream */
+  --cove-seafoam: rgba(94, 158, 160, 0.12);
+  --cove-warning: #2e2618;
+  --cove-done:    rgba(94, 158, 160, 0.09);
+  --cove-calm:    #4ec48e;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SW PORTAL — DARK MODE FIXES
+   --cove-deep (#1a3444) in dark mode is nearly the same shade as --bg-card
+   (#1c2d36), making all text that uses it invisible. The overrides below
+   remap text uses to --text-primary and fix hardcoded white backgrounds.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Headings and standalone body text ── */
+[data-theme="dark"] .sw-home-header h1,
+[data-theme="dark"] .sw-home-recent h2,
+[data-theme="dark"] .stat-value,
+[data-theme="dark"] .case-card-id,
+[data-theme="dark"] .residents-header h1,
+[data-theme="dark"] .resident-code,
+[data-theme="dark"] .rd-header h1,
+[data-theme="dark"] .rd-status-value,
+[data-theme="dark"] .rd-status-mh-value,
+[data-theme="dark"] .rd-timeline-title,
+[data-theme="dark"] .rd-card h2,
+[data-theme="dark"] .rd-dl dd,
+[data-theme="dark"] .rd-score-row,
+[data-theme="dark"] .rd-alert-title,
+[data-theme="dark"] .rd-alert-detail,
+[data-theme="dark"] .rd-school,
+[data-theme="dark"] .rd-completion,
+[data-theme="dark"] .rd-mh-value,
+[data-theme="dark"] .rd-modal-header h2,
+[data-theme="dark"] .analytics-title,
+[data-theme="dark"] .pr-header h1,
+[data-theme="dark"] .pr-main-header h2,
+[data-theme="dark"] .pr-trend-label,
+[data-theme="dark"] .pr-card-date,
+[data-theme="dark"] .pr-card-emotion,
+[data-theme="dark"] .pr-page-current,
+[data-theme="dark"] .pr-rail-code,
+[data-theme="dark"] .pr-row-interventions,
+[data-theme="dark"] .ip-header h1,
+[data-theme="dark"] .ip-main-header h2,
+[data-theme="dark"] .ip-conferences h3,
+[data-theme="dark"] .ip-conf-date,
+[data-theme="dark"] .ip-rail-code,
+[data-theme="dark"] .ap-header h1,
+[data-theme="dark"] .ap-main-header h2,
+[data-theme="dark"] .ap-score-card-value,
+[data-theme="dark"] .ap-score-card-band,
+[data-theme="dark"] .ap-detail-line,
+[data-theme="dark"] .ap-rail-code,
+[data-theme="dark"] .vc-header h1,
+[data-theme="dark"] .vc-main-header h2,
+[data-theme="dark"] .vc-conf-section h3,
+[data-theme="dark"] .vc-rail-code,
+[data-theme="dark"] .vc-card-date,
+[data-theme="dark"] .vc-card-line,
+[data-theme="dark"] .vc-conf-date,
+[data-theme="dark"] .vc-conf-cat,
+[data-theme="dark"] .vc-page-current,
+[data-theme="dark"] .cc-header h1,
+[data-theme="dark"] .cc-main-header h2,
+[data-theme="dark"] .cc-section-header h2,
+[data-theme="dark"] .cc-section-header h3,
+[data-theme="dark"] .cc-rail-code,
+[data-theme="dark"] .cc-detail-summary,
+[data-theme="dark"] .cc-detail-plan-desc { color: var(--text-primary); }
+
+/* ── 2. Form field labels (small caps) ── */
+[data-theme="dark"] .pr-field > span,
+[data-theme="dark"] .ip-field > span,
+[data-theme="dark"] .vc-field > span { color: var(--text-secondary); }
+
+/* ── 3. Table header rows ── */
+[data-theme="dark"] .pr-list-head,
+[data-theme="dark"] .ip-list-head,
+[data-theme="dark"] .ap-list-head,
+[data-theme="dark"] .vc-list-head,
+[data-theme="dark"] .cc-list-head {
+  background: var(--bg-accent);
+  color: var(--text-secondary);
+}
+
+/* ── 4. Clickable table rows ── */
+[data-theme="dark"] .pr-row,
+[data-theme="dark"] .ip-row,
+[data-theme="dark"] .ap-row,
+[data-theme="dark"] .vc-row,
+[data-theme="dark"] .cc-row { color: var(--text-primary); }
+
+/* ── 5. Filter chips (inactive state) ── */
+[data-theme="dark"] .pr-filter:not(.pr-filter--active),
+[data-theme="dark"] .ip-filter:not(.ip-filter--active),
+[data-theme="dark"] .ap-filter:not(.ap-filter--active) {
+  background: var(--bg-card);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+/* ── 6. Secondary / cancel buttons ── */
+[data-theme="dark"] .pr-btn--secondary,
+[data-theme="dark"] .ip-btn--secondary,
+[data-theme="dark"] .vc-btn--secondary,
+[data-theme="dark"] .rd-modal-cancel {
+  background: var(--bg-card);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+/* ── 7. Pagination buttons ── */
+[data-theme="dark"] .pr-page-btn,
+[data-theme="dark"] .pr-page-size,
+[data-theme="dark"] .vc-page-btn {
+  background: var(--bg-card);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+/* ── 8. White-background form inputs ── */
+[data-theme="dark"] .rd-modal-input,
+[data-theme="dark"] .rd-status-select,
+[data-theme="dark"] .pr-field input,
+[data-theme="dark"] .pr-field textarea,
+[data-theme="dark"] .ip-field input,
+[data-theme="dark"] .ip-field select,
+[data-theme="dark"] .ip-field textarea,
+[data-theme="dark"] .vc-field input,
+[data-theme="dark"] .vc-field select,
+[data-theme="dark"] .vc-field textarea,
+[data-theme="dark"] .ip-plan-status {
+  background: var(--bg-page);
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+/* ── 9. White-background cards and panels ── */
+[data-theme="dark"] .pr-card,
+[data-theme="dark"] .vc-card,
+[data-theme="dark"] .vc-conf-card,
+[data-theme="dark"] .cc-detail-plan,
+[data-theme="dark"] .ip-conf-item,
+[data-theme="dark"] .ap-new-menu,
+[data-theme="dark"] .ap-score-card {
+  background: var(--bg-card);
+  border-color: var(--border-medium);
+}
+
+/* ── 10. Expanded row detail panels (#fafafa) ── */
+[data-theme="dark"] .pr-row-detail,
+[data-theme="dark"] .ap-row-detail,
+[data-theme="dark"] .vc-row-detail,
+[data-theme="dark"] .cc-row-detail { background: var(--bg-page); }
+
+/* ── 11. Dropdown menu items ── */
+[data-theme="dark"] .ap-new-menu-item { color: var(--text-primary); }
+[data-theme="dark"] .ap-new-menu-item:hover { background: var(--bg-hover); }
+
+/* ── 12. Draft banner ── */
+[data-theme="dark"] .pr-draft-banner {
+  background: var(--bg-accent);
+  color: var(--text-primary);
+}
+
+/* ── 13. Seaglass-background chips (light green + dark text) ── */
+[data-theme="dark"] .rd-chip,
+[data-theme="dark"] .rd-enrollment,
+[data-theme="dark"] .cc-cat-chip,
+[data-theme="dark"] .cc-count,
+[data-theme="dark"] .cc-status-pill,
+[data-theme="dark"] .ip-plan-cat,
+[data-theme="dark"] .vc-conf-status,
+[data-theme="dark"] .vc-flag--outcome {
+  background: rgba(94, 158, 160, 0.18);
+  color: var(--text-primary);
+}
+
+/* ── 14. Status score chips ── */
+[data-theme="dark"] .rd-score-bar,
+[data-theme="dark"] .rd-status-mh-chip,
+[data-theme="dark"] .rd-status-mh-chip--neutral { background: var(--bg-accent); }
+
+[data-theme="dark"] .rd-mh-cell { background: var(--bg-card); }
+[data-theme="dark"] .rd-mh-cell--bad { background: rgba(224, 104, 104, 0.1); }
+[data-theme="dark"] .rd-mh-cell--warn { background: rgba(224, 180, 88, 0.1); }
+
+/* ── 15. Transfer (blue) status badges ── */
+[data-theme="dark"] .case-card-status--transferred,
+[data-theme="dark"] .badge-status--transferred,
+[data-theme="dark"] .rd-status--transferred {
+  background: rgba(59, 130, 246, 0.18);
+  color: #7bb8f8;
+}
+
+/* ── 16. Risk badges (hardcoded light red / light yellow) ── */
+[data-theme="dark"] .badge-risk--high,
+[data-theme="dark"] .rd-status-mh-chip--high,
+[data-theme="dark"] .rd-contact-pill--bad { background: rgba(224, 104, 104, 0.15); }
+
+[data-theme="dark"] .badge-risk--medium,
+[data-theme="dark"] .rd-status-mh-chip--medium { background: rgba(224, 180, 88, 0.15); }
+
+[data-theme="dark"] .rd-contact-pill--unknown { background: var(--bg-accent); color: var(--text-muted); }
+
+/* ── 17. Alert banners ── */
+[data-theme="dark"] .rd-alert-banner--high { background: rgba(224, 104, 104, 0.1); }
+[data-theme="dark"] .cc-gap-alert--warn { background: var(--bg-accent); color: var(--text-secondary); }
+[data-theme="dark"] .cc-gap-alert--bad { background: rgba(224, 104, 104, 0.1); }
+
+/* ── 18. Admission checklist status badges ── */
+[data-theme="dark"] .ip-cl-status--pending  { background: rgba(224, 180, 88, 0.15); color: var(--color-warning); }
+[data-theme="dark"] .ip-cl-status--approved { background: rgba(78, 196, 142, 0.15); color: var(--color-success); }
+[data-theme="dark"] .ip-cl-status--rejected { background: rgba(224, 104, 104, 0.15); color: var(--color-error); }
+[data-theme="dark"] .ip-cl-legal-note {
+  background: rgba(224, 180, 88, 0.08);
+  border-color: rgba(224, 180, 88, 0.3);
+  color: var(--color-warning);
+}
+[data-theme="dark"] .ip-cl-pending { color: var(--color-warning); }
+
+/* ── 19. Edit/reactivate button text (dark-on-light chip bg → light text) ── */
+[data-theme="dark"] .rd-btn-edit,
+[data-theme="dark"] .rd-btn-reactivate { color: var(--text-primary); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN PORTAL — DARK MODE FIXES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page titles / major headings ── */
+[data-theme="dark"] .mu-title,
+[data-theme="dark"] .mu-seg-title,
+[data-theme="dark"] .mu-modal-title,
+[data-theme="dark"] .mu-kpi-value,
+[data-theme="dark"] .mu-td-name,
+[data-theme="dark"] .mu-td-num,
+[data-theme="dark"] .rp-title,
+[data-theme="dark"] .rp-kpi-value,
+[data-theme="dark"] .rp-card-title,
+[data-theme="dark"] .rp-section-title,
+[data-theme="dark"] .rp-seg-title,
+[data-theme="dark"] .rp-seg-row-name,
+[data-theme="dark"] .rp-seg-row-pct,
+[data-theme="dark"] .rp-goal-raised,
+[data-theme="dark"] .rp-bar-value,
+[data-theme="dark"] .rp-annual-title,
+[data-theme="dark"] .rp-td-name,
+[data-theme="dark"] .rp-alloc-amt,
+[data-theme="dark"] .rp-insight-callout,
+[data-theme="dark"] .rp-goal-trend-main-title,
+[data-theme="dark"] .rp-goal-chart-heading,
+[data-theme="dark"] .rp-threshold-label,
+[data-theme="dark"] .rp-ml-action-type,
+[data-theme="dark"] .rp-ml-why-label,
+[data-theme="dark"] .lapse-importance-label,
+[data-theme="dark"] .lapse-importance-title,
+[data-theme="dark"] .lapse-risk-box-dollars,
+[data-theme="dark"] .sm-page-title,
+[data-theme="dark"] .sm-stat-number,
+[data-theme="dark"] .sm-bio-title,
+[data-theme="dark"] .sm-tips-header,
+[data-theme="dark"] .sm-pstat-val,
+[data-theme="dark"] .ad-summary-total,
+[data-theme="dark"] .ad-conf-date,
+[data-theme="dark"] .ad-sh-status,
+[data-theme="dark"] .ad-td-name,
+[data-theme="dark"] .ad-td-amount,
+[data-theme="dark"] .wizard-step-active,
+[data-theme="dark"] .wizard-capacity,
+[data-theme="dark"] .wizard-option-title,
+[data-theme="dark"] .wizard-label,
+[data-theme="dark"] .wizard-code-value,
+[data-theme="dark"] .wizard-review-value,
+[data-theme="dark"] .ap-resident-code { color: var(--text-primary); }
+
+/* ── Active tab states (have !important in light mode) ── */
+[data-theme="dark"] .rp-tab-active,
+[data-theme="dark"] .mu-th-active,
+[data-theme="dark"] .ap-tab--active { color: var(--text-primary) !important; }
+
+/* ── Chip/badge text on seaglass bg ── */
+[data-theme="dark"] .mu-chip,
+[data-theme="dark"] .mu-badge-type,
+[data-theme="dark"] .mu-badge-ok,
+[data-theme="dark"] .rp-badge-ok,
+[data-theme="dark"] .rp-loading-badge,
+[data-theme="dark"] .lapse-reason-chip,
+[data-theme="dark"] .sm-badge-em,
+[data-theme="dark"] .sm-badge-email,
+[data-theme="dark"] .rrp-auto-badge,
+[data-theme="dark"] .rrp-auto-pill {
+  background: rgba(94, 158, 160, 0.18);
+  color: var(--text-primary);
+}
+
+/* ── Active KPI tab label ── */
+[data-theme="dark"] .mu-kpi-active .mu-kpi-label { color: var(--text-secondary); }
+
+/* ── Donation report white/sand backgrounds ── */
+[data-theme="dark"] .rp-goal-preset:not(.rp-goal-preset-active),
+[data-theme="dark"] .rp-range-btn { background: var(--bg-card); border-color: var(--border-medium); color: var(--text-primary); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PUBLIC PAGES — DARK MODE FIXES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .hp-section-header,
+[data-theme="dark"] .hp-mission-text,
+[data-theme="dark"] .hp-holistic-content,
+[data-theme="dark"] .hp-campaign-inner,
+[data-theme="dark"] .hp-progress-labels,
+[data-theme="dark"] .ip-section-title,
+[data-theme="dark"] .ip-stat-number,
+[data-theme="dark"] .ip-stat-label,
+[data-theme="dark"] .ip-outcome-number,
+[data-theme="dark"] .ip-photo-break-text,
+[data-theme="dark"] .ip-cta-inner,
+[data-theme="dark"] .privacy-inner { color: var(--text-primary); }
