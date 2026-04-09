@@ -7,6 +7,7 @@ namespace WebApplication1.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class DonationsController : ControllerBase
 {
     private readonly AppDbContext _context;
@@ -32,6 +33,7 @@ public class DonationsController : ControllerBase
         return Ok(donation);
     }
 
+    [AllowAnonymous]
     [HttpGet("total")]
     public async Task<IActionResult> Total()
     {

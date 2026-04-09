@@ -777,6 +777,64 @@ namespace WebApplication1.Migrations
                     b.ToTable("sw_notifications");
                 });
 
+            modelBuilder.Entity("WebApplication1.Data.Partner", b =>
+                {
+                    b.Property<int>("PartnerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("partner_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PartnerId"));
+
+                    b.Property<string>("ContactName")
+                        .HasColumnType("text")
+                        .HasColumnName("contact_name");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<string>("PartnerName")
+                        .HasColumnType("text")
+                        .HasColumnName("partner_name");
+
+                    b.Property<string>("PartnerType")
+                        .HasColumnType("text")
+                        .HasColumnName("partner_type");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("text")
+                        .HasColumnName("phone");
+
+                    b.Property<string>("Region")
+                        .HasColumnType("text")
+                        .HasColumnName("region");
+
+                    b.Property<string>("RoleType")
+                        .HasColumnType("text")
+                        .HasColumnName("role_type");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.HasKey("PartnerId");
+
+                    b.ToTable("partners");
+                });
+
             modelBuilder.Entity("WebApplication1.Data.ProcessRecording", b =>
                 {
                     b.Property<int>("RecordingId")
