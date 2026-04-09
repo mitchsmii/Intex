@@ -87,9 +87,14 @@ export default function DonorProfilePage() {
   const fullName = `${supporter.firstName ?? ''} ${supporter.lastName ?? ''}`.trim()
   const name = supporter.displayName || fullName || supporter.email || 'Donor'
 
+  const donorSince = supporter.firstDonationDate
+    ? new Date(supporter.firstDonationDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    : '—'
+
   return (
     <div className="dp-page">
       <div className="dp-card">
+        {/* ── Avatar row ── */}
         <div className="dp-avatar-row">
           <div className="dp-avatar">{name.charAt(0).toUpperCase()}</div>
           <div>
@@ -99,91 +104,123 @@ export default function DonorProfilePage() {
         </div>
 
         {success && (
-          <div className="dp-success" role="status">
-            Profile updated successfully.
-          </div>
+          <div className="dp-success" role="status">Profile updated successfully.</div>
         )}
         {error && (
-          <div className="dp-error" role="alert">
-            {error}
-          </div>
+          <div className="dp-error" role="alert">{error}</div>
         )}
 
+        {/* ── Always-visible form ── */}
+        <div className="dp-form">
+
+          {/* First name — editable */}
+          <div className="dp-form-row">
+            <label className="dp-label" htmlFor="dp-firstName">First Name</label>
+            <div className="dp-input-wrapper">
+              <input
+                id="dp-firstName"
+                className={`dp-input${!editing ? ' dp-input--locked' : ''}`}
+                value={firstName}
+                disabled={!editing}
+                onChange={e => setFirstName(e.target.value)}
+                placeholder={editing ? 'Enter first name' : undefined}
+              />
+              {!editing && <span className="dp-lock-icon" aria-hidden="true">🔒</span>}
+            </div>
+          </div>
+
+          {/* Last name — read-only always */}
+          <div className="dp-form-row">
+            <label className="dp-label" htmlFor="dp-lastName">Last Name</label>
+            <div className="dp-input-wrapper">
+              <input
+                id="dp-lastName"
+                className="dp-input dp-input--locked"
+                value={supporter.lastName ?? ''}
+                disabled
+                readOnly
+              />
+              <span className="dp-lock-icon" aria-hidden="true">🔒</span>
+            </div>
+          </div>
+
+          {/* Display name — editable */}
+          <div className="dp-form-row">
+            <label className="dp-label" htmlFor="dp-displayName">Display Name</label>
+            <div className="dp-input-wrapper">
+              <input
+                id="dp-displayName"
+                className={`dp-input${!editing ? ' dp-input--locked' : ''}`}
+                value={displayName}
+                disabled={!editing}
+                onChange={e => setDisplayName(e.target.value)}
+                placeholder={editing ? 'How you\'d like to appear' : undefined}
+              />
+              {!editing && <span className="dp-lock-icon" aria-hidden="true">🔒</span>}
+            </div>
+          </div>
+
+          {/* Email — read-only always */}
+          <div className="dp-form-row">
+            <label className="dp-label" htmlFor="dp-email">Email</label>
+            <div className="dp-input-wrapper">
+              <input
+                id="dp-email"
+                className="dp-input dp-input--locked"
+                value={supporter.email ?? ''}
+                disabled
+                readOnly
+              />
+              <span className="dp-lock-icon" aria-hidden="true">🔒</span>
+            </div>
+          </div>
+
+          {/* Phone — editable */}
+          <div className="dp-form-row">
+            <label className="dp-label" htmlFor="dp-phone">Phone</label>
+            <div className="dp-input-wrapper">
+              <input
+                id="dp-phone"
+                className={`dp-input${!editing ? ' dp-input--locked' : ''}`}
+                value={phone}
+                disabled={!editing}
+                onChange={e => setPhone(e.target.value)}
+                placeholder={editing ? '+63 9XX XXX XXXX' : undefined}
+              />
+              {!editing && <span className="dp-lock-icon" aria-hidden="true">🔒</span>}
+            </div>
+          </div>
+
+          {/* Donor since — read-only always */}
+          <div className="dp-form-row">
+            <label className="dp-label" htmlFor="dp-donorSince">Donor Since</label>
+            <div className="dp-input-wrapper">
+              <input
+                id="dp-donorSince"
+                className="dp-input dp-input--locked"
+                value={donorSince}
+                disabled
+                readOnly
+              />
+              <span className="dp-lock-icon" aria-hidden="true">🔒</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Action buttons ── */}
         {!editing ? (
-          <>
-            <div className="dp-fields">
-              <div className="dp-field">
-                <span className="dp-field-label">First Name</span>
-                <span className="dp-field-value">{supporter.firstName || '—'}</span>
-              </div>
-              <div className="dp-field">
-                <span className="dp-field-label">Last Name</span>
-                <span className="dp-field-value">{supporter.lastName || '—'}</span>
-              </div>
-              <div className="dp-field">
-                <span className="dp-field-label">Display Name</span>
-                <span className="dp-field-value">{supporter.displayName || '—'}</span>
-              </div>
-              <div className="dp-field">
-                <span className="dp-field-label">Phone</span>
-                <span className="dp-field-value">{supporter.phone || '—'}</span>
-              </div>
-              <div className="dp-field">
-                <span className="dp-field-label">Donor Since</span>
-                <span className="dp-field-value">
-                  {supporter.firstDonationDate
-                    ? new Date(supporter.firstDonationDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                    : '—'}
-                </span>
-              </div>
-            </div>
-            <button className="dp-btn dp-btn-primary" onClick={() => setEditing(true)}>
-              Edit Profile
-            </button>
-          </>
+          <button className="dp-btn dp-btn-primary" onClick={() => setEditing(true)}>
+            Edit Profile
+          </button>
         ) : (
-          <>
-            <div className="dp-form">
-              <div className="dp-form-row">
-                <label className="dp-label" htmlFor="dp-firstName">First Name</label>
-                <input
-                  id="dp-firstName"
-                  className="dp-input"
-                  value={firstName}
-                  onChange={e => setFirstName(e.target.value)}
-                  placeholder="Enter first name"
-                />
-              </div>
-              <div className="dp-form-row">
-                <label className="dp-label" htmlFor="dp-displayName">Display Name</label>
-                <input
-                  id="dp-displayName"
-                  className="dp-input"
-                  value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
-                  placeholder="How you'd like to appear"
-                />
-              </div>
-              <div className="dp-form-row">
-                <label className="dp-label" htmlFor="dp-phone">Phone</label>
-                <input
-                  id="dp-phone"
-                  className="dp-input"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  placeholder="+63 9XX XXX XXXX"
-                />
-              </div>
-            </div>
-            <div className="dp-actions">
-              <button className="dp-btn dp-btn-ghost" onClick={handleCancel} disabled={saving}>
-                Cancel
-              </button>
-              <button className="dp-btn dp-btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving…' : 'Save Changes'}
-              </button>
-            </div>
-          </>
+          <div className="dp-actions">
+            <button className="dp-btn dp-btn-ghost" onClick={handleCancel} disabled={saving}>
+              Cancel
+            </button>
+            <button className="dp-btn dp-btn-primary" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save Changes'}
+            </button>
+          </div>
         )}
       </div>
     </div>

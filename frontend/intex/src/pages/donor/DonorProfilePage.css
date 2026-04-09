@@ -91,6 +91,12 @@
   gap: 0.375rem;
 }
 
+.dp-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .dp-label {
   font-size: 0.8rem;
   font-weight: 600;
@@ -100,18 +106,45 @@
 }
 
 .dp-input {
+  flex: 1;
   padding: 0.6rem 0.875rem;
   border: 1px solid var(--border-light, #cdd8e0);
   border-radius: 8px;
   font-size: 0.95rem;
-  background: var(--bg-page, #f8fafb);
+  background: var(--bg-card, #fff);
   color: var(--text-primary, #0e2a47);
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
+  font-family: inherit;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .dp-input:focus {
   border-color: var(--color-primary, #1a6c7a);
+  box-shadow: 0 0 0 3px rgba(94, 158, 160, 0.12);
+}
+
+/* Locked (disabled) appearance */
+.dp-input--locked {
+  background: var(--bg-page, #f4f7f8);
+  color: var(--text-secondary, #5a7080);
+  border-color: var(--border-light, #e0e8ec);
+  cursor: default;
+  padding-right: 2.25rem; /* room for lock icon */
+}
+
+.dp-input--locked:disabled {
+  opacity: 1; /* don't fade — keep readable */
+}
+
+.dp-lock-icon {
+  position: absolute;
+  right: 0.625rem;
+  font-size: 0.75rem;
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
 }
 
 .dp-actions {

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import PublicLayout from './components/common/PublicLayout'
@@ -37,6 +38,7 @@ import CookieConsent from './components/common/CookieConsent'
 
 function App() {
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''}>
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
@@ -103,6 +105,7 @@ function App() {
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
+    </GoogleOAuthProvider>
   )
 }
 

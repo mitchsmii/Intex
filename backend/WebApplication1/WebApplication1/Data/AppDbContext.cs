@@ -37,6 +37,11 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     {
         base.OnModelCreating(modelBuilder);
 
+        // supporters.supporter_id uses a PostgreSQL sequence — don't send a value in INSERT
+        modelBuilder.Entity<Supporter>()
+            .Property(s => s.SupporterId)
+            .ValueGeneratedOnAdd();
+
         // residents.resident_id uses a PostgreSQL sequence — don't send a value in INSERT
         modelBuilder.Entity<Resident>()
             .Property(r => r.ResidentId)

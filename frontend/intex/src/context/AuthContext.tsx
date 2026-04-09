@@ -9,7 +9,15 @@ export interface AuthContextType {
   // isLoading is ONLY true during the initial mount session-restore.
   // The login form manages its own submitting state independently.
   isLoading: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<AuthUser>
+  register: (payload: {
+    email: string
+    password: string
+    firstName?: string
+    lastName?: string
+    phone?: string
+  }) => Promise<AuthUser>
+  googleLogin: (idToken: string) => Promise<AuthUser>
   logout: () => void
 }
 
@@ -44,8 +52,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('cove_token', t)
     setToken(t)
     setUser(u)
-    // Resolves on success, throws on failure.
-    // The calling component (LoginPage) handles redirect after this resolves.
+    return u // return user so LoginPage can navigate immediately
+  }, [])
+
+  const register = useCallback(async (payload: {
+    email: string
+    password: string
+    firstName?: string
+    lastName?: string
+    phone?: string
+  }) => {
+    const { token: t, user: u } = await authService.register(payload)
+    localStorage.setItem('cove_token', t)
+    setToken(t)
+    setUser(u)
+    return u
+  }, [])
+
+  const googleLogin = useCallback(async (idToken: string) => {
+    const { token: t, user: u } = await authService.googleLogin(idToken)
+    localStorage.setItem('cove_token', t)
+    setToken(t)
+    setUser(u)
+    return u
   }, [])
 
   const logout = useCallback(() => {
@@ -55,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, register, googleLogin, logout }}>
       {children}
     </AuthContext.Provider>
   )

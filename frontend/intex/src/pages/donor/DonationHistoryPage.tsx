@@ -201,7 +201,7 @@ export default function DonationHistoryPage() {
               We couldn't find any donations linked to <strong>{user?.email}</strong>.
               Make your first donation to start building your giving history.
             </p>
-            <Link to="/donate" className="dh-lookup-btn" style={{ display: 'inline-block', textDecoration: 'none', textAlign: 'center' }}>
+            <Link to="/donor/donate" className="dh-lookup-btn" style={{ display: 'inline-block', textDecoration: 'none', textAlign: 'center' }}>
               Make a Donation
             </Link>
           </div>

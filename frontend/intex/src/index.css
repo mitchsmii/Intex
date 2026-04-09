@@ -1,6 +1,12 @@
 body {
   margin: 0;
-  background: #f9fafb;
+  background: var(--bg-page, #f8faf9);
+  color: var(--text-primary, #1a2e2e);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background 0.2s, color 0.2s;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
 }
