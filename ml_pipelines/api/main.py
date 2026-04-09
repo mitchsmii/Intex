@@ -207,6 +207,33 @@ def _extract_feature_importance(model: Any, feature_names: list[str]) -> list[di
     return pairs
 
 
+def _extract_pipeline_feature_importance(model: Any, feature_names: list[str]) -> list[dict[str, Any]]:
+    """Extract feature importance for plain models or sklearn Pipelines.
+
+    For pipeline models that include a selector step, this maps the final model's
+    importances to only the selected feature names.
+    """
+    if hasattr(model, "named_steps"):
+        selector = model.named_steps.get("select")
+        inner_model = model.named_steps.get("model", model)
+
+        selected_features = feature_names
+        if selector is not None and hasattr(selector, "get_support"):
+            support = selector.get_support()
+            if len(support) != len(feature_names):
+                raise HTTPException(
+                    status_code=500,
+                    detail="Selector mask length does not match feature list length.",
+                )
+            selected_features = [
+                feature for feature, keep in zip(feature_names, support) if bool(keep)
+            ]
+
+        return _extract_feature_importance(inner_model, selected_features)
+
+    return _extract_feature_importance(model, feature_names)
+
+
 @app.get("/feature-importance/social-engagement")
 def social_engagement_feature_importance() -> dict[str, Any]:
     """Return global feature importance for the social engagement donation classifier.
@@ -251,7 +278,7 @@ def donor_churn_feature_importance() -> dict[str, Any]:
     """
     donor_model = _load_artifact(DONOR_MODEL_PATH)
     donor_features = list(_load_artifact(DONOR_FEATURES_PATH))
-    return {"features": _extract_feature_importance(donor_model, donor_features)}
+    return {"features": _extract_pipeline_feature_importance(donor_model, donor_features)}
 
 
 @app.post("/predict/donor-churn")
