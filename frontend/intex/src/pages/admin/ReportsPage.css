@@ -34,6 +34,76 @@
   border-radius: var(--radius-full);
 }
 
+/* ── Donor OKR banner ── */
+.rp-okr-banner {
+  background: #f0f7f4;
+  border: 1px solid var(--cove-seaglass);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.rp-okr-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.rp-okr-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-left: 5px solid var(--cove-tidal);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.rp-okr-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.rp-okr-objective {
+  margin: 0 0 var(--space-xs);
+  color: var(--cove-deep);
+  font-size: 0.95rem;
+}
+
+.rp-okr-value {
+  font-size: clamp(2rem, 3vw, 2.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--cove-deep);
+  margin-bottom: 6px;
+}
+
+.rp-okr-target {
+  margin: 0 0 var(--space-sm);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.rp-okr-track {
+  height: 10px;
+  background: var(--border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.rp-okr-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.rp-okr-fill-ok { background: #15803d; }
+.rp-okr-fill-warn { background: #d97706; }
+.rp-okr-fill-bad { background: #dc2626; }
+
 /* ── Tabs ── */
 .rp-tabs {
   display: flex;
@@ -695,6 +765,7 @@
   .rp-kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .rp-two-col  { grid-template-columns: 1fr; }
   .rp-pillars  { grid-template-columns: 1fr; }
+  .rp-okr-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Donor lapse risk filter boxes ── */
