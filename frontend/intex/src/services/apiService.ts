@@ -345,6 +345,15 @@ async function authPost<T>(path: string, body: unknown): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function authDelete(path: string): Promise<void> {
+  const token = localStorage.getItem('cove_token')
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`)
+}
+
 async function authPatch(path: string): Promise<void> {
   const token = localStorage.getItem('cove_token')
   await fetch(`${BASE_URL}${path}`, {
@@ -425,4 +434,16 @@ export const api = {
     authPatchWithBody<AdmissionChecklist>(`/api/admissionchecklists/${id}/approve`, { notes: notes ?? null }),
   rejectChecklist:            (id: number, notes?: string) =>
     authPatchWithBody<AdmissionChecklist>(`/api/admissionchecklists/${id}/reject`, { notes: notes ?? null }),
+
+  // Admin-only: full safehouse data including capacity/occupancy
+  getAdminSafehouses:         () => authGet<Safehouse[]>('/api/safehouses/admin'),
+
+  // Delete operations (Admin only — require confirmed token)
+  deleteSupporter:            (id: number) => authDelete(`/api/supporters/${id}`),
+  deleteSocialWorker:         (id: number) => authDelete(`/api/socialworkers/${id}`),
+  deleteDonation:             (id: number) => authDelete(`/api/donations/${id}`),
+
+  // Update supporter profile
+  updateSupporter:            (id: number, body: Partial<{ firstName: string; lastName: string; displayName: string; email: string; phone: string }>) =>
+    authPatchWithBody<Supporter>(`/api/supporters/${id}`, body),
 }

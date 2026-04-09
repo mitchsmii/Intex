@@ -65,9 +65,6 @@ export default function ImpactPage() {
   }, [])
 
   const activeSafehouses = safehouses.filter(s => s.status === 'Active').length
-  const totalCap = safehouses.reduce((s, h) => s + (h.capacityGirls ?? 0), 0)
-  const totalOcc = safehouses.reduce((s, h) => s + (h.currentOccupancy ?? 0), 0)
-  const occupancyPct = totalCap > 0 ? Math.round((totalOcc / totalCap) * 100) : 0
 
   const avgHealth = metrics.filter(m => m.avgHealthScore != null).length
     ? metrics.reduce((s, m) => s + Number(m.avgHealthScore ?? 0), 0) / metrics.filter(m => m.avgHealthScore != null).length
@@ -157,7 +154,7 @@ export default function ImpactPage() {
               {
                 value: activeSafehouses, suffix: '',
                 label: 'Active Safehouses',
-                sub: `${totalCap} total beds across all locations`,
+                sub: 'Providing safety and care across the Philippines',
                 icon: (
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -205,20 +202,20 @@ export default function ImpactPage() {
 
           <div className="ip-outcomes-grid">
 
-            {/* Occupancy */}
+            {/* Active Safehouses */}
             <div className="ip-outcome-card">
               <div className="ip-outcome-header">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                   <polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
-                <h3>Shelter Occupancy</h3>
+                <h3>Active Safehouses</h3>
               </div>
-              <div className="ip-outcome-number">{occupancyPct}<span className="ip-outcome-unit">%</span></div>
+              <div className="ip-outcome-number">{activeSafehouses}<span className="ip-outcome-unit"> locations</span></div>
               <div className="ip-outcome-bar-track">
-                <div className="ip-outcome-bar-fill" style={{ width: `${occupancyPct}%` }} />
+                <div className="ip-outcome-bar-fill" style={{ width: '100%' }} />
               </div>
-              <p className="ip-outcome-desc">{totalOcc} of {totalCap} beds occupied — we keep every shelter as full as safely possible.</p>
+              <p className="ip-outcome-desc">Each safehouse provides a secure environment where survivors can heal and rebuild their lives.</p>
             </div>
 
             {/* Health */}

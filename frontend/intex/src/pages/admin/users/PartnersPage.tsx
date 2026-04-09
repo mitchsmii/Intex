@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
 import type { Supporter, Donation } from '../../../services/apiService'
+import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
 import '../ManageUsersPage.css'
 
 const PARTNER_TYPES = ['Organization', 'NGO', 'Church', 'Corporate', 'Government', 'Foundation']
@@ -98,6 +99,8 @@ export default function PartnersPage() {
   const [sortDir,     setSortDir]     = useState<Dir>('asc')
   const [valueFilter, setValueFilter] = useState('')
   const [showAdd,     setShowAdd]     = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Supporter | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => { setValueFilter('') }, [sortCol])
 
@@ -112,6 +115,17 @@ export default function PartnersPage() {
 
   const totalBySupporter = (id: number) =>
     donations.filter(d => d.supporterId === id).reduce((s, d) => s + (d.amount ?? 0), 0)
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.deleteSupporter(deleteTarget.supporterId)
+      setSupporters(prev => prev.filter(s => s.supporterId !== deleteTarget.supporterId))
+      setDeleteTarget(null)
+    } catch { /* ignore */ }
+    finally { setDeleting(false) }
+  }
 
   function toggleSort(col: SortKey) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -162,6 +176,12 @@ export default function PartnersPage() {
 
   return (
     <div className="mu-page">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        itemLabel={deleteTarget ? (deleteTarget.organizationName ?? deleteTarget.displayName ?? `${deleteTarget.firstName ?? ''} ${deleteTarget.lastName ?? ''}`.trim()) : ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
       {showAdd && (
         <AddPartnerModal
           onClose={() => setShowAdd(false)}
@@ -243,11 +263,12 @@ export default function PartnersPage() {
                 <SortTh label="Status"            col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <SortTh label="Total Contributed" col="total"     sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <SortTh label="First Gift"        col="firstDate" sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="mu-empty-cell">No partners found.</td></tr>
+                <tr><td colSpan={8} className="mu-empty-cell">No partners found.</td></tr>
               )}
               {filtered.map(p => {
                 const ds = donations.filter(d => d.supporterId === p.supporterId)
@@ -267,6 +288,16 @@ export default function PartnersPage() {
                     <td><span className={`mu-badge ${p.status === 'Active' ? 'mu-badge-ok' : 'mu-badge-off'}`}>{p.status ?? '—'}</span></td>
                     <td className="mu-td-num">{ds.length ? fmtAmt(tot, ds[0]?.currencyCode) : '—'}</td>
                     <td>{p.firstDonationDate ? new Date(p.firstDonationDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</td>
+                    <td>
+                      <button
+                        className="mu-btn mu-btn-danger"
+                        onClick={() => setDeleteTarget(p)}
+                        disabled={deleting}
+                        style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem' }}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 )
               })}

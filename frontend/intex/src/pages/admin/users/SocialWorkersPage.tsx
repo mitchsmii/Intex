@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../../services/apiService'
 import type { SocialWorker, Safehouse, Resident } from '../../../services/apiService'
+import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal'
 import '../ManageUsersPage.css'
 
 type SortKey = 'fullName' | 'email' | 'phone' | 'safehouse' | 'status' | 'createdAt'
@@ -107,6 +108,8 @@ export default function SocialWorkersPage() {
   const [sortDir,    setSortDir]    = useState<Dir>('asc')
   const [valueFilter, setValueFilter] = useState('')
   const [showAdd,    setShowAdd]    = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<SocialWorker | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => { setValueFilter('') }, [sortCol])
 
@@ -157,6 +160,17 @@ export default function SocialWorkersPage() {
   const assignedResidents = (w: SocialWorker) =>
     residents.filter(r => r.assignedSocialWorker === w.fullName)
 
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await api.deleteSocialWorker(deleteTarget.socialWorkerId)
+      setWorkers(prev => prev.filter(w => w.socialWorkerId !== deleteTarget.socialWorkerId))
+      setDeleteTarget(null)
+    } catch { /* ignore */ }
+    finally { setDeleting(false) }
+  }
+
   function toggleSort(col: SortKey) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortCol(col); setSortDir('asc') }
@@ -199,6 +213,12 @@ export default function SocialWorkersPage() {
 
   return (
     <div className="mu-page">
+      <DeleteConfirmModal
+        open={!!deleteTarget}
+        itemLabel={deleteTarget?.fullName ?? ''}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
       {showAdd && (
         <AddSocialWorkerModal
           safehouses={safehouses}
@@ -284,11 +304,12 @@ export default function SocialWorkersPage() {
                 <SortTh label="Status"     col="status"    sort={sortCol} dir={sortDir} onSort={toggleSort} />
                 <th>Residents</th>
                 <SortTh label="Since"      col="createdAt" sort={sortCol} dir={sortDir} onSort={toggleSort} />
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="mu-empty-cell">No social workers found.</td></tr>
+                <tr><td colSpan={8} className="mu-empty-cell">No social workers found.</td></tr>
               )}
               {filtered.map((w, i) => {
                 const res = assignedResidents(w)
@@ -320,6 +341,16 @@ export default function SocialWorkersPage() {
                       )}
                     </td>
                     <td>{w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</td>
+                    <td>
+                      <button
+                        className="mu-btn mu-btn-danger"
+                        onClick={() => setDeleteTarget(w)}
+                        disabled={deleting}
+                        style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem' }}
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
                 )
               })}

@@ -1,9 +1,0 @@
-.public-layout {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.public-content {
-  flex: 1;
-}
