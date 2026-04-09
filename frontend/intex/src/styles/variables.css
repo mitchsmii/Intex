@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+  /* ===== Typography ===== */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body:    'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ===== Cove Brand Palette ===== */
+  --cove-deep:      #2c4a52;  /* Deep Cove — dark teal, primary dark */
+  --cove-tidal:     #5e9ea0;  /* Tidal — medium teal, primary accent */
+  --cove-seaglass:  #a8d5ba;  /* Sea Glass — soft green */
+  --cove-seafoam:   #d4ebd0;  /* Seafoam — light green */
+  --cove-sand:      #f0e6d3;  /* Warm Sand — sandy cream */
+
+  /* ===== Semantic Colors ===== */
+  --color-primary:       var(--cove-tidal);
+  --color-primary-dark:  var(--cove-deep);
+  --color-primary-light: var(--cove-seaglass);
+
+  /* Backgrounds */
+  --bg-page:       #f8faf9;
+  --bg-card:       #ffffff;
+  --bg-sidebar:    var(--cove-deep);
+  --bg-hover:      var(--cove-seafoam);
+  --bg-accent:     var(--cove-sand);
+
+  /* Text */
+  --text-primary:   #1a2e2e;
+  --text-secondary: #4a6a6a;
+  --text-muted:     #8a9f9f;
+  --text-inverse:   #ffffff;
+  --text-link:      var(--cove-tidal);
+
+  /* Borders */
+  --border-light:  #dfe8e4;
+  --border-medium: #b8cfc7;
+
+  /* Status */
+  --color-success: #3a9e6e;
+  --color-warning: #d4a44a;
+  --color-error:   #c94a4a;
+  --color-info:    var(--cove-tidal);
+
+  /* ===== Semantic role tokens (SW dashboard redesign) ===== */
+  /* Prefer these over raw brand vars — they encode *intent*, not color. */
+  --cove-anchor:   var(--cove-deep);     /* Page anchors: Focus Bar, section titles, resident codes */
+  --cove-interact: var(--cove-tidal);    /* Interactive: buttons, focus rings, chevrons */
+  --cove-calm:     var(--cove-seaglass); /* Positive states: on-track, improving */
+  --cove-done:     var(--cove-seafoam);  /* Quiet/empty: hover bg, empty states */
+  --cove-warning:  var(--cove-sand);     /* Medium-severity accents ONLY — not card backgrounds */
+  --cove-urgent:   #c94a4a;              /* Reserved: high-severity rails, suicide-risk chip */
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(44, 74, 82, 0.08);
+  --shadow-md:  0 4px 12px rgba(44, 74, 82, 0.12);
+  --shadow-lg:  0 8px 24px rgba(44, 74, 82, 0.16);
+
+  /* Border Radius */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  16px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  40px;
+  --space-2xl: 64px;
+}

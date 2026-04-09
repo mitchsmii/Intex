@@ -1,0 +1,112 @@
+.sw-home-header {
+  margin-bottom: var(--space-lg);
+}
+
+.sw-home-header h1 {
+  font-size: 1.5rem;
+  color: var(--cove-deep);
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Stat cards */
+.sw-home-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.stat-card--warning {
+  border-left: 3px solid var(--color-error);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--cove-deep);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Recent cases */
+.sw-home-recent h2 {
+  font-size: 1.1rem;
+  color: var(--cove-deep);
+  margin: 0 0 var(--space-md);
+  font-weight: 600;
+}
+
+.sw-home-cases {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.case-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border-light);
+}
+
+.case-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.case-card-id {
+  font-weight: 600;
+  color: var(--cove-deep);
+  font-size: 1rem;
+}
+
+.case-card-status {
+  font-size: 0.8rem;
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+
+.case-card-status--active {
+  background: var(--cove-seafoam);
+  color: var(--color-success);
+}
+
+.case-card-status--closed {
+  background: var(--cove-sand);
+  color: var(--color-warning);
+}
+
+.case-card-status--transferred {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.case-card-updated {
+  margin: var(--space-xs) 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.sw-home-error {
+  color: var(--color-error);
+  padding: var(--space-lg);
+}

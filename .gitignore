@@ -1,0 +1,41 @@
+# .NET
+**/bin/
+**/obj/
+**/publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Secrets
+appsettings.Development.json
+.env
+.env.*
+
+# Node
+node_modules/
+dist/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MCP config (contains project refs)
+.mcp.json
+
+# AI tooling (not part of the project)
+.agents/
+.claude/
+.superpowers/
+skills-lock.json
+SECURITY_AUDIT_REPORT.md
+
+# Log files
+*.err.log
+*.out.log

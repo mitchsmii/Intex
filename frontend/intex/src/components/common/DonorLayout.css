@@ -1,0 +1,19 @@
+.donor-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.donor-content {
+  margin-left: 240px;
+  flex: 1;
+  background: var(--bg-page);
+  padding: var(--space-xl);
+}
+
+@media (max-width: 768px) {
+  .donor-content {
+    margin-left: 0;
+    padding: var(--space-md);
+    padding-top: calc(60px + var(--space-md));
+  }
+}
