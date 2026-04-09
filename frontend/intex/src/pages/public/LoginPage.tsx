@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react'
+import { useState, useEffect, useRef, type FormEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import './LoginPage.css'
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [loggedOut, setLoggedOut] = useState(false)
+  const initialAuthChecked = useRef(false)
 
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -26,13 +27,18 @@ export default function LoginPage() {
     password?: string
   }>({})
 
-  // If user lands on /login while already logged in, log them out so they can switch accounts
+  // Run once after auth state is known on page load.
+  // If the user was already logged in when they arrived, log them out so they
+  // can switch accounts. Either way, set loggedOut=true so the redirect effect
+  // fires after a fresh login without re-triggering this logout.
   useEffect(() => {
-    if (!isLoading && user && !loggedOut) {
+    if (isLoading || initialAuthChecked.current) return
+    initialAuthChecked.current = true
+    if (user) {
       logout()
-      setLoggedOut(true)
     }
-  }, [user, isLoading, logout, loggedOut])
+    setLoggedOut(true)
+  }, [isLoading, user, logout])
 
   // After a fresh login, redirect to the appropriate page
   useEffect(() => {
