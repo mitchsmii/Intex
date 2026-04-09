@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../../services/apiService'
-import shelterImg from '../../assets/shelter.webp'
+// Shelter is served from public/ so the <link rel="preload"> in index.html
+// can reference the same stable URL (/shelter.webp) before React renders.
+const shelterImg = '/shelter.webp'
 import handsImg from '../../assets/hands.webp'
 import girlsJumpingFieldImg from '../../assets/girls-jumping-field.webp'
 import './HomePage.css'
@@ -76,7 +78,7 @@ function HomePage() {
             </p>
           </div>
           <div className="hp-holistic-img">
-            <img src={handsImg} alt="Hands reaching out in support" fetchPriority="high" />
+            <img src={handsImg} alt="Hands reaching out in support" fetchPriority="high" width="2650" height="1450" />
           </div>
         </div>
       </section>
