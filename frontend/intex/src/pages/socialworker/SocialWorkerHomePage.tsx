@@ -19,7 +19,6 @@ import { buildAlerts } from '../../components/socialworker/dashboard/CriticalAle
 import TodaysPriorities from '../../components/socialworker/dashboard/TodaysPriorities'
 import WeekCalendar from '../../components/socialworker/dashboard/WeekCalendar'
 import MentalHealthSnapshot from '../../components/socialworker/dashboard/MentalHealthSnapshot'
-import JourneyClusterSection from '../../components/socialworker/dashboard/JourneyClusterSection'
 import ResidentCard from '../../components/socialworker/dashboard/ResidentCard'
 import type { Resident } from '../../types/Resident'
 import type { ScheduleEvent } from '../../types/ScheduleEvent'
@@ -267,10 +266,6 @@ function SocialWorkerHomePage() {
       {tab === 'wellbeing' && (
         <div className="sw-dash-tab-content">
           <ReadinessPipeline
-            residents={residents}
-            onResidentClick={goToResidentById}
-          />
-          <JourneyClusterSection
             residents={residents}
             onResidentClick={goToResidentById}
           />
