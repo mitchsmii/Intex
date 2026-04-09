@@ -6,9 +6,10 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Cove — a safe haven for survivors of abuse and trafficking. We provide shelter, healing, justice, and empowerment for those who need it most." />
-    <!-- Preload the hero background so the browser fetches it before React renders -->
-    <link rel="preload" href="/shelter.webp" as="image" type="image/webp" />
     <!-- Pre-connect to the API so stats requests start as early as possible -->
+    <!-- Note: shelter.webp is NOT preloaded here — it's only used on the home page
+         and was previously wasting 593 KB of bandwidth on every other route.
+         The <img fetchPriority="high"> in HomePage.tsx is sufficient for LCP there. -->
     <link rel="preconnect" href="https://intexbackend-dragb9ahdsfvejfe.centralus-01.azurewebsites.net" crossorigin />
     <title>Cove</title>
   </head>

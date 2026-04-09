@@ -77,11 +77,13 @@ function ResidentsPage() {
           type="text"
           className="residents-search"
           placeholder="Search by code or category..."
+          aria-label="Search residents by code or category"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <select
           className="residents-select"
+          aria-label="Filter by status"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
@@ -92,6 +94,7 @@ function ResidentsPage() {
         </select>
         <select
           className="residents-select"
+          aria-label="Filter by risk level"
           value={riskFilter}
           onChange={(e) => setRiskFilter(e.target.value)}
         >
@@ -104,7 +107,20 @@ function ResidentsPage() {
 
       <div className="residents-grid">
         {filtered.map((r) => (
-          <div key={r.residentId} className="resident-card" onClick={() => navigate(`${base}/residents/${r.residentId}`)}>
+          <div
+            key={r.residentId}
+            className="resident-card"
+            role="button"
+            tabIndex={0}
+            aria-label={`View details for resident ${r.internalCode ?? r.residentId}`}
+            onClick={() => navigate(`${base}/residents/${r.residentId}`)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                navigate(`${base}/residents/${r.residentId}`)
+              }
+            }}
+          >
             <div className="resident-card-header">
               <div className="resident-avatar">
                 {r.internalCode?.substring(0, 2) || '??'}
