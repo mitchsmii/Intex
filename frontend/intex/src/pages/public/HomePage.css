@@ -455,6 +455,14 @@
   .hp-holistic-inner {
     grid-template-columns: 1fr;
   }
+
+  .hp-holistic-content {
+    order: 1;
+  }
+
+  .hp-holistic-img {
+    order: 2;
+  }
 }
 
 @media (max-width: 600px) {
