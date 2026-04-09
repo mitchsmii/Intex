@@ -54,6 +54,8 @@ RESIDENT_RISK_MODEL_PATH = SAVED_MODELS_DIR / "resident_risk_model.pkl"
 RESIDENT_RISK_METADATA_PATH = SAVED_MODELS_DIR / "resident_risk_metadata.json"
 EDUCATION_OUTCOME_MODEL_PATH = SAVED_MODELS_DIR / "education_outcome_model.pkl"
 EDUCATION_OUTCOME_METADATA_PATH = SAVED_MODELS_DIR / "education_outcome_metadata.json"
+REINTEGRATION_MODEL_PATH = SAVED_MODELS_DIR / "reintegration_model.pkl"
+REINTEGRATION_READINESS_FEATURES_PATH = SAVED_MODELS_DIR / "reintegration_features.pkl"
 REINTEGRATION_KMEANS_PATH = SAVED_MODELS_DIR / "reintegration_journey_kmeans.pkl"
 REINTEGRATION_SCALER_PATH = SAVED_MODELS_DIR / "reintegration_journey_scaler.pkl"
 REINTEGRATION_FEATURES_PATH = SAVED_MODELS_DIR / "reintegration_journey_features.pkl"
@@ -125,8 +127,10 @@ def _align_features(payload: dict[str, Any], feature_names: list[str]) -> pd.Dat
     Returns:
         pd.DataFrame: Single-row aligned feature DataFrame.
     """
+    # Normalize feature names to plain str (handles quoted_name from pandas/SQL)
+    str_names = [str(f) for f in feature_names]
     row: dict[str, float] = {}
-    for feature in feature_names:
+    for feature in str_names:
         value = payload.get(feature, 0)
         if isinstance(value, bool):
             row[feature] = float(value)
@@ -135,7 +139,7 @@ def _align_features(payload: dict[str, Any], feature_names: list[str]) -> pd.Dat
                 row[feature] = float(value)
             except (TypeError, ValueError):
                 row[feature] = 0.0
-    return pd.DataFrame([row], columns=feature_names)
+    return pd.DataFrame([row], columns=str_names)
 
 
 def _predict_probability(model: Any, aligned_df: pd.DataFrame) -> float:
@@ -471,6 +475,51 @@ def reintegration_journey_feature_importance() -> dict[str, Any]:
     pairs = [
         {"feature": name, "importance": float(v)}
         for name, v in zip(feature_names, variance)
+    ]
+    pairs.sort(key=lambda item: item["importance"], reverse=True)
+    return {"features": pairs}
+
+
+@app.post("/predict/reintegration-readiness")
+def predict_reintegration_readiness(payload: dict[str, Any]) -> dict[str, Any]:
+    """Predict whether a resident is progressing toward reintegration.
+
+    Args:
+        payload: JSON payload with the 28 resident features.
+
+    Returns:
+        dict[str, Any]: is_ready (bool) and probability (float).
+    """
+    model = _load_artifact(REINTEGRATION_MODEL_PATH)
+    feature_names: list[str] = _load_artifact(REINTEGRATION_READINESS_FEATURES_PATH)
+
+    aligned = _align_features(payload, feature_names)
+
+    # Model is a regressor that outputs a 0-1 readiness score directly
+    raw_score = float(model.predict(aligned)[0])
+    probability = max(0.0, min(1.0, raw_score))
+    is_ready = probability >= 0.5
+
+    return {"is_ready": bool(is_ready), "probability": round(probability, 4)}
+
+
+@app.get("/feature-importance/reintegration-readiness")
+def reintegration_readiness_feature_importance() -> dict[str, Any]:
+    """Return global feature importance for the reintegration readiness model.
+
+    Returns:
+        dict[str, Any]: ``{"features": [{feature, importance}, ...]}``.
+    """
+    model = _load_artifact(REINTEGRATION_MODEL_PATH)
+    feature_names: list[str] = _load_artifact(REINTEGRATION_READINESS_FEATURES_PATH)
+    str_names = [str(f) for f in feature_names]
+    raw = model.feature_importances_
+    total = float(raw.sum())
+    if total > 0:
+        raw = raw / total
+    pairs = [
+        {"feature": name, "importance": float(v)}
+        for name, v in zip(str_names, raw)
     ]
     pairs.sort(key=lambda item: item["importance"], reverse=True)
     return {"features": pairs}

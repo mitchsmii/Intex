@@ -63,6 +63,7 @@ public class MlPredictionsController : ControllerBase
                 "donor-churn"              => await RefreshDonorChurn(),
                 "resident-risk"            => await RefreshResidentRisk(),
                 "reintegration-journey"    => await RefreshReintegrationJourney(),
+                "reintegration-readiness"  => await RefreshReintegrationReadiness(),
                 _ => throw new ArgumentException($"Unknown model: {modelName}")
             };
 
@@ -288,6 +289,67 @@ public class MlPredictionsController : ControllerBase
         {
             var old = await _context.MlPredictions
                 .Where(p => p.ModelName == "reintegration-journey")
+                .ToListAsync();
+            _context.MlPredictions.RemoveRange(old);
+            _context.MlPredictions.AddRange(predictions);
+            await _context.SaveChangesAsync();
+        }
+
+        return predictions.Count;
+    }
+
+    // ── Reintegration Readiness (supervised) ────────────────────────────────
+
+    private async Task<int> RefreshReintegrationReadiness()
+    {
+        var residents = await _context.Residents
+            .Where(r => r.CaseStatus == "Active")
+            .ToListAsync();
+
+        var allRecordings = await _context.ProcessRecordings.ToListAsync();
+        var allHealth = await _context.HealthWellbeingRecords.ToListAsync();
+        var allEducation = await _context.EducationRecords.ToListAsync();
+        var allIncidents = await _context.IncidentReports.ToListAsync();
+        var allVisits = await _context.HomeVisitations.ToListAsync();
+        var allPlans = await _context.InterventionPlans.ToListAsync();
+
+        var client = _httpFactory.CreateClient();
+        var now = DateTime.UtcNow;
+        var predictions = new List<MlPrediction>();
+
+        foreach (var r in residents)
+        {
+            var recs = allRecordings.Where(p => p.ResidentId == r.ResidentId).ToList();
+            var health = allHealth.Where(h => h.ResidentId == r.ResidentId).ToList();
+            var edu = allEducation.Where(e => e.ResidentId == r.ResidentId).ToList();
+            var incidents = allIncidents.Where(i => i.ResidentId == r.ResidentId).ToList();
+            var visits = allVisits.Where(v => v.ResidentId == r.ResidentId).ToList();
+            var plans = allPlans.Where(p => p.ResidentId == r.ResidentId).ToList();
+
+            var input = BuildReintegrationInput(r, recs, health, edu, incidents, visits, plans);
+
+            try
+            {
+                var resp = await PostMl(client, "/predict/reintegration-readiness", input);
+                if (resp != null)
+                {
+                    predictions.Add(new MlPrediction
+                    {
+                        ModelName = "reintegration-readiness",
+                        EntityId = r.ResidentId,
+                        IsPositive = resp.Value.GetProperty("is_ready").GetBoolean(),
+                        Probability = resp.Value.GetProperty("probability").GetDouble(),
+                        ComputedAt = now,
+                    });
+                }
+            }
+            catch { /* skip */ }
+        }
+
+        if (predictions.Count > 0)
+        {
+            var old = await _context.MlPredictions
+                .Where(p => p.ModelName == "reintegration-readiness")
                 .ToListAsync();
             _context.MlPredictions.RemoveRange(old);
             _context.MlPredictions.AddRange(predictions);
