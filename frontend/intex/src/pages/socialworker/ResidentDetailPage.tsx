@@ -70,6 +70,7 @@ function ResidentDetailPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [journeyCluster, setJourneyCluster] = useState<{ clusterId: number; clusterName: string } | null>(null)
 
   // Admin-only state
   const [showEdit, setShowEdit] = useState(false)
@@ -104,6 +105,32 @@ function ResidentDetailPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
+  }, [residentId])
+
+  // ── Reintegration journey cluster (from cached predictions) ────────────
+  const CLUSTER_NAMES: Record<number, string> = {
+    0: 'Newly Admitted \u2014 Onboarding Needed',
+    1: 'Established \u2014 Active Care',
+  }
+
+  useEffect(() => {
+    if (!residentId) return
+    let cancelled = false
+
+    api.getMlPredictions('reintegration-journey')
+      .then((preds) => {
+        const mine = preds.find((p) => p.entityId === residentId)
+        if (mine && !cancelled) {
+          const clusterId = Math.round(mine.probability)
+          setJourneyCluster({
+            clusterId,
+            clusterName: CLUSTER_NAMES[clusterId] ?? `Developing Profile \u2014 Monitor & Support`,
+          })
+        }
+      })
+      .catch(() => { /* no cached prediction yet */ })
+
+    return () => { cancelled = true }
   }, [residentId])
 
   const latestHealth = useMemo<HealthWellbeingRecord | null>(() => {
@@ -553,6 +580,16 @@ function ResidentDetailPage() {
                 {resident.reintegrationType ?? '—'}
                 {resident.reintegrationStatus ? ` · ${resident.reintegrationStatus}` : ''}
               </dd>
+              {journeyCluster && (
+                <>
+                  <dt>Journey Profile</dt>
+                  <dd>
+                    <span className={`rd-journey-chip rd-journey-chip--${journeyCluster.clusterName.includes('Onboarding') ? 'onboarding' : journeyCluster.clusterName.includes('Active') ? 'active' : 'developing'}`}>
+                      {journeyCluster.clusterName}
+                    </span>
+                  </dd>
+                </>
+              )}
               <dt>Length of Stay</dt>
               <dd>{resident.lengthOfStay ?? '—'}</dd>
               <dt>Assigned SW</dt>

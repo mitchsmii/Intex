@@ -60,8 +60,9 @@ public class MlPredictionsController : ControllerBase
         {
             var count = modelName switch
             {
-                "donor-churn"        => await RefreshDonorChurn(),
-                "resident-risk"      => await RefreshResidentRisk(),
+                "donor-churn"              => await RefreshDonorChurn(),
+                "resident-risk"            => await RefreshResidentRisk(),
+                "reintegration-journey"    => await RefreshReintegrationJourney(),
                 _ => throw new ArgumentException($"Unknown model: {modelName}")
             };
 
@@ -231,6 +232,177 @@ public class MlPredictionsController : ControllerBase
         }
 
         return predictions.Count;
+    }
+
+    // ── Reintegration Journey ─────────────────────────────────────────────
+
+    private async Task<int> RefreshReintegrationJourney()
+    {
+        var residents = await _context.Residents
+            .Where(r => r.CaseStatus == "Active")
+            .ToListAsync();
+
+        var allRecordings = await _context.ProcessRecordings.ToListAsync();
+        var allHealth = await _context.HealthWellbeingRecords.ToListAsync();
+        var allEducation = await _context.EducationRecords.ToListAsync();
+        var allIncidents = await _context.IncidentReports.ToListAsync();
+        var allVisits = await _context.HomeVisitations.ToListAsync();
+        var allPlans = await _context.InterventionPlans.ToListAsync();
+
+        var client = _httpFactory.CreateClient();
+        var now = DateTime.UtcNow;
+        var predictions = new List<MlPrediction>();
+
+        foreach (var r in residents)
+        {
+            var recs = allRecordings.Where(p => p.ResidentId == r.ResidentId).ToList();
+            var health = allHealth.Where(h => h.ResidentId == r.ResidentId).ToList();
+            var edu = allEducation.Where(e => e.ResidentId == r.ResidentId).ToList();
+            var incidents = allIncidents.Where(i => i.ResidentId == r.ResidentId).ToList();
+            var visits = allVisits.Where(v => v.ResidentId == r.ResidentId).ToList();
+            var plans = allPlans.Where(p => p.ResidentId == r.ResidentId).ToList();
+
+            var input = BuildReintegrationInput(r, recs, health, edu, incidents, visits, plans);
+
+            try
+            {
+                var resp = await PostMl(client, "/predict/reintegration-journey", input);
+                if (resp != null)
+                {
+                    var clusterId = resp.Value.GetProperty("cluster_id").GetInt32();
+                    var clusterName = resp.Value.GetProperty("cluster_name").GetString() ?? "";
+                    predictions.Add(new MlPrediction
+                    {
+                        ModelName = "reintegration-journey",
+                        EntityId = r.ResidentId,
+                        IsPositive = clusterName.Contains("Active"),
+                        Probability = clusterId,
+                        ComputedAt = now,
+                    });
+                }
+            }
+            catch { /* skip */ }
+        }
+
+        if (predictions.Count > 0)
+        {
+            var old = await _context.MlPredictions
+                .Where(p => p.ModelName == "reintegration-journey")
+                .ToListAsync();
+            _context.MlPredictions.RemoveRange(old);
+            _context.MlPredictions.AddRange(predictions);
+            await _context.SaveChangesAsync();
+        }
+
+        return predictions.Count;
+    }
+
+    private static object BuildReintegrationInput(
+        Resident r,
+        List<ProcessRecording> recs,
+        List<HealthWellbeingRecord> health,
+        List<EducationRecord> edu,
+        List<IncidentReport> incidents,
+        List<HomeVisitation> visits,
+        List<InterventionPlan> plans)
+    {
+        var daysInCare = r.DateOfAdmission.HasValue
+            ? (DateTime.UtcNow - r.DateOfAdmission.Value.ToDateTime(TimeOnly.MinValue)).Days
+            : 0;
+
+        var riskOrder = new Dictionary<string, int>
+            { { "Critical", 4 }, { "High", 3 }, { "Medium", 2 }, { "Low", 1 } };
+        var initialRisk = riskOrder.GetValueOrDefault(r.InitialRiskLevel ?? "", 3);
+        var currentRisk = riskOrder.GetValueOrDefault(r.CurrentRiskLevel ?? "", 3);
+
+        var abuseComplexity = new[] {
+            r.SubCatOrphaned, r.SubCatTrafficked, r.SubCatChildLabor,
+            r.SubCatPhysicalAbuse, r.SubCatSexualAbuse, r.SubCatOsaec,
+            r.SubCatCicl, r.SubCatAtRisk, r.SubCatStreetChild, r.SubCatChildWithHiv
+        }.Count(b => b == true);
+
+        var avgHealth = health.Count > 0 ? health.Average(h => (double)(h.GeneralHealthScore ?? 0)) : 3.0;
+        var avgNutrition = health.Count > 0 ? health.Average(h => (double)(h.NutritionScore ?? 0)) : 3.0;
+        var avgSleep = health.Count > 0 ? health.Average(h => (double)(h.SleepQualityScore ?? 0)) : 3.0;
+        var avgEnergy = health.Count > 0 ? health.Average(h => (double)(h.EnergyLevelScore ?? 0)) : 3.0;
+
+        var healthScores = health
+            .OrderBy(h => h.RecordDate)
+            .Select(h => (double)(h.GeneralHealthScore ?? 0))
+            .ToList();
+        var healthTrend = 0.0;
+        if (healthScores.Count >= 2)
+        {
+            var mid = healthScores.Count / 2;
+            healthTrend = healthScores.Skip(mid).Average() - healthScores.Take(mid).Average();
+        }
+
+        var avgProgress = edu.Count > 0 ? edu.Average(e => (double)(e.ProgressPercent ?? 0)) : 0.0;
+        var avgAttendance = edu.Count > 0 ? edu.Average(e => (double)(e.AttendanceRate ?? 0)) : 0.0;
+
+        var totalSessions = recs.Count;
+        var pctProgress = totalSessions > 0 ? recs.Count(p => p.ProgressNoted == true) / (double)totalSessions : 0;
+        var pctConcerns = totalSessions > 0 ? recs.Count(p => p.ConcernsFlagged == true) / (double)totalSessions : 0;
+
+        var completedPlans = plans.Count(p => (p.Status ?? "").Equals("Completed", StringComparison.OrdinalIgnoreCase));
+        var activePlans = plans.Count(p => (p.Status ?? "").Equals("Active", StringComparison.OrdinalIgnoreCase));
+
+        var coopMap = new Dictionary<string, double>
+            { { "High", 3 }, { "Moderate", 2 }, { "Neutral", 1 }, { "Low", 0 } };
+        var avgCoop = visits.Count > 0
+            ? visits.Average(v => coopMap.GetValueOrDefault(v.FamilyCooperationLevel ?? "", 1))
+            : 1.0;
+        var pctSafety = visits.Count > 0
+            ? visits.Count(v => v.SafetyConcernsNoted == true) / (double)visits.Count
+            : 0.0;
+        var outcomeMap = new Dictionary<string, double>
+            { { "Favorable", 1 }, { "Neutral", 0 }, { "Unfavorable", -1 } };
+        var avgOutcome = visits.Count > 0
+            ? visits.Average(v => outcomeMap.GetValueOrDefault(v.VisitOutcome ?? "", 0))
+            : 0.0;
+
+        var sevMap = new Dictionary<string, double>
+            { { "High", 3 }, { "Medium", 2 }, { "Low", 1 } };
+        var avgSeverity = incidents.Count > 0
+            ? incidents.Average(i => sevMap.GetValueOrDefault(i.Severity ?? "", 1))
+            : 1.0;
+        var unresolvedInc = incidents.Count(i => i.Resolved != true);
+        var daysSinceInc = incidents.Count > 0
+            ? incidents.Where(i => i.IncidentDate.HasValue)
+                .Select(i => (DateTime.UtcNow - i.IncidentDate!.Value.ToDateTime(TimeOnly.MinValue)).Days)
+                .DefaultIfEmpty(999).Min()
+            : 999;
+
+        return new
+        {
+            days_in_care = daysInCare,
+            risk_improved = currentRisk < initialRisk ? 1 : 0,
+            abuse_complexity = abuseComplexity,
+            avg_health_score = avgHealth,
+            avg_nutrition_score = avgNutrition,
+            avg_sleep_score = avgSleep,
+            avg_energy_score = avgEnergy,
+            health_record_count = health.Count,
+            health_trend = healthTrend,
+            avg_education_progress = avgProgress,
+            avg_attendance_rate = avgAttendance,
+            education_record_count = edu.Count,
+            total_counseling_sessions = totalSessions,
+            pct_sessions_with_progress = pctProgress,
+            pct_sessions_with_concerns = pctConcerns,
+            total_intervention_plans = plans.Count,
+            completed_plans = completedPlans,
+            active_plans = activePlans,
+            plan_completion_rate = plans.Count > 0 ? completedPlans / (double)plans.Count : 0.0,
+            total_visitations = visits.Count,
+            avg_family_cooperation = avgCoop,
+            pct_safety_concerns = pctSafety,
+            avg_visit_outcome = avgOutcome,
+            total_incidents = incidents.Count,
+            avg_incident_severity = avgSeverity,
+            unresolved_incidents = unresolvedInc,
+            days_since_last_incident = daysSinceInc,
+        };
     }
 
     // ── Helper ───────────────────────────────────────────────────────────────

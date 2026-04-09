@@ -134,3 +134,53 @@ export function predictEducationOutcome(
 ): Promise<EducationOutcomeResult> {
   return mlPost<EducationOutcomeResult>('/predict/education-outcome', input)
 }
+
+export interface ReintegrationJourneyInput {
+  days_in_care: number
+  risk_improved: number
+  abuse_complexity: number
+  avg_health_score: number
+  avg_nutrition_score: number
+  avg_sleep_score: number
+  avg_energy_score: number
+  health_record_count: number
+  health_trend: number
+  avg_education_progress: number
+  avg_attendance_rate: number
+  education_record_count: number
+  total_counseling_sessions: number
+  pct_sessions_with_progress: number
+  pct_sessions_with_concerns: number
+  total_intervention_plans: number
+  completed_plans: number
+  active_plans: number
+  plan_completion_rate: number
+  total_visitations: number
+  avg_family_cooperation: number
+  pct_safety_concerns: number
+  avg_visit_outcome: number
+  total_incidents: number
+  avg_incident_severity: number
+  unresolved_incidents: number
+  days_since_last_incident: number
+  [key: string]: number
+}
+
+export interface ReintegrationJourneyResult {
+  cluster_id: number
+  cluster_name: string
+  centroid_distances: Record<string, number>
+}
+
+export function predictReintegrationJourney(
+  input: ReintegrationJourneyInput,
+): Promise<ReintegrationJourneyResult> {
+  return mlPost<ReintegrationJourneyResult>('/predict/reintegration-journey', input)
+}
+
+export async function fetchReintegrationFeatureImportance(): Promise<FeatureImportance[]> {
+  const res = await fetch(`${ML_BASE_URL}/feature-importance/reintegration-journey`)
+  if (!res.ok) throw new Error(`ML API error ${res.status}: /feature-importance/reintegration-journey`)
+  const data = (await res.json()) as { features: FeatureImportance[] }
+  return data.features
+}
