@@ -77,8 +77,8 @@
 /* ─────── Shared Buttons ─────── */
 .hp-btn-primary {
   display: inline-block;
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--cove-tidal);
+  color: white;
   font-size: 1.15rem;
   font-weight: 700;
   padding: 18px 48px;
@@ -107,7 +107,7 @@
 }
 
 .hp-btn-secondary:hover {
-  background: var(--cove-deep);
+  background: var(--bg-sidebar);
   transform: translateY(-2px);
 }
 

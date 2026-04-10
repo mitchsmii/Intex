@@ -146,7 +146,7 @@
 
 .vc-rail-item:hover { background: var(--cove-seafoam); }
 .vc-rail-item--active {
-  background: var(--cove-seaglass);
+  background: var(--bg-hover);
   border-color: var(--cove-tidal);
 }
 
@@ -210,7 +210,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.vc-add-btn:hover { background: var(--cove-deep); }
+.vc-add-btn:hover { background: var(--bg-sidebar); }
 
 /* ---------- Header actions + legend ---------- */
 .vc-header-actions {
@@ -630,7 +630,7 @@
 }
 
 .vc-btn--primary { background: var(--cove-tidal); color: white; }
-.vc-btn--primary:hover { background: var(--cove-deep); }
+.vc-btn--primary:hover { background: var(--bg-sidebar); }
 .vc-btn--primary:disabled { background: var(--cove-seaglass); cursor: not-allowed; }
 
 .vc-btn--secondary {
@@ -737,7 +737,7 @@
   color: var(--text-muted);
   border: 1px solid var(--border-light, #d1d5db);
 }
-.vc-flag--outcome { background: var(--cove-seaglass); color: var(--cove-deep); }
+.vc-flag--outcome { background: var(--badge-teal-bg); color: var(--badge-teal-color); }
 
 /* ---------- Pagination ---------- */
 .vc-pagination {
@@ -859,8 +859,8 @@
   text-transform: uppercase;
   padding: 2px var(--space-sm);
   border-radius: var(--radius-full);
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
   margin-top: 4px;
 }
 

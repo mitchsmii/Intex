@@ -77,7 +77,7 @@
   align-items: center;
   gap: 0.3rem;
   padding: 0.35rem 0.75rem;
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   color: white;
   border-radius: var(--radius-full);
   font-size: 0.78rem;

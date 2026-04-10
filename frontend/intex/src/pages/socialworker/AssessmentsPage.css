@@ -79,7 +79,7 @@
 
 .ap-rail-item:hover { background: var(--cove-seafoam); }
 .ap-rail-item--active {
-  background: var(--cove-seaglass);
+  background: var(--bg-hover);
   border-color: var(--cove-tidal);
 }
 
@@ -137,7 +137,7 @@
   transition: background 0.15s;
 }
 
-.ap-new-btn:hover { background: var(--cove-deep); }
+.ap-new-btn:hover { background: var(--bg-sidebar); }
 
 .ap-new-backdrop {
   position: fixed;

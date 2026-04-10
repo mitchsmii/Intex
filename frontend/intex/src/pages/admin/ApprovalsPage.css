@@ -402,5 +402,5 @@
   background: var(--cove-tidal);
   color: white;
 }
-.ap-btn--counter:hover:not(:disabled) { background: var(--cove-deep); }
+.ap-btn--counter:hover:not(:disabled) { background: var(--bg-sidebar); }
 .ap-btn--counter:disabled { opacity: 0.5; }

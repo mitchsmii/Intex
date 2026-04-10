@@ -31,7 +31,7 @@
   justify-content: space-between;
   padding: var(--space-lg) var(--space-xl);
   border-bottom: 1px solid var(--border-light);
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   color: white;
 }
 
@@ -115,9 +115,9 @@
 }
 
 .wizard-step-done .wizard-step-dot {
-  background: var(--cove-seaglass);
-  border-color: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  border-color: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
 }
 
 /* ── Body ── */
@@ -228,7 +228,7 @@
 
 .wizard-option-selected {
   border-color: var(--cove-tidal);
-  background: var(--cove-seaglass);
+  background: var(--bg-hover);
 }
 
 .wizard-option-busy {
@@ -394,7 +394,7 @@
   color: white;
 }
 
-.wizard-btn-primary:hover:not(:disabled) { background: var(--cove-deep); }
+.wizard-btn-primary:hover:not(:disabled) { background: var(--bg-sidebar); }
 
 .wizard-btn-primary:disabled {
   opacity: 0.45;

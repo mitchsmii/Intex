@@ -186,7 +186,7 @@
   transition: background 0.15s, opacity 0.15s;
 }
 
-.rd-modal-save:hover:not(:disabled) { background: var(--cove-deep); }
+.rd-modal-save:hover:not(:disabled) { background: var(--bg-sidebar); }
 .rd-modal-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Inline status select ── */
@@ -594,8 +594,8 @@
   font-weight: 700;
   padding: 2px var(--space-sm);
   border-radius: var(--radius-full);
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
   text-transform: uppercase;
 }
 
@@ -740,8 +740,8 @@
   font-weight: 700;
   padding: 2px var(--space-sm);
   border-radius: var(--radius-full);
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
   text-transform: uppercase;
 }
 

@@ -96,7 +96,7 @@
 .dh-lookup-btn {
   width: 100%;
   padding: 0.8rem;
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -115,7 +115,7 @@
 
 /* ── Hero card ── */
 .dh-hero {
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   border-radius: var(--radius-lg);
   padding: var(--space-lg) var(--space-xl);
   display: flex;
@@ -188,7 +188,7 @@
 }
 
 .tier-champion { background: var(--rank-1-bg); color: var(--rank-1-color); }
-.tier-advocate  { background: var(--cove-seaglass); color: var(--cove-deep); }
+.tier-advocate  { background: var(--badge-teal-bg); color: var(--badge-teal-color); }
 .tier-supporter { background: var(--cove-seafoam); color: var(--cove-deep); }
 .tier-friend    { background: rgba(255,255,255,0.15); color: white; }
 
@@ -257,7 +257,7 @@
 .impact-teal  { background: var(--cove-seafoam);  }
 .impact-green { background: var(--badge-success-bg); }
 .impact-sand  { background: var(--cove-sand);      }
-.impact-deep  { background: var(--cove-deep); color: white; }
+.impact-deep  { background: var(--bg-brand-panel); color: white; }
 
 .dh-impact-icon  { font-size: 1.6rem; }
 .dh-impact-value {

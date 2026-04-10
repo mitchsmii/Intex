@@ -281,7 +281,7 @@
 /* ── Fundraising ── */
 .ip-fund-section {
   padding: var(--space-2xl) var(--space-lg);
-  background: linear-gradient(135deg, var(--cove-deep) 0%, #1a3540 100%);
+  background: linear-gradient(135deg, var(--bg-brand-panel) 0%, #1a3035 100%);
 }
 
 .ip-fund-card {

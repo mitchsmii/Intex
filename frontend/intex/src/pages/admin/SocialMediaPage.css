@@ -416,7 +416,7 @@
   gap: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
   border-bottom: 1px solid var(--border-light);
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   flex-shrink: 0;
 }
 
@@ -600,7 +600,7 @@
 }
 
 .sm-chat-send:hover:not(:disabled) {
-  background: var(--cove-deep);
+  background: var(--bg-sidebar);
   transform: scale(1.05);
 }
 
@@ -848,7 +848,7 @@
   font-family: inherit;
   transition: background 0.15s;
 }
-.sm-pred-btn:hover:not(:disabled) { background: var(--cove-deep); }
+.sm-pred-btn:hover:not(:disabled) { background: var(--bg-sidebar); }
 .sm-pred-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .sm-pred-error {

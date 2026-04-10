@@ -191,7 +191,7 @@
 }
 
 .af-opt--selected {
-  background: var(--cove-seaglass);
+  background: var(--bg-hover);
   font-weight: 600;
 }
 
@@ -318,7 +318,7 @@
   color: white;
 }
 
-.af-btn--primary:hover { background: var(--cove-deep); }
+.af-btn--primary:hover { background: var(--bg-sidebar); }
 .af-btn--primary:disabled {
   background: var(--cove-seaglass);
   cursor: not-allowed;

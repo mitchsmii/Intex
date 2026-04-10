@@ -302,7 +302,7 @@ label {
 }
 
 .freq-btn.freq-active {
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   color: white;
 }
 
@@ -417,8 +417,8 @@ label {
 }
 
 .pill.selected:hover {
-  background: var(--cove-deep);
-  border-color: var(--cove-deep);
+  background: var(--bg-sidebar);
+  border-color: var(--bg-sidebar);
 }
 
 /* Other amount input row */
@@ -440,7 +440,7 @@ label {
   padding: 0.8rem 1rem;
   border-radius: var(--radius-md);
   border: none;
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   color: white;
   font-size: 1rem;
   font-weight: 600;
@@ -567,7 +567,7 @@ label {
 }
 
 .account-prompt-signin:hover {
-  background: var(--cove-deep);
+  background: var(--bg-sidebar);
 }
 
 .account-prompt-register {
