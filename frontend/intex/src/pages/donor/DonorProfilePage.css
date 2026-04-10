@@ -147,8 +147,8 @@
 }
 
 .dp-success {
-  background: #d4edda;
-  color: #155724;
+  background: var(--badge-success-bg);
+  color: var(--color-success);
   border-radius: 8px;
   padding: 0.65rem 1rem;
   font-size: 0.875rem;
@@ -156,8 +156,8 @@
 }
 
 .dp-error {
-  background: #f8d7da;
-  color: #721c24;
+  background: var(--alert-high-bg);
+  color: var(--color-error);
   border-radius: 8px;
   padding: 0.65rem 1rem;
   font-size: 0.875rem;

@@ -15,8 +15,7 @@
 
 .residents-count {
   font-size: 0.85rem;
-  /* #446060 on #dfe8e4 = 4.99:1 contrast — passes WCAG AA */
-  color: #446060;
+  color: var(--text-secondary);
   background: var(--border-light);
   padding: 2px var(--space-sm);
   border-radius: var(--radius-full);
@@ -108,8 +107,7 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  /* Darkened teal so white text (#fff on #2a6466) = 5.87:1 — passes WCAG AA */
-  background: #2a6466;
+  background: var(--cove-deep);
   color: var(--text-inverse);
   display: flex;
   align-items: center;
@@ -132,8 +130,7 @@
 
 .resident-case-no {
   font-size: 0.8rem;
-  /* #446060 on #fff = 6.13:1 — passes WCAG AA */
-  color: #446060;
+  color: var(--text-secondary);
 }
 
 /* Badges */
@@ -158,24 +155,22 @@
 
 .badge-status--closed {
   background: var(--cove-sand);
-  /* #7a4a00 on #f0e6d3 = 5.44:1 — passes WCAG AA */
-  color: #7a4a00;
+  color: var(--badge-warn-color);
 }
 
 .badge-status--transferred {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--badge-info-bg);
+  color: var(--badge-info-color);
 }
 
 .badge-risk--high {
-  background: #fee2e2;
+  background: var(--badge-error-bg);
   color: var(--color-error);
 }
 
 .badge-risk--medium {
-  background: #fef3c7;
-  /* #7a4a00 on #fef3c7 = 5.97:1 — passes WCAG AA */
-  color: #7a4a00;
+  background: var(--badge-warn-bg);
+  color: var(--badge-warn-color);
 }
 
 .badge-risk--low {
@@ -199,8 +194,7 @@
 
 .resident-label {
   font-size: 0.7rem;
-  /* #446060 on #fff = 6.13:1 — passes WCAG AA */
-  color: #446060;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }

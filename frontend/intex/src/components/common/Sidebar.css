@@ -151,7 +151,7 @@
 
 .sidebar-badge {
   margin-left: auto;
-  background: #e53e3e;
+  background: var(--color-error);
   color: white;
   font-size: 0.7rem;
   font-weight: 700;

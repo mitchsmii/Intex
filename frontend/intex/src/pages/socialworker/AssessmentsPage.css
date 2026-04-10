@@ -207,8 +207,8 @@
 
 .ap-score-card--good { border-left-color: var(--color-success); }
 .ap-score-card--warn { border-left-color: var(--color-warning); }
-.ap-score-card--bad { border-left-color: var(--color-error); background: #fef2f2; }
-.ap-score-card--neutral { border-left-color: #cbd5e1; }
+.ap-score-card--bad { border-left-color: var(--color-error); background: var(--alert-high-bg); }
+.ap-score-card--neutral { border-left-color: var(--border-medium); }
 
 .ap-score-card-name {
   font-size: 0.7rem;
@@ -352,12 +352,12 @@
 
 .ap-sev-pill--good { background: var(--cove-seafoam); color: var(--color-success); }
 .ap-sev-pill--warn { background: var(--cove-sand); color: var(--color-warning); }
-.ap-sev-pill--bad { background: #fee2e2; color: var(--color-error); }
-.ap-sev-pill--neutral { background: #f1f5f9; color: var(--text-muted); }
+.ap-sev-pill--bad { background: var(--badge-error-bg); color: var(--color-error); }
+.ap-sev-pill--neutral { background: var(--badge-neutral-bg); color: var(--text-muted); }
 
 .ap-row-detail {
   padding: var(--space-md) var(--space-lg) var(--space-lg);
-  background: #fafafa;
+  background: var(--bg-row-detail);
   border-top: 1px solid var(--border-light, #e5e7eb);
   display: flex;
   flex-direction: column;
@@ -376,7 +376,7 @@
 }
 .ap-detail-section--alert .ap-detail-label { color: var(--color-error); }
 .ap-detail-section--alert p {
-  background: #fef2f2;
+  background: var(--alert-high-bg);
   padding: var(--space-sm);
   border-radius: var(--radius-sm);
   border-left: 3px solid var(--color-error);

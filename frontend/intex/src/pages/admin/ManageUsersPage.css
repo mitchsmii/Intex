@@ -81,8 +81,8 @@
 }
 
 .mu-badge-archived {
-  background: #f3f0ff;
-  color: #6d28d9;
+  background: var(--badge-purple-bg);
+  color: var(--badge-purple-color);
 }
 
 /* ── KPI row ── */
@@ -103,7 +103,7 @@
 
 .mu-kpi-warn {
   border-color: var(--color-warning);
-  background: #fffdf0;
+  background: var(--badge-warn-bg);
 }
 
 .mu-kpi-clickable {
@@ -123,7 +123,7 @@
 
 .mu-kpi-active {
   border-color: var(--cove-tidal) !important;
-  background: #edf7f7 !important;
+  background: var(--cove-seafoam) !important;
   box-shadow: 0 0 0 2px var(--cove-tidal) !important;
 }
 
@@ -200,7 +200,7 @@
   padding: 4px 8px;
   border: 1px solid var(--cove-tidal);
   border-radius: var(--radius-sm);
-  background: #edf7f7;
+  background: var(--cove-seafoam);
   font-size: 0.8rem;
   cursor: pointer;
   color: var(--cove-deep);
@@ -306,15 +306,15 @@
 }
 
 .mu-seg-bar-critical {
-  background: #dc2626;
+  background: var(--color-error);
 }
 
 .mu-seg-bar-warn {
-  background: #b45309;
+  background: var(--color-warning);
 }
 
 .mu-seg-bar-ok {
-  background: #15803d;
+  background: var(--color-success);
 }
 
 /* ── Card / table ── */
@@ -358,7 +358,7 @@
 }
 
 .mu-table tbody tr:hover {
-  background: #f8fdfd;
+  background: var(--bg-hover);
 }
 
 .mu-td-name {
@@ -405,18 +405,18 @@
 }
 
 .mu-badge-warn {
-  background: #fef9c3;
-  color: #b45309;
+  background: var(--badge-warn-bg);
+  color: var(--badge-warn-color);
 }
 
 .mu-badge-critical {
-  background: #fee2e2;
-  color: #dc2626;
+  background: var(--badge-error-bg);
+  color: var(--color-error);
 }
 
 .mu-badge-med {
-  background: #e8f4fd;
-  color: #1a5276;
+  background: var(--badge-info-bg);
+  color: var(--badge-info-color);
 }
 
 .mu-badge-type {
@@ -425,8 +425,8 @@
 }
 
 .mu-badge-role {
-  background: #eef2ff;
-  color: #3730a3;
+  background: var(--badge-purple-bg);
+  color: var(--badge-purple-color);
 }
 
 /* ── Sortable column headers ── */
@@ -522,7 +522,7 @@
 .mu-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(44, 74, 82, 0.45);
+  background: var(--modal-overlay);
   display: flex;
   align-items: center;
   justify-content: center;

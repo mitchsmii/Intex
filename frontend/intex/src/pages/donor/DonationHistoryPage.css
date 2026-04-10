@@ -84,8 +84,8 @@
 }
 
 .dh-error {
-  background: #fde8e8;
-  border: 1px solid #f5c0c0;
+  background: var(--alert-high-bg);
+  border: 1px solid var(--color-error);
   color: var(--color-error);
   border-radius: var(--radius-sm);
   padding: 0.65rem 1rem;
@@ -187,7 +187,7 @@
   border-radius: var(--radius-full);
 }
 
-.tier-champion { background: #fde68a; color: #78350f; }
+.tier-champion { background: var(--rank-1-bg); color: var(--rank-1-color); }
 .tier-advocate  { background: var(--cove-seaglass); color: var(--cove-deep); }
 .tier-supporter { background: var(--cove-seafoam); color: var(--cove-deep); }
 .tier-friend    { background: rgba(255,255,255,0.15); color: white; }
@@ -255,7 +255,7 @@
 }
 
 .impact-teal  { background: var(--cove-seafoam);  }
-.impact-green { background: #d4f0e4;               }
+.impact-green { background: var(--badge-success-bg); }
 .impact-sand  { background: var(--cove-sand);      }
 .impact-deep  { background: var(--cove-deep); color: white; }
 
@@ -390,9 +390,9 @@
   font-weight: 600;
 }
 
-.tag-monthly  { background: #d4ebd0; color: var(--cove-deep); }
-.tag-onetime  { background: var(--cove-sand); color: #7c5a2e; }
-.tag-complete { background: #d4f0e4; color: var(--color-success); }
+.tag-monthly  { background: var(--badge-success-bg); color: var(--cove-deep); }
+.tag-onetime  { background: var(--cove-sand); color: var(--cove-deep); }
+.tag-complete { background: var(--badge-success-bg); color: var(--color-success); }
 
 /* ── Tax note ── */
 .dh-tax-note {

@@ -8,23 +8,23 @@
 h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--text-primary);
   margin: 0;
 }
 
 .subtitle {
-  color: #6b7280;
+  color: var(--text-muted);
   margin: 4px 0 32px;
   font-size: 1rem;
 }
 
 .status {
-  color: #6b7280;
+  color: var(--text-muted);
   text-align: center;
 }
 
 .error {
-  color: #dc2626;
+  color: var(--color-error);
 }
 
 .user-list {
@@ -38,9 +38,9 @@ h1 {
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
-  background: #ffffff;
+  background: var(--bg-card);
   border-radius: 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border-light);
   transition: box-shadow 0.2s;
 }
 
@@ -52,8 +52,8 @@ h1 {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #4f46e5;
-  color: #ffffff;
+  background: var(--cove-tidal);
+  color: var(--text-inverse);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,11 +71,11 @@ h1 {
 
 .user-name {
   font-weight: 600;
-  color: #111827;
+  color: var(--text-primary);
   font-size: 1rem;
 }
 
 .user-role {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: var(--text-muted);
 }

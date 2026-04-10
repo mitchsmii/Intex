@@ -14,7 +14,7 @@
   position: relative;
   width: 100%;
   min-height: 96px;
-  background: linear-gradient(180deg, #ecf6f2 0%, var(--cove-seafoam) 100%);
+  background: linear-gradient(180deg, var(--cove-seafoam) 0%, var(--cove-seafoam) 100%);
   overflow: hidden;
 }
 
@@ -205,7 +205,7 @@ label {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-medium);
   font-size: 0.9rem;
-  background: white;
+  background: var(--bg-card);
   color: var(--text-primary);
   box-sizing: border-box;
   font-family: inherit;
@@ -283,7 +283,7 @@ label {
 .freq-btn {
   padding: 0.45rem 1.25rem;
   border: none;
-  background: white;
+  background: var(--bg-card);
   color: var(--text-secondary);
   font-size: 0.9rem;
   font-family: inherit;
@@ -363,7 +363,7 @@ label {
   font-size: 0.82rem;
   font-family: inherit;
   color: var(--text-primary);
-  background: white;
+  background: var(--bg-card);
   cursor: pointer;
   transition: border-color 0.15s ease;
 }
@@ -530,7 +530,7 @@ label {
 .account-prompt-banner {
   margin-top: 0.75rem;
   padding: 0.75rem 1rem;
-  background: #f8f4ee;
+  background: var(--cove-sand);
   border: 1px solid var(--cove-sand);
   border-radius: var(--radius-md);
   font-size: 0.85rem;
@@ -559,7 +559,7 @@ label {
   padding: 6px 18px;
   border-radius: var(--radius-full);
   background: var(--cove-tidal);
-  color: #fff;
+  color: var(--text-inverse);
   font-size: 0.82rem;
   font-weight: 700;
   text-decoration: none;

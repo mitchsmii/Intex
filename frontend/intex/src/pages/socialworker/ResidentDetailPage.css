@@ -51,12 +51,12 @@
 .rd-btn-edit:hover:not(:disabled) { background: var(--cove-seaglass); }
 
 .rd-btn-archive {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fcd34d;
+  background: var(--badge-warn-bg);
+  color: var(--badge-warn-color);
+  border: 1px solid var(--badge-amber-bg);
 }
 
-.rd-btn-archive:hover:not(:disabled) { background: #fde68a; }
+.rd-btn-archive:hover:not(:disabled) { background: var(--badge-amber-bg); }
 
 .rd-btn-reactivate {
   background: var(--cove-seafoam);
@@ -80,7 +80,7 @@
 .rd-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--modal-overlay);
   z-index: 500;
   display: flex;
   align-items: center;
@@ -227,7 +227,7 @@
 
 .rd-alert-banner--high {
   border-left-color: var(--color-error);
-  background: #fef2f2;
+  background: var(--alert-high-bg);
 }
 
 .rd-alert-banner-body {
@@ -252,7 +252,7 @@
   border-radius: var(--radius-full);
 }
 
-.rd-alert-tag--incident { background: #fee2e2; color: var(--color-error); }
+.rd-alert-tag--incident { background: var(--badge-error-bg); color: var(--color-error); }
 .rd-alert-tag--safety { background: var(--cove-sand); color: var(--color-warning); }
 .rd-alert-tag--session { background: var(--cove-seafoam); color: var(--color-success); }
 .rd-alert-tag--risk { background: #fee2e2; color: var(--color-error); }
@@ -340,7 +340,7 @@
 }
 
 .rd-status--closed { background: var(--cove-sand); color: var(--color-warning); }
-.rd-status--transferred { background: #dbeafe; color: #2563eb; }
+.rd-status--transferred { background: var(--badge-info-bg); color: var(--badge-info-color); }
 
 /* ---------- Status strip ---------- */
 .rd-status-strip {
@@ -395,7 +395,7 @@
   align-items: flex-start;
   padding: 4px var(--space-sm);
   border-radius: var(--radius-sm);
-  background: #f1f5f9;
+  background: var(--badge-neutral-bg);
   min-width: 54px;
 }
 
@@ -416,13 +416,13 @@
   line-height: 1;
 }
 
-.rd-status-mh-chip--high   { background: #fee2e2; }
+.rd-status-mh-chip--high   { background: var(--badge-error-bg); }
 .rd-status-mh-chip--high .rd-status-mh-value   { color: var(--color-error); }
 .rd-status-mh-chip--medium { background: var(--cove-sand); }
 .rd-status-mh-chip--medium .rd-status-mh-value { color: var(--color-warning); }
 .rd-status-mh-chip--low    { background: var(--cove-seafoam); }
 .rd-status-mh-chip--low .rd-status-mh-value    { color: var(--color-success); }
-.rd-status-mh-chip--neutral { background: #f1f5f9; }
+.rd-status-mh-chip--neutral { background: var(--badge-neutral-bg); }
 
 @media (max-width: 720px) {
   .rd-status-strip { grid-template-columns: 1fr; gap: var(--space-md); }
@@ -494,7 +494,7 @@
 
 .rd-timeline-item--recording .rd-timeline-dot  { background: var(--cove-tidal); }
 .rd-timeline-item--visit .rd-timeline-dot      { background: var(--color-success); }
-.rd-timeline-item--assessment .rd-timeline-dot { background: #8b5cf6; }
+.rd-timeline-item--assessment .rd-timeline-dot { background: var(--badge-purple-color); }
 .rd-timeline-item--incident .rd-timeline-dot   { background: var(--color-error); }
 
 .rd-timeline-body {
@@ -610,16 +610,16 @@
   letter-spacing: 0.02em;
 }
 .rd-journey-chip--onboarding {
-  background: #fff3cd;
-  color: #856404;
+  background: var(--chip-onboarding-bg);
+  color: var(--chip-onboarding-color);
 }
 .rd-journey-chip--active {
-  background: #d1ecf1;
-  color: #0c5460;
+  background: var(--chip-active-bg);
+  color: var(--chip-active-color);
 }
 .rd-journey-chip--developing {
-  background: #e2e3e5;
-  color: #383d41;
+  background: var(--chip-developing-bg);
+  color: var(--chip-developing-color);
 }
 
 /* ---------- Readiness bar ---------- */
@@ -640,10 +640,10 @@
   border-radius: 4px;
   transition: width 0.3s;
 }
-.rd-readiness-fill--good { background: #28a745; }
-.rd-readiness-fill--mid { background: #5e9ea0; }
-.rd-readiness-fill--building { background: #ffc107; }
-.rd-readiness-fill--low { background: #dc3545; }
+.rd-readiness-fill--good { background: var(--color-success); }
+.rd-readiness-fill--mid { background: var(--cove-tidal); }
+.rd-readiness-fill--building { background: var(--color-warning); }
+.rd-readiness-fill--low { background: var(--color-error); }
 .rd-readiness-label {
   font-size: 0.78rem;
   font-weight: 600;
@@ -678,7 +678,7 @@
 
 .rd-score-bar {
   height: 8px;
-  background: #f1f5f9;
+  background: var(--bg-input-readonly);
   border-radius: var(--radius-full);
   overflow: hidden;
 }
@@ -777,8 +777,8 @@
 
 .rd-contact-pill--good { background: var(--cove-seafoam); color: var(--color-success); }
 .rd-contact-pill--warn { background: var(--cove-sand); color: var(--color-warning); }
-.rd-contact-pill--bad { background: #fee2e2; color: var(--color-error); }
-.rd-contact-pill--unknown { background: #f1f5f9; color: var(--text-muted); }
+.rd-contact-pill--bad { background: var(--badge-error-bg); color: var(--color-error); }
+.rd-contact-pill--unknown { background: var(--badge-neutral-bg); color: var(--text-muted); }
 
 /* ---------- Mental Health snapshot ---------- */
 .rd-mh-grid {
@@ -800,8 +800,8 @@
 
 .rd-mh-cell--good { border-left-color: var(--color-success); }
 .rd-mh-cell--warn { border-left-color: var(--color-warning); }
-.rd-mh-cell--bad  { border-left-color: var(--color-error); background: #fef2f2; }
-.rd-mh-cell--neutral { border-left-color: #cbd5e1; }
+.rd-mh-cell--bad  { border-left-color: var(--color-error); background: var(--alert-high-bg); }
+.rd-mh-cell--neutral { border-left-color: var(--border-medium); }
 
 .rd-mh-label {
   font-size: 0.65rem;

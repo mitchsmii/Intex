@@ -209,7 +209,7 @@
 .pr-trend-dot--good { background: var(--color-success); }
 .pr-trend-dot--warn { background: var(--color-warning); }
 .pr-trend-dot--bad  { background: var(--color-error); }
-.pr-trend-dot--unknown { background: #cbd5e1; }
+.pr-trend-dot--unknown { background: var(--border-medium); }
 
 /* ---------- Draft banner ---------- */
 .pr-draft-banner {
@@ -322,7 +322,7 @@
 }
 
 .pr-field input[readonly] {
-  background: #f1f5f9;
+  background: var(--bg-input-readonly);
   color: var(--text-muted);
 }
 
@@ -355,7 +355,7 @@
 }
 
 .pr-form-error {
-  background: #fee2e2;
+  background: var(--badge-error-bg);
   color: var(--color-error);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
@@ -557,7 +557,7 @@
 
 .pr-row-detail {
   padding: var(--space-md) var(--space-lg) var(--space-lg);
-  background: #fafafa;
+  background: var(--bg-row-detail);
   border-top: 1px solid var(--border-light, #e5e7eb);
   display: flex;
   flex-direction: column;
@@ -700,7 +700,7 @@
 }
 
 .pr-flag--progress { background: var(--cove-seafoam); color: var(--color-success); }
-.pr-flag--concern { background: #fee2e2; color: var(--color-error); }
+.pr-flag--concern { background: var(--badge-error-bg); color: var(--color-error); }
 .pr-flag--referral { background: var(--cove-sand); color: var(--color-warning); }
 
 /* ---------- Pagination ---------- */
@@ -769,7 +769,7 @@
 /* ─── Process Recording Detail Modal ─────────────────────────────────── */
 .pr-modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(44, 74, 82, 0.55);
+  background: var(--modal-overlay);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000; padding: var(--space-md);
 }
