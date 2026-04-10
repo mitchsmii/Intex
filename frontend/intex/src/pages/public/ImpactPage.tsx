@@ -108,7 +108,7 @@ export default function ImpactPage() {
   const avgHealth = average(latestHealthValues.length ? latestHealthValues : recentHealthFallback)
   const avgEdu = average(latestEducationValues.length ? latestEducationValues : recentEducationFallback)
 
-  const goalUSD = 100_000
+  const goalUSD = 1_000_000
   const goalPct = Math.min(100, Math.round((totalRaised / goalUSD) * 100))
 
   const IMPACT_TIERS = [
