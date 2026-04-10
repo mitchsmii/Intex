@@ -21,6 +21,30 @@ public class SupportersController : ControllerBase
         return Ok(supporters);
     }
 
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] UpsertSupporterDto dto)
+    {
+        var supporter = new Supporter
+        {
+            FirstName          = dto.FirstName,
+            LastName           = dto.LastName,
+            Email              = dto.Email,
+            Phone              = dto.Phone,
+            DisplayName        = string.IsNullOrWhiteSpace(dto.DisplayName)
+                                   ? (dto.FirstName + " " + dto.LastName).Trim()
+                                   : dto.DisplayName,
+            SupporterType      = dto.SupporterType ?? "Individual",
+            AcquisitionChannel = dto.AcquisitionChannel,
+            Status             = "Active",
+            CreatedAt          = DateTime.UtcNow,
+        };
+
+        _context.Supporters.Add(supporter);
+        await _context.SaveChangesAsync();
+        return Ok(supporter);
+    }
+
     // Find supporter by email, or create one if they don't exist yet.
     // Returns the supporter record (existing or newly created).
     [AllowAnonymous]

@@ -40,6 +40,7 @@ function AddDonorModal({ onClose, onSave }: { onClose: () => void; onSave: (s: S
   const [email,     setEmail]     = useState('')
   const [phone,     setPhone]     = useState('')
   const [channel,   setChannel]   = useState('')
+  const [amount,    setAmount]    = useState('')
   const [saving,    setSaving]    = useState(false)
   const [error,     setError]     = useState('')
 
@@ -56,6 +57,18 @@ function AddDonorModal({ onClose, onSave }: { onClose: () => void; onSave: (s: S
         supporterType:      'Individual',
         status:             'Active',
       })
+      // Create initial donation if amount was entered
+      const parsedAmount = parseFloat(amount)
+      if (parsedAmount > 0) {
+        await api.createDonation({
+          supporterId:  created.supporterId,
+          amount:       parsedAmount,
+          currencyCode: 'PHP',
+          isRecurring:  false,
+          donationType: 'Monetary',
+          channelSource: channel.trim() || 'Manual',
+        })
+      }
       onSave(created)
     } catch { setError('Failed to save. Please try again.') }
     finally   { setSaving(false) }
@@ -86,6 +99,10 @@ function AddDonorModal({ onClose, onSave }: { onClose: () => void; onSave: (s: S
         <div className="mu-form-row">
           <label className="mu-form-label">Acquisition Channel</label>
           <input className="mu-form-input" value={channel} onChange={e => setChannel(e.target.value)} placeholder="e.g. Facebook, Referral" />
+        </div>
+        <div className="mu-form-row">
+          <label className="mu-form-label">Initial Donation Amount (PHP)</label>
+          <input className="mu-form-input" type="number" min="0" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00 (optional)" />
         </div>
         {error && <p style={{ color: 'var(--color-error)', fontSize: '0.82rem', margin: 0 }}>{error}</p>}
         <div className="mu-modal-actions">
