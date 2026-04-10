@@ -65,8 +65,10 @@ function HomePage() {
             <h1 className="hp-hero-title">Cove</h1>
             <p className="hp-hero-tagline">A Sanctuary for Survivors</p>
             <p className="hp-hero-sub">
-              We provide a safe haven where individuals can rebuild their lives
-              and transform trauma into leadership — seen, heard, and loved like family.
+              Cove is a nonprofit serving children in the Philippines who have
+              survived sexual abuse and trafficking, offering a protected home
+              and professional care that prepares each child for a safe return
+              to family and community life.
             </p>
             <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
           </div>
@@ -79,9 +81,10 @@ function HomePage() {
           <div className="hp-holistic-content">
             <h2>Comprehensive Care for Whole-Person Healing</h2>
             <p className="hp-holistic-intro">
-              True healing addresses every dimension of a person's life.
-              Our holistic approach meets survivors where they are and walks
-              with them every step of the way.
+              Our residential program responds to the urgent shortage of safe
+              shelters for children escaping abuse in the Philippines. At
+              Lighthouse Sanctuary, girls ages 8-18 receive trauma-informed
+              support in a secure, stable environment.
             </p>
           </div>
           <div className="hp-holistic-img">
@@ -95,8 +98,8 @@ function HomePage() {
         <div className="hp-section-header">
           <h2>What We Do</h2>
           <p>
-            From victimhood to empowerment — our four pillars guide every
-            survivor's journey toward a new life.
+            Each child receives coordinated care that supports healing now and
+            successful reintegration later.
           </p>
         </div>
         <div className="hp-pillars-grid">
@@ -150,11 +153,13 @@ function HomePage() {
         <div className="hp-mission-inner">
           <p className="hp-mission-label">Our Mission</p>
           <blockquote className="hp-mission-text">
-            "Our mission is to provide a sanctuary of safety, healing, and
-            empowerment for survivors of abuse. We offer a safe haven where
-            individuals can rebuild their lives and transform trauma into
-            leadership. Here, survivors become part of a community where every
-            person is seen, heard, and loved like family."
+            "We protect children who have survived sexual abuse and
+            trafficking by providing safe residential care, counseling, medical
+            support, daily essentials, and personalized education. In
+            partnership with legal advocates and DSWD, we pursue justice and
+            prepare every child for safe family placement through reunification,
+            foster care, or adoption, with counseling that supports each
+            transition."
           </blockquote>
         </div>
       </section>
