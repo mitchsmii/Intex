@@ -159,11 +159,15 @@ function cacheAgeLabel(ts: number): string {
 
 function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapseRows: LapseRow[] }) {
   const { retentionRate, priorYearCount, highRiskCount } = useMemo(() => {
-    const now = new Date()
-    const last12Start = new Date(now)
-    last12Start.setFullYear(now.getFullYear() - 1)
-    const prior12Start = new Date(now)
-    prior12Start.setFullYear(now.getFullYear() - 2)
+    const now = donations.reduce((max, d) => {
+      const ts = d.donationDate ? new Date(d.donationDate).getTime() : 0
+      return ts > max ? ts : max
+    }, 0)
+    const nowDate = now > 0 ? new Date(now) : new Date()
+    const last12Start = new Date(nowDate)
+    last12Start.setFullYear(nowDate.getFullYear() - 1)
+    const prior12Start = new Date(nowDate)
+    prior12Start.setFullYear(nowDate.getFullYear() - 2)
 
     const priorYearDonors = new Set<number>()
     const recentDonors = new Set<number>()
@@ -176,7 +180,7 @@ function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapse
       if (ts >= prior12Start.getTime() && ts < last12Start.getTime()) {
         priorYearDonors.add(d.supporterId)
       }
-      if (ts >= last12Start.getTime() && ts <= now.getTime()) {
+      if (ts >= last12Start.getTime() && ts <= nowDate.getTime()) {
         recentDonors.add(d.supporterId)
       }
     }
