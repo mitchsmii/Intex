@@ -96,8 +96,8 @@
 }
 
 .case-card-status--transferred {
-  background: #dbeafe;
-  color: #2563eb;
+  background: var(--badge-info-bg);
+  color: var(--badge-info-color);
 }
 
 .case-card-updated {

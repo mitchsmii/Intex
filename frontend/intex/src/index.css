@@ -1,6 +1,6 @@
 body {
   margin: 0;
-  background: #f9fafb;
+  background: var(--bg-page);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

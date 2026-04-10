@@ -260,7 +260,7 @@
 }
 
 .ip-form-error {
-  background: #fee2e2;
+  background: var(--badge-error-bg);
   color: var(--color-error);
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
@@ -422,7 +422,7 @@
   text-transform: uppercase;
   padding: 1px 5px;
   border-radius: var(--radius-full);
-  background: #fee2e2;
+  background: var(--badge-error-bg);
   color: var(--color-error);
 }
 
@@ -520,9 +520,9 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.ip-cl-status--pending  { background: #fef3c7; color: #92400e; }
-.ip-cl-status--approved { background: #d1fae5; color: #065f46; }
-.ip-cl-status--rejected { background: #fee2e2; color: #991b1b; }
+.ip-cl-status--pending  { background: var(--status-pending-bg);  color: var(--status-pending-color); }
+.ip-cl-status--approved { background: var(--status-approved-bg); color: var(--status-approved-color); }
+.ip-cl-status--rejected { background: var(--status-rejected-bg); color: var(--status-rejected-color); }
 
 /* State messages */
 .ip-cl-approved {
@@ -538,7 +538,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  color: #92400e;
+  color: var(--status-pending-color);
   font-size: 0.88rem;
   padding: var(--space-sm) 0;
 }
@@ -599,12 +599,12 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  background: var(--alert-legal-bg);
+  border: 1px solid var(--alert-legal-border);
   border-radius: var(--radius-md);
   padding: var(--space-sm) var(--space-md);
   font-size: 0.82rem;
-  color: #92400e;
+  color: var(--alert-legal-color);
   margin-bottom: var(--space-md);
 }
 
@@ -694,7 +694,7 @@
 /* ─── Intervention Plan Detail Modal ─────────────────────────────────── */
 .ip-modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(44, 74, 82, 0.55);
+  background: var(--modal-overlay);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000; padding: var(--space-md);
 }

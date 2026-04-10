@@ -18,11 +18,14 @@
   --color-primary-light: var(--cove-seaglass);
 
   /* Backgrounds */
-  --bg-page:       #f8faf9;
-  --bg-card:       #ffffff;
-  --bg-sidebar:    var(--cove-deep);
-  --bg-hover:      var(--cove-seafoam);
-  --bg-accent:     var(--cove-sand);
+  --bg-page:           #f8faf9;
+  --bg-card:           #ffffff;
+  --bg-sidebar:        var(--cove-deep);
+  --bg-hover:          var(--cove-seafoam);
+  --bg-accent:         var(--cove-sand);
+  --bg-row-detail:     #fafafa;
+  --bg-input-readonly: #f1f5f9;
+  --bg-subtle:         #f0f7f4;
 
   /* Text */
   --text-primary:   #1a2e2e;
@@ -42,13 +45,76 @@
   --color-info:    var(--cove-tidal);
 
   /* ===== Semantic role tokens (SW dashboard redesign) ===== */
-  /* Prefer these over raw brand vars — they encode *intent*, not color. */
-  --cove-anchor:   var(--cove-deep);     /* Page anchors: Focus Bar, section titles, resident codes */
-  --cove-interact: var(--cove-tidal);    /* Interactive: buttons, focus rings, chevrons */
-  --cove-calm:     var(--cove-seaglass); /* Positive states: on-track, improving */
-  --cove-done:     var(--cove-seafoam);  /* Quiet/empty: hover bg, empty states */
-  --cove-warning:  var(--cove-sand);     /* Medium-severity accents ONLY — not card backgrounds */
-  --cove-urgent:   #c94a4a;              /* Reserved: high-severity rails, suicide-risk chip */
+  --cove-anchor:   var(--cove-deep);
+  --cove-interact: var(--cove-tidal);
+  --cove-calm:     var(--cove-seaglass);
+  --cove-done:     var(--cove-seafoam);
+  --cove-warning:  var(--cove-sand);
+  --cove-urgent:   #c94a4a;
+
+  /* ===== Status badge system ===== */
+  --badge-info-bg:       #dbeafe;
+  --badge-info-color:    #2563eb;
+  --badge-warn-bg:       #fef3c7;
+  --badge-warn-color:    #92400e;
+  --badge-success-bg:    #d1fae5;
+  --badge-success-color: #065f46;
+  --badge-error-bg:      #fee2e2;
+  --badge-error-color:   #991b1b;
+  --badge-purple-bg:     #f3e8ff;
+  --badge-purple-color:  #7c3aed;
+  --badge-neutral-bg:    #f1f5f9;
+  --badge-neutral-color: #374151;
+  --badge-amber-bg:      #fde68a;
+  --badge-amber-color:   #92400e;
+  --badge-orange-bg:     #fed7aa;
+  --badge-orange-color:  #7c2d12;
+  --badge-teal-bg:       #d4f0e4;
+  --badge-teal-color:    #0a4a35;
+
+  /* ===== Approval / workflow status ===== */
+  --status-pending-bg:    #fef3c7;
+  --status-pending-color: #92400e;
+  --status-approved-bg:    #d1fae5;
+  --status-approved-color: #065f46;
+  --status-rejected-bg:    #fee2e2;
+  --status-rejected-color: #991b1b;
+
+  /* ===== Risk levels ===== */
+  --risk-low-bg:     #f0fdf4;
+  --risk-low-color:  #166534;
+  --risk-low-border: #16a34a;
+  --risk-med-bg:     #fffbeb;
+  --risk-med-color:  #92400e;
+  --risk-med-border: #d97706;
+  --risk-high-bg:    #fef2f2;
+  --risk-high-color: #991b1b;
+  --risk-high-border: #dc2626;
+
+  /* ===== Journey / resident chips ===== */
+  --chip-onboarding-bg:    #fff3cd;
+  --chip-onboarding-color: #856404;
+  --chip-active-bg:        #d1ecf1;
+  --chip-active-color:     #0c5460;
+  --chip-developing-bg:    #e2e3e5;
+  --chip-developing-color: #383d41;
+
+  /* ===== Alert / incident panels ===== */
+  --alert-high-bg:      #fef2f2;
+  --alert-legal-bg:     #fffbeb;
+  --alert-legal-border: #fde68a;
+  --alert-legal-color:  #92400e;
+
+  /* ===== Overlays ===== */
+  --modal-overlay: rgba(44, 74, 82, 0.55);
+
+  /* ===== Donation report rank badges ===== */
+  --rank-1-bg:    #fde68a;
+  --rank-1-color: #92400e;
+  --rank-2-bg:    #e5e7eb;
+  --rank-2-color: #374151;
+  --rank-3-bg:    #fed7aa;
+  --rank-3-color: #7c2d12;
 
   /* Shadows */
   --shadow-sm:  0 1px 3px rgba(44, 74, 82, 0.08);
@@ -68,4 +134,103 @@
   --space-lg:  24px;
   --space-xl:  40px;
   --space-2xl: 64px;
+}
+
+[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-page:           #111b1c;
+  --bg-card:           #1a2a2c;
+  --bg-sidebar:        #0e1719;
+  --bg-hover:          #243536;
+  --bg-accent:         #1f2e30;
+  --bg-row-detail:     #141e1f;
+  --bg-input-readonly: #1a2527;
+  --bg-subtle:         #162020;
+
+  /* Text */
+  --text-primary:   #e2eeec;
+  --text-secondary: #8ab5b0;
+  --text-muted:     #5e8a87;
+  --text-inverse:   #ffffff;
+  --text-link:      var(--cove-tidal);
+
+  /* Borders */
+  --border-light:  #2a3d3f;
+  --border-medium: #3a5557;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Semantic role tokens */
+  --cove-anchor:   var(--cove-seaglass);
+  --cove-interact: var(--cove-tidal);
+  --cove-calm:     var(--cove-seaglass);
+  --cove-done:     #1e3530;
+  --cove-warning:  #2e2518;
+
+  /* Status badge system */
+  --badge-info-bg:       #1e3a5f;
+  --badge-info-color:    #93c5fd;
+  --badge-warn-bg:       #3d2e08;
+  --badge-warn-color:    #fcd34d;
+  --badge-success-bg:    #0a2e1f;
+  --badge-success-color: #6ee7b7;
+  --badge-error-bg:      #3b0f0f;
+  --badge-error-color:   #fca5a5;
+  --badge-purple-bg:     #2d1f45;
+  --badge-purple-color:  #c4b5fd;
+  --badge-neutral-bg:    #1e2a2d;
+  --badge-neutral-color: #94a3b8;
+  --badge-amber-bg:      #3d2e08;
+  --badge-amber-color:   #fcd34d;
+  --badge-orange-bg:     #2e1a08;
+  --badge-orange-color:  #fdba74;
+  --badge-teal-bg:       #0a2e20;
+  --badge-teal-color:    #6ee7b7;
+
+  /* Approval / workflow status */
+  --status-pending-bg:    #3d2e08;
+  --status-pending-color: #fcd34d;
+  --status-approved-bg:    #0a2e1f;
+  --status-approved-color: #6ee7b7;
+  --status-rejected-bg:    #3b0f0f;
+  --status-rejected-color: #fca5a5;
+
+  /* Risk levels */
+  --risk-low-bg:     #0a2e1a;
+  --risk-low-color:  #6ee7b7;
+  --risk-low-border: #16a34a;
+  --risk-med-bg:     #2e2008;
+  --risk-med-color:  #fcd34d;
+  --risk-med-border: #d97706;
+  --risk-high-bg:    #2e0f0f;
+  --risk-high-color: #fca5a5;
+  --risk-high-border: #dc2626;
+
+  /* Journey / resident chips */
+  --chip-onboarding-bg:    #2e2308;
+  --chip-onboarding-color: #fcd34d;
+  --chip-active-bg:        #0c2e35;
+  --chip-active-color:     #67e8f9;
+  --chip-developing-bg:    #242a2d;
+  --chip-developing-color: #94a3b8;
+
+  /* Alert / incident panels */
+  --alert-high-bg:      #2e0f0f;
+  --alert-legal-bg:     #2a1f08;
+  --alert-legal-border: #78520a;
+  --alert-legal-color:  #fcd34d;
+
+  /* Overlays */
+  --modal-overlay: rgba(0, 0, 0, 0.7);
+
+  /* Donation report rank badges */
+  --rank-1-bg:    #3d2e08;
+  --rank-1-color: #fcd34d;
+  --rank-2-bg:    #242a2d;
+  --rank-2-color: #9ca3af;
+  --rank-3-bg:    #2e1f08;
+  --rank-3-color: #fdba74;
 }

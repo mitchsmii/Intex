@@ -321,7 +321,7 @@
 }
 
 .cc-gap-alert--bad {
-  background: #fef2f2;
+  background: var(--alert-high-bg);
   border-left-color: var(--color-error);
   color: var(--color-error);
 }
@@ -333,7 +333,7 @@
 
 .cc-row-detail {
   padding: var(--space-md) var(--space-lg) var(--space-lg);
-  background: #fafafa;
+  background: var(--bg-row-detail);
   border-top: 1px solid var(--border-light, #e5e7eb);
   display: flex;
   flex-direction: column;
@@ -444,7 +444,7 @@
 /* ─── Case Conference Detail Modal ───────────────────────────────────── */
 .cc-modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(44, 74, 82, 0.55);
+  background: var(--modal-overlay);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000; padding: var(--space-md);
 }

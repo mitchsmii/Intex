@@ -92,7 +92,7 @@
 .ap-error {
   color: var(--color-error);
   font-size: 0.88rem;
-  background: #fee2e2;
+  background: var(--badge-error-bg);
   border-radius: var(--radius-md);
   padding: var(--space-sm) var(--space-md);
 }
@@ -148,21 +148,21 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.ap-status--pending  { background: #fef3c7; color: #92400e; }
-.ap-status--approved { background: #d1fae5; color: #065f46; }
-.ap-status--rejected { background: #fee2e2; color: #991b1b; }
+.ap-status--pending  { background: var(--status-pending-bg);  color: var(--status-pending-color); }
+.ap-status--approved { background: var(--status-approved-bg); color: var(--status-approved-color); }
+.ap-status--rejected { background: var(--status-rejected-bg); color: var(--status-rejected-color); }
 
 .ap-facility-badge {
-  background: #e0f2fe;
-  color: #0369a1;
+  background: var(--badge-info-bg);
+  color: var(--badge-info-color);
   border-radius: var(--radius-full);
   font-size: 0.72rem;
   font-weight: 600;
   padding: 2px 10px;
 }
 .ap-facility-badge--not {
-  background: #f3e8ff;
-  color: #7c3aed;
+  background: var(--badge-purple-bg);
+  color: var(--badge-purple-color);
 }
 
 .ap-card-dates {
@@ -291,7 +291,7 @@
   border: 1px solid var(--color-error);
 }
 .ap-btn--reject:hover:not(:disabled) {
-  background: #fee2e2;
+  background: var(--badge-error-bg);
 }
 
 @media (max-width: 640px) {

@@ -147,10 +147,10 @@
   line-height: 1;
 }
 
-.dr-burn-in  .dr-burn-stat-value { color: #a8d5ba; }
-.dr-burn-out .dr-burn-stat-value { color: #f0e6d3; }
-.net-pos     .dr-burn-stat-value { color: #a8d5ba; }
-.net-neg     .dr-burn-stat-value { color: #f9afb1; }
+.dr-burn-in  .dr-burn-stat-value { color: var(--cove-seaglass); }
+.dr-burn-out .dr-burn-stat-value { color: var(--cove-sand); }
+.net-pos     .dr-burn-stat-value { color: var(--cove-seaglass); }
+.net-neg     .dr-burn-stat-value { color: var(--badge-error-color); }
 
 .dr-burn-divider {
   font-size: 2rem;
@@ -177,8 +177,8 @@
   font-weight: 600;
 }
 
-.legend-income { color: #5e9ea0; }
-.legend-burn   { color: #d4a44a; }
+.legend-income { color: var(--cove-tidal); }
+.legend-burn   { color: var(--color-warning); }
 
 .dr-linechart-wrap {
   width: 100%;
@@ -230,9 +230,9 @@
   border-radius: var(--radius-full);
 }
 
-.thresh-good { background: #d4f0e4; color: var(--color-success); }
-.thresh-warn { background: #fdf0d4; color: var(--color-warning); }
-.thresh-low  { background: #fde8e8; color: var(--color-error);   }
+.thresh-good { background: var(--badge-success-bg); color: var(--color-success); }
+.thresh-warn { background: var(--badge-warn-bg); color: var(--color-warning); }
+.thresh-low  { background: var(--badge-error-bg); color: var(--color-error);   }
 
 .dr-threshold-desc {
   font-size: 0.75rem;
@@ -486,9 +486,9 @@
   font-weight: 700;
 }
 
-.dr-rank-1     { background: #fde68a; color: #92400e; }
-.dr-rank-2     { background: #e5e7eb; color: #374151; }
-.dr-rank-3     { background: #fed7aa; color: #92400e; }
+.dr-rank-1     { background: var(--rank-1-bg); color: var(--rank-1-color); }
+.dr-rank-2     { background: var(--rank-2-bg); color: var(--rank-2-color); }
+.dr-rank-3     { background: var(--rank-3-bg); color: var(--rank-3-color); }
 .dr-rank-other { background: var(--cove-seafoam); color: var(--cove-deep); }
 
 .dr-donor-name { font-weight: 500; color: var(--text-primary); }
@@ -504,8 +504,8 @@
   font-weight: 600;
 }
 
-.tag-monthly { background: #d4ebd0; color: var(--cove-deep); }
-.tag-onetime { background: var(--cove-sand); color: #7c5a2e; }
+.tag-monthly { background: var(--badge-success-bg); color: var(--cove-deep); }
+.tag-onetime { background: var(--cove-sand); color: var(--cove-deep); }
 
 /* ── Recent donations ── */
 .dr-recent { display: flex; flex-direction: column; }
