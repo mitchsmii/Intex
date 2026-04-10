@@ -65,6 +65,25 @@ public class SocialWorkersController : ControllerBase
         return Ok(allNames);
     }
 
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateSocialWorkerDto dto)
+    {
+        var sw = new SocialWorker
+        {
+            FullName    = dto.FullName,
+            Email       = dto.Email,
+            Phone       = dto.Phone,
+            SafehouseId = dto.SafehouseId,
+            Status      = dto.Status ?? "Active",
+            CreatedAt   = DateTime.UtcNow,
+            UpdatedAt   = DateTime.UtcNow,
+        };
+        _context.SocialWorkers.Add(sw);
+        await _context.SaveChangesAsync();
+        return Ok(sw);
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
