@@ -350,7 +350,13 @@ async function post<T>(path: string, body: unknown): Promise<T> {
 function handle401(res: Response): void {
   if (res.status === 401) {
     localStorage.removeItem('cove_token')
-    window.location.href = '/login'
+    // Dispatch an event so AuthContext can clear React state without a hard reload.
+    // ProtectedRoute will then redirect via React Router, preserving navigation state.
+    window.dispatchEvent(
+      new CustomEvent('cove:auth-expired', {
+        detail: { from: window.location.pathname + window.location.search },
+      })
+    )
     throw new Error('Session expired')
   }
 }
@@ -446,6 +452,7 @@ export const api = {
     authPost<{ reply: string }>('/api/vanessa/chat', { messages }),
   getDonations:               () => authGet<Donation[]>('/api/donations'),
   getDonationsBySupporter:    (id: number) => authGet<DonationRaw[]>(`/api/donations/by-supporter/${id}`),
+  getDonationsByEmail:        (email: string) => authGet<DonationRaw[]>(`/api/donations/by-email?email=${encodeURIComponent(email)}`),
   getDonationsMonthlySummary: () => authGet<MonthlyDonationSummary[]>('/api/donations/summary/monthly'),
   getTopSupporters:           (top = 5) => authGet<TopSupporter[]>(`/api/donations/top-supporters?top=${top}`),
   getDonationsTotal:          () => get<{ total: number }>('/api/donations/total'),

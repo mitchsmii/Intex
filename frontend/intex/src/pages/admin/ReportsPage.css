@@ -944,8 +944,8 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
   padding: 2px 7px;
   border-radius: var(--radius-full);
 }
@@ -1047,7 +1047,7 @@
   font-family: inherit;
   transition: background 0.15s;
 }
-.rrp-predict-btn:hover:not(:disabled) { background: var(--cove-deep); }
+.rrp-predict-btn:hover:not(:disabled) { background: var(--bg-sidebar); }
 .rrp-predict-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .rrp-error {

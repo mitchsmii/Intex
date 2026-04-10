@@ -89,7 +89,7 @@
 }
 
 .pr-rail-item--active {
-  background: var(--cove-seaglass);
+  background: var(--bg-hover);
   border-color: var(--cove-tidal);
 }
 
@@ -156,7 +156,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.pr-add-btn:hover { background: var(--cove-deep); }
+.pr-add-btn:hover { background: var(--bg-sidebar); }
 
 /* ---------- Emotional-state trend ---------- */
 .pr-trend {
@@ -218,8 +218,8 @@
   justify-content: space-between;
   gap: var(--space-md);
   padding: var(--space-xs) var(--space-md);
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
@@ -381,7 +381,7 @@
   color: white;
 }
 
-.pr-btn--primary:hover { background: var(--cove-deep); }
+.pr-btn--primary:hover { background: var(--bg-sidebar); }
 .pr-btn--primary:disabled {
   background: var(--cove-seaglass);
   cursor: not-allowed;

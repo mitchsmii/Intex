@@ -91,6 +91,31 @@ public class DonationsController : ControllerBase
         return Ok(donations);
     }
 
+    // Fetches all donations across every supporter record with the given email.
+    // Handles the case where a donor has multiple supporter rows (e.g. from
+    // donating as a guest before registering an account).
+    [HttpGet("by-email")]
+    public async Task<IActionResult> ByEmail([FromQuery] string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest(new { message = "Email is required." });
+
+        var supporterIds = await _context.Supporters
+            .Where(s => s.Email != null && s.Email.ToLower() == email.ToLower())
+            .Select(s => s.SupporterId)
+            .ToListAsync();
+
+        if (!supporterIds.Any())
+            return Ok(Array.Empty<object>());
+
+        var donations = await _context.Donations
+            .Where(d => d.SupporterId != null && supporterIds.Contains(d.SupporterId.Value))
+            .OrderByDescending(d => d.DonationDate)
+            .ToListAsync();
+
+        return Ok(donations);
+    }
+
     [HttpGet("summary/monthly")]
     public async Task<IActionResult> MonthlySummary()
     {

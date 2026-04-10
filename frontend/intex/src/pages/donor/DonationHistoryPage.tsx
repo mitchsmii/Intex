@@ -149,11 +149,16 @@ export default function DonationHistoryPage() {
       return
     }
     setLoading(true)
-    api.lookupSupporterByEmail(user.email)
-      .then(found => api.getDonationsBySupporter(found.supporterId).then(list => {
+    // Fetch supporter and donations in parallel; use email-based donation fetch so
+    // all donations are found even if multiple supporter records share the same email.
+    Promise.all([
+      api.lookupSupporterByEmail(user.email),
+      api.getDonationsByEmail(user.email),
+    ])
+      .then(([found, list]) => {
         setSupporter(found)
         setDonations(list)
-      }))
+      })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false))
   }, [user])
@@ -219,10 +224,14 @@ export default function DonationHistoryPage() {
       <div className="dh-hero">
         <div className="dh-hero-left">
           <div className="dh-avatar">
-            {(supporter.firstName?.[0] ?? '?')}{(supporter.lastName?.[0] ?? '')}
+            {supporter.firstName?.[0] ?? user?.email?.[0]?.toUpperCase() ?? '?'}{supporter.lastName?.[0] ?? ''}
           </div>
           <div>
-            <div className="dh-hero-name">{supporter.firstName} {supporter.lastName}</div>
+            <div className="dh-hero-name">
+              {supporter.firstName || supporter.lastName
+                ? `${supporter.firstName ?? ''} ${supporter.lastName ?? ''}`.trim()
+                : (user?.email ?? supporter.email ?? 'Donor')}
+            </div>
             <div className="dh-hero-email">{supporter.email}</div>
             <div className="dh-hero-meta">
               <span>Member since {since}</span>

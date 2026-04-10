@@ -44,6 +44,9 @@
   --color-error:   #c94a4a;
   --color-info:    var(--cove-tidal);
 
+  /* ===== Brand background token (separate from text uses of --cove-deep) ===== */
+  --bg-brand-panel: var(--cove-deep);
+
   /* ===== Semantic role tokens (SW dashboard redesign) ===== */
   --cove-anchor:   var(--cove-deep);
   --cove-interact: var(--cove-tidal);
@@ -162,6 +165,17 @@
   --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* Brand palette overrides — all text using --cove-deep becomes readable */
+  --cove-deep:    #9fd4d4;  /* light teal: 8.4:1 on dark card bg */
+  --cove-seafoam: #1a3530;  /* dark green: hover/selected states */
+  --cove-sand:    #2a2018;  /* dark warm: accent backgrounds */
+
+  /* Improved text contrast */
+  --text-muted:   #7ab8b5;  /* was #5e8a87 (3.5:1) → 5.8:1 on dark card */
+
+  /* Brand panel bg — keeps panels dark even after --cove-deep lightens */
+  --bg-brand-panel: #1a3035;
 
   /* Semantic role tokens */
   --cove-anchor:   var(--cove-seaglass);

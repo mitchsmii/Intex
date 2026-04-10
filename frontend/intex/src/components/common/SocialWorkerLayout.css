@@ -50,7 +50,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--space-sm);
-  background: var(--cove-deep);
+  background: var(--bg-sidebar);
   color: white;
   border-radius: var(--radius-md);
   padding: var(--space-md);

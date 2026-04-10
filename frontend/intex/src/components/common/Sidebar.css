@@ -1,6 +1,6 @@
 .sidebar {
   width: 240px;
-  background: var(--cove-deep);
+  background: var(--bg-sidebar);
   color: var(--text-inverse);
   display: flex;
   flex-direction: column;
@@ -181,7 +181,7 @@
   left: 0;
   right: 0;
   z-index: 999;
-  background: var(--cove-deep);
+  background: var(--bg-sidebar);
   max-height: calc(100vh - 60px);
   overflow-y: auto;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
@@ -221,7 +221,7 @@
     width: 100%;
     box-sizing: border-box;
     height: 60px;
-    background: var(--cove-deep);
+    background: var(--bg-sidebar);
     padding: 0 var(--space-md);
     z-index: 1000;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);

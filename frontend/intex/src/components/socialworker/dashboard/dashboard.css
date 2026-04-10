@@ -86,7 +86,7 @@
   justify-content: space-between;
   gap: var(--space-xl);
   padding: var(--space-lg) var(--space-xl);
-  background: linear-gradient(135deg, var(--cove-deep) 0%, var(--cove-tidal) 100%);
+  background: linear-gradient(135deg, var(--bg-brand-panel) 0%, var(--cove-tidal) 100%);
   color: white;
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
@@ -214,7 +214,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.sw-dash-add-btn:hover { background: var(--cove-deep); }
+.sw-dash-add-btn:hover { background: var(--bg-sidebar); }
 
 /* ---------- Sections ---------- */
 .sw-dash-section {
@@ -630,8 +630,8 @@
 }
 
 .sw-dash-pipeline-col h3 .count {
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
   border-radius: var(--radius-full);
   font-size: 0.7rem;
   padding: 1px 8px;
@@ -743,8 +743,8 @@
   text-transform: uppercase;
   padding: 2px var(--space-sm);
   border-radius: var(--radius-full);
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
 }
 
 .action-tag--high-risk { background: #fee2e2; color: var(--color-error); }
@@ -1318,7 +1318,7 @@
   background: var(--cove-tidal);
   color: white;
 }
-.conf-req-btn--accept:hover { background: var(--cove-deep); }
+.conf-req-btn--accept:hover { background: var(--bg-sidebar); }
 .conf-req-btn--accept:disabled { opacity: 0.5; }
 
 /* ---------- Journey Cluster Section ---------- */
@@ -1373,7 +1373,7 @@
   text-align: left;
   transition: background 0.15s;
 }
-.journey-cluster-row:hover { background: var(--cove-seaglass); }
+.journey-cluster-row:hover { background: var(--bg-hover); }
 .journey-cluster-code {
   font-weight: 600;
   font-size: 0.85rem;

@@ -81,7 +81,7 @@
 
 .ip-rail-item:hover { background: var(--cove-seafoam); }
 .ip-rail-item--active {
-  background: var(--cove-seaglass);
+  background: var(--bg-hover);
   border-color: var(--cove-tidal);
 }
 
@@ -134,7 +134,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.ip-add-btn:hover { background: var(--cove-deep); }
+.ip-add-btn:hover { background: var(--bg-sidebar); }
 
 .ip-empty {
   color: var(--text-muted);
@@ -282,7 +282,7 @@
 }
 
 .ip-btn--primary { background: var(--cove-tidal); color: white; }
-.ip-btn--primary:hover { background: var(--cove-deep); }
+.ip-btn--primary:hover { background: var(--bg-sidebar); }
 .ip-btn--primary:disabled { background: var(--cove-seaglass); cursor: not-allowed; }
 
 .ip-btn--secondary {
@@ -377,8 +377,8 @@
   text-transform: uppercase;
   padding: 2px var(--space-sm);
   border-radius: var(--radius-full);
-  background: var(--cove-seaglass);
-  color: var(--cove-deep);
+  background: var(--badge-teal-bg);
+  color: var(--badge-teal-color);
   display: inline-block;
 }
 
@@ -589,7 +589,7 @@
   white-space: nowrap;
 }
 .ip-cl-toggle-btn.active {
-  background: var(--cove-deep);
+  background: var(--bg-sidebar);
   color: white;
   font-weight: 600;
 }

@@ -130,7 +130,7 @@
 
 .ib-sev-pill--high { background: var(--badge-error-bg); color: var(--color-error); }
 .ib-sev-pill--medium { background: var(--cove-sand); color: var(--color-warning); }
-.ib-sev-pill--low { background: var(--cove-seaglass); color: var(--cove-deep); }
+.ib-sev-pill--low { background: var(--badge-teal-bg); color: var(--badge-teal-color); }
 
 .ib-yn {
   font-size: 0.7rem;
@@ -189,7 +189,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-.ib-resolve-btn:hover { background: var(--cove-deep); }
+.ib-resolve-btn:hover { background: var(--bg-sidebar); }
 .ib-resolve-btn:disabled {
   background: var(--cove-seaglass);
   cursor: not-allowed;

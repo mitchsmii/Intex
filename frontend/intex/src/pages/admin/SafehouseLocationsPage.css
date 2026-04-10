@@ -115,7 +115,7 @@
   position: absolute;
   pointer-events: none;
   z-index: 100;
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   color: white;
   border-radius: var(--radius-md);
   padding: 0.65rem 0.85rem;

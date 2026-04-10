@@ -72,7 +72,7 @@ export default function LoginPage() {
 
   const validateLogin = (): boolean => {
     const errors: Record<string, string> = {}
-    if (!username.trim()) errors.username = 'Username is required'
+    if (!username.trim()) errors.username = 'Email or Username is required'
     if (!password) errors.password = 'Password is required'
     setFieldErrors(errors)
     return Object.keys(errors).length === 0
@@ -278,7 +278,7 @@ export default function LoginPage() {
                 <p className="login-card__subheading">Sign in to your Cove account</p>
 
                 <div className="login-field">
-                  <label className="login-field__label" htmlFor="login-username">Username</label>
+                  <label className="login-field__label" htmlFor="login-username">Email or Username</label>
                   <div className="login-field__input-wrapper">
                     <input
                       id="login-username"

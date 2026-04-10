@@ -105,7 +105,7 @@
 
 /* ── Burn Rate Panel ── */
 .dr-burn-panel {
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   border-radius: var(--radius-lg);
   padding: var(--space-lg) var(--space-xl);
   color: white;
@@ -349,7 +349,7 @@
   border: 2px solid transparent;
 }
 
-.bed-occupied  { background: var(--cove-tidal);   border-color: var(--cove-deep);    }
+.bed-occupied  { background: var(--cove-tidal);   border-color: var(--bg-brand-panel);    }
 .bed-available { background: var(--cove-seafoam);  border-color: var(--cove-seaglass); border-style: dashed; }
 
 .dr-shelter-legend {
@@ -398,7 +398,7 @@
 
 /* Intake callout */
 .dr-intake-box {
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   color: white;
   border-radius: var(--radius-lg);
   padding: var(--space-lg);

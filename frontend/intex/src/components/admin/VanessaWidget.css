@@ -37,7 +37,7 @@
 
 .vw-trigger-open {
   padding: 0 16px;
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
 }
 
 .vw-label {
@@ -87,7 +87,7 @@
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   flex-shrink: 0;
 }
 
@@ -291,7 +291,7 @@
 }
 
 .vw-send:hover:not(:disabled) {
-  background: var(--cove-deep);
+  background: var(--bg-brand-panel);
   transform: scale(1.06);
 }
 
