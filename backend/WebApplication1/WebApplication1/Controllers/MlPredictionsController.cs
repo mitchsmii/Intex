@@ -14,12 +14,14 @@ public class MlPredictionsController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IHttpClientFactory _httpFactory;
+    private readonly ILogger<MlPredictionsController> _logger;
     private const string MlApiBase = "https://lighthouse-ml-api-intex.azurewebsites.net";
 
-    public MlPredictionsController(AppDbContext context, IHttpClientFactory httpFactory)
+    public MlPredictionsController(AppDbContext context, IHttpClientFactory httpFactory, ILogger<MlPredictionsController> logger)
     {
         _context = context;
         _httpFactory = httpFactory;
+        _logger = logger;
     }
 
     /// <summary>
@@ -71,7 +73,8 @@ public class MlPredictionsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { error = ex.Message });
+            _logger.LogError(ex, "ML prediction refresh failed for model {ModelName}", modelName);
+            return StatusCode(500, new { error = "An internal error occurred. Check server logs for details." });
         }
     }
 

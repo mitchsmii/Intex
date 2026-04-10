@@ -92,6 +92,8 @@ public class ResidentsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Resident>> CreateResident([FromBody] CreateResidentDto dto)
     {
+        if (dto.Age < 0 || dto.Age > 25)
+            return BadRequest(new { message = "Age must be between 0 and 25." });
         // Generate unique codes atomically
         var codes = await _context.Residents
             .Where(r => r.InternalCode != null && r.InternalCode.StartsWith("LS-"))

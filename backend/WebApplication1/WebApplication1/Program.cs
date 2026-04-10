@@ -1,16 +1,22 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WebApplication1.Data;
+using WebApplication1.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 builder.Services.AddOpenApi();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ITokenBlacklist, InMemoryTokenBlacklist>();
 
 // Background service: refresh ML predictions daily at 3 AM UTC
 builder.Services.AddHostedService<WebApplication1.Services.MlRefreshService>();
@@ -27,6 +33,10 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     options.Password.RequireLowercase = false;
     options.Password.RequireDigit = false;
     options.Password.RequireNonAlphanumeric = false;
+
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
@@ -55,6 +65,18 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtSection["Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(jwtKey)
     };
+    options.Events = new JwtBearerEvents
+    {
+        OnTokenValidated = context =>
+        {
+            var blacklist = context.HttpContext.RequestServices
+                .GetRequiredService<ITokenBlacklist>();
+            var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+            if (jti != null && blacklist.IsRevoked(jti))
+                context.Fail("Token has been revoked.");
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddSingleton<JwtSecurityTokenHandler>();
@@ -75,9 +97,33 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",
                 "https://intex-ochre.vercel.app"
             )
-            .AllowAnyHeader()
-            .AllowAnyMethod()
+            .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
+            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             .AllowCredentials();
+    });
+});
+
+// Rate limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Strict limiter for auth endpoints: 5 attempts per minute per IP
+    options.AddFixedWindowLimiter("auth", config =>
+    {
+        config.PermitLimit = 5;
+        config.Window = TimeSpan.FromMinutes(1);
+        config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        config.QueueLimit = 0;
+    });
+
+    // Limiter for anonymous public endpoints: 30 requests per minute per IP
+    options.AddFixedWindowLimiter("public", config =>
+    {
+        config.PermitLimit = 30;
+        config.Window = TimeSpan.FromMinutes(1);
+        config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        config.QueueLimit = 0;
     });
 });
 
@@ -184,14 +230,22 @@ using (var scope = app.Services.CreateScope())
         if (existing != null)
         {
             using var roleCmd = conn.CreateCommand();
-            roleCmd.CommandText = $"""
+            var pUserId = roleCmd.CreateParameter();
+            pUserId.ParameterName = "userId";
+            pUserId.Value = existing.Id;
+            roleCmd.Parameters.Add(pUserId);
+            var pRole = roleCmd.CreateParameter();
+            pRole.ParameterName = "roleName";
+            pRole.Value = seed.Role;
+            roleCmd.Parameters.Add(pRole);
+            roleCmd.CommandText = """
                 INSERT INTO "AspNetUserRoles" ("UserId", "RoleId")
-                SELECT '{existing.Id}', r."Id"
+                SELECT @userId, r."Id"
                 FROM "AspNetRoles" r
-                WHERE r."NormalizedName" = '{seed.Role}'
+                WHERE r."NormalizedName" = @roleName
                 AND NOT EXISTS (
                     SELECT 1 FROM "AspNetUserRoles" ur
-                    WHERE ur."UserId" = '{existing.Id}' AND ur."RoleId" = r."Id"
+                    WHERE ur."UserId" = @userId AND ur."RoleId" = r."Id"
                 )
                 """;
             await roleCmd.ExecuteNonQueryAsync();
@@ -211,19 +265,24 @@ else
 }
 
 app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 
 app.UseHttpsRedirection();
 
-// Content-Security-Policy header
+// Security headers
 app.Use(async (context, next) =>
 {
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()";
     context.Response.Headers["Content-Security-Policy"] =
         "default-src 'self'; " +
         "script-src 'self'; " +
-        "style-src 'self' 'unsafe-inline'; " +
-        "img-src 'self' data: https:; " +
+        "style-src 'self'; " +
+        "img-src 'self' https:; " +
         "font-src 'self'; " +
-        "connect-src 'self' https://intexbackend-dragb9ahdsfvejfe.centralus-01.azurewebsites.net https://intex-ochre.vercel.app;";
+        "connect-src 'self';";
     await next();
 });
 

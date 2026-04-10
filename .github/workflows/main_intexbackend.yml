@@ -10,10 +10,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: windows-latest
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
     permissions:
-      contents: read #This is required for actions/checkout
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore .NET dependencies
+        run: dotnet restore
+        working-directory: backend/WebApplication1/WebApplication1
+
+      - name: Check for vulnerable .NET packages
+        run: dotnet list package --vulnerable --include-transitive 2>&1 | tee vuln-report.txt && grep -q "has no vulnerable packages" vuln-report.txt
+        working-directory: backend/WebApplication1/WebApplication1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend/intex
+
+      - name: Audit frontend npm packages
+        run: npm audit --audit-level=moderate
+        working-directory: frontend/intex
+
+  build:
+    name: Build
+    runs-on: windows-latest
+    needs: security-scan
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -38,18 +75,19 @@ jobs:
           path: ${{env.DOTNET_ROOT}}/myapp
 
   deploy:
+    name: Deploy
     runs-on: windows-latest
     needs: build
     permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
+
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -64,4 +102,3 @@ jobs:
           app-name: 'IntexBackend'
           slot-name: 'Production'
           package: .
-          

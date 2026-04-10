@@ -436,8 +436,10 @@ export const api = {
   getResidentMlFeatures:      () => authGet<ResidentMlFeatures[]>('/api/residents/ml-features'),
   getPartners:                () => authGet<Partner[]>('/api/partners'),
   getSupporters:              () => authGet<Supporter[]>('/api/supporters'),
-  lookupSupporter:            (firstName: string, lastName: string, email: string) =>
-    get<Supporter>(`/api/supporters/lookup?firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}&email=${encodeURIComponent(email)}`),
+  lookupSupporter:            (firstName: string, lastName: string, email: string) => {
+    const params = new URLSearchParams({ firstName, lastName, email })
+    return get<Supporter>(`/api/supporters/lookup?${params.toString()}`)
+  },
   lookupSupporterByEmail:     (email: string) =>
     authGet<Supporter>(`/api/supporters/lookup-by-email?email=${encodeURIComponent(email)}`),
   chatWithVanessa:            (messages: { role: 'vanessa' | 'user'; content: string }[]) =>

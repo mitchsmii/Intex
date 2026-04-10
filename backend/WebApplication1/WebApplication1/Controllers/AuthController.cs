@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WebApplication1.Data;
@@ -21,19 +22,25 @@ public class AuthController : ControllerBase
     private readonly IConfiguration _configuration;
     private readonly AppDbContext _context;
     private readonly IEmailSender _emailSender;
+    private readonly ILogger<AuthController> _logger;
+    private readonly ITokenBlacklist _tokenBlacklist;
 
     public AuthController(
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
         IConfiguration configuration,
         AppDbContext context,
-        IEmailSender emailSender)
+        IEmailSender emailSender,
+        ILogger<AuthController> logger,
+        ITokenBlacklist tokenBlacklist)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _configuration = configuration;
         _context = context;
         _emailSender = emailSender;
+        _logger = logger;
+        _tokenBlacklist = tokenBlacklist;
     }
 
     private static string Sanitize(string? input, int maxLength = 500)
@@ -46,6 +53,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         var username = Sanitize(request.Username);
@@ -54,13 +62,28 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             return BadRequest(new { message = "Username and password are required." });
 
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
         var user = await _userManager.FindByNameAsync(username);
         if (user == null)
+        {
+            _logger.LogWarning("Failed login: unknown username {Username} from {IP}", username, ip);
             return Unauthorized(new { message = "Invalid username or password" });
+        }
 
-        var result = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: false);
+        var result = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
         if (!result.Succeeded)
+        {
+            if (result.IsLockedOut)
+            {
+                _logger.LogWarning("Account locked out: {Username} from {IP}", username, ip);
+                return Unauthorized(new { message = "Account locked. Try again in 15 minutes." });
+            }
+            _logger.LogWarning("Failed login: bad password for {Username} from {IP}", username, ip);
             return Unauthorized(new { message = "Invalid username or password" });
+        }
+
+        _logger.LogInformation("Successful login: {Username} from {IP}", username, ip);
 
         // Check if 2FA is enabled
         if (user.TwoFactorEnabled)
@@ -90,6 +113,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("2fa/verify")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> VerifyTwoFactor([FromBody] TwoFactorVerifyRequest request)
     {
         var userId = Sanitize(request.UserId);
@@ -104,7 +128,13 @@ public class AuthController : ControllerBase
 
         var valid = await _userManager.VerifyTwoFactorTokenAsync(user, "Email", code);
         if (!valid)
+        {
+            _logger.LogWarning("Failed 2FA attempt for user {UserId} from {IP}",
+                userId, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
             return Unauthorized(new { message = "Invalid or expired code." });
+        }
+
+        _logger.LogInformation("Successful 2FA verification for user {UserId}", userId);
 
         var roles = await _userManager.GetRolesAsync(user);
         var token = GenerateJwtToken(user, roles);
@@ -123,6 +153,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting("auth")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         var email = Sanitize(request.Email);
@@ -196,6 +227,23 @@ public class AuthController : ControllerBase
         });
     }
 
+    [HttpPost("logout")]
+    [Authorize]
+    public IActionResult Logout()
+    {
+        var jti = User.FindFirstValue(JwtRegisteredClaimNames.Jti);
+        var expClaim = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+
+        if (jti != null && long.TryParse(expClaim, out var expUnix))
+        {
+            var expiry = DateTimeOffset.FromUnixTimeSeconds(expUnix);
+            _tokenBlacklist.Revoke(jti, expiry);
+        }
+
+        _logger.LogInformation("User {UserId} logged out", User.FindFirstValue(ClaimTypes.NameIdentifier));
+        return Ok(new { message = "Logged out successfully." });
+    }
+
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> Me()
@@ -227,6 +275,7 @@ public class AuthController : ControllerBase
 
         var claims = new List<Claim>
         {
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(ClaimTypes.NameIdentifier, user.Id),
             new(ClaimTypes.Name, user.UserName ?? string.Empty),
             new(ClaimTypes.Email, user.Email ?? string.Empty)

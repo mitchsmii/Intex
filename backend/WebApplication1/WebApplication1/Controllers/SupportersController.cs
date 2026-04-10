@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 
@@ -23,6 +24,7 @@ public class SupportersController : ControllerBase
     // Find supporter by email, or create one if they don't exist yet.
     // Returns the supporter record (existing or newly created).
     [AllowAnonymous]
+    [EnableRateLimiting("public")]
     [HttpPost("upsert")]
     public async Task<IActionResult> Upsert([FromBody] UpsertSupporterDto dto)
     {
@@ -53,6 +55,7 @@ public class SupportersController : ControllerBase
     }
 
     [AllowAnonymous]
+    [EnableRateLimiting("public")]
     [HttpGet("lookup")]
     public async Task<IActionResult> Lookup(
         [FromQuery] string firstName,

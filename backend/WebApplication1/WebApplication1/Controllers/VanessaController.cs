@@ -211,8 +211,9 @@ public class VanessaController : ControllerBase
         req.Headers.Add("anthropic-version", "2023-06-01");
         req.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var resp = await client.SendAsync(req);
-        var body = await resp.Content.ReadAsStringAsync();
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var resp = await client.SendAsync(req, cts.Token);
+        var body = await resp.Content.ReadAsStringAsync(cts.Token);
         return (resp.IsSuccessStatusCode, body);
     }
 
