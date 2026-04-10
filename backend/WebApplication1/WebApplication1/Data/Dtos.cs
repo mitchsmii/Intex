@@ -5,7 +5,9 @@ public record UpsertSupporterDto(
     string LastName,
     string Email,
     string? Phone,
-    string? DisplayName
+    string? DisplayName,
+    string? SupporterType = null,
+    string? AcquisitionChannel = null
 );
 
 public record CreateDonationDto(
