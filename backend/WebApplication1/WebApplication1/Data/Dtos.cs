@@ -27,6 +27,22 @@ public record CreateResidentDto(
     string RiskLevel
 );
 
+public record CreateSocialWorkerDto(
+    string FullName,
+    string? FirstName,
+    string? LastName,
+    string? Email,
+    string? Phone,
+    int? SafehouseId
+);
+
+public record PatchResidentDto(
+    int? SafehouseId,
+    string? AssignedSocialWorker,
+    string? CurrentRiskLevel,
+    string? CaseStatus
+);
+
 public record UpdateSupporterDto(
     string? FirstName,
     string? LastName,

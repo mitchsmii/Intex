@@ -206,11 +206,18 @@ public class AuthController : ControllerBase
         // Add to Donor role
         await _userManager.AddToRoleAsync(user, "Donor");
 
-        // Create supporter row
-        await _context.Database.ExecuteSqlRawAsync(
-            "INSERT INTO supporters (supporter_type, first_name, last_name, email, status, created_at) " +
-            "VALUES ({0}, {1}, {2}, {3}, {4}, {5})",
-            "Individual", firstName, lastName, email, "Active", DateTime.UtcNow);
+        // Create supporter row (best-effort — don't fail registration if this errors)
+        try
+        {
+            await _context.Database.ExecuteSqlRawAsync(
+                "INSERT INTO supporters (supporter_type, first_name, last_name, email, status, created_at) " +
+                "VALUES ({0}, {1}, {2}, {3}, {4}, {5})",
+                "Individual", firstName, lastName, email, "Active", DateTime.UtcNow);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to create supporter row for {Email} — user account still created.", email);
+        }
 
         var roles = await _userManager.GetRolesAsync(user);
         var token = GenerateJwtToken(user, roles);

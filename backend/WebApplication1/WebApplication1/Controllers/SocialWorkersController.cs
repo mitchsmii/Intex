@@ -73,6 +73,31 @@ public class SocialWorkersController : ControllerBase
         return Ok(sw);
     }
 
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateSocialWorkerDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.FullName))
+            return BadRequest(new { message = "Full name is required." });
+
+        var sw = new SocialWorker
+        {
+            FullName    = dto.FullName.Trim(),
+            FirstName   = dto.FirstName?.Trim(),
+            LastName    = dto.LastName?.Trim(),
+            Email       = dto.Email?.Trim(),
+            Phone       = dto.Phone?.Trim(),
+            SafehouseId = dto.SafehouseId,
+            Status      = "Active",
+            CreatedAt   = DateTime.UtcNow,
+            UpdatedAt   = DateTime.UtcNow,
+        };
+
+        _context.SocialWorkers.Add(sw);
+        await _context.SaveChangesAsync();
+        return Ok(sw);
+    }
+
     [HttpDelete("{id:int}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
