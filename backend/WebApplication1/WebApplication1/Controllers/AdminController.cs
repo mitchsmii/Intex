@@ -63,6 +63,11 @@ public class AdminController : ControllerBase
             {
                 if (!await _userManager.IsInRoleAsync(existing, roleName))
                     await _userManager.AddToRoleAsync(existing, roleName);
+
+                // Reset password so existing accounts always match the configured password
+                var token = await _userManager.GeneratePasswordResetTokenAsync(existing);
+                await _userManager.ResetPasswordAsync(existing, token, defaultPassword);
+
                 skipped.Add(username);
                 continue;
             }
