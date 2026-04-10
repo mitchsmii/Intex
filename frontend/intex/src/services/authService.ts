@@ -42,6 +42,7 @@ export const authService = {
     const res = await fetch(`${API_URL}/api/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
+    if (res.status === 401 || res.status === 403) throw new Error('UNAUTHORIZED')
     if (!res.ok) throw new Error('Session expired')
     return res.json()
   },

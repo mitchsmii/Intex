@@ -267,7 +267,12 @@ else
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();
 
-app.UseHttpsRedirection();
+// Only redirect to HTTPS in production — in dev the frontend calls http://localhost:5280
+// and the self-signed cert would break every request.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 // Security headers
 app.Use(async (context, next) =>

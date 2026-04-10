@@ -75,7 +75,8 @@ public class SupportersController : ControllerBase
         return Ok(match);
     }
 
-    // Email-only lookup for authenticated donors viewing their own history
+    // Email-only lookup for authenticated donors viewing their own history.
+    // Auto-creates a supporter record if one doesn't exist so history tracking starts now.
     [HttpGet("lookup-by-email")]
     [Authorize]
     public async Task<IActionResult> LookupByEmail([FromQuery] string email)
@@ -87,10 +88,20 @@ public class SupportersController : ControllerBase
             .Where(s => s.Email!.ToLower() == email.ToLower())
             .FirstOrDefaultAsync();
 
-        if (match == null)
-            return NotFound(new { message = "No donation history found for this account." });
+        if (match != null)
+            return Ok(match);
 
-        return Ok(match);
+        // No supporter record yet — create one so history tracking starts now.
+        var newSupporter = new Supporter
+        {
+            Email         = email,
+            SupporterType = "Individual",
+            Status        = "Active",
+            CreatedAt     = DateTime.UtcNow,
+        };
+        _context.Supporters.Add(newSupporter);
+        await _context.SaveChangesAsync();
+        return Ok(newSupporter);
     }
 
     [HttpPatch("{id:int}")]

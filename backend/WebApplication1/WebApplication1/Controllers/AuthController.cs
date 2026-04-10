@@ -64,7 +64,8 @@ public class AuthController : ControllerBase
 
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        var user = await _userManager.FindByNameAsync(username);
+        var user = await _userManager.FindByNameAsync(username)
+            ?? await _userManager.FindByEmailAsync(username);
         if (user == null)
         {
             _logger.LogWarning("Failed login: unknown username {Username} from {IP}", username, ip);
