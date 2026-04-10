@@ -159,15 +159,26 @@ function cacheAgeLabel(ts: number): string {
 
 function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapseRows: LapseRow[] }) {
   const { retentionRate, priorYearCount, highRiskCount } = useMemo(() => {
-    const now = donations.reduce((max, d) => {
-      const ts = d.donationDate ? new Date(d.donationDate).getTime() : 0
-      return ts > max ? ts : max
-    }, 0)
-    const nowDate = now > 0 ? new Date(now) : new Date()
-    const last12Start = new Date(nowDate)
-    last12Start.setFullYear(nowDate.getFullYear() - 1)
-    const prior12Start = new Date(nowDate)
-    prior12Start.setFullYear(nowDate.getFullYear() - 2)
+    // Find actual data date range (min and max donation dates)
+    let minTs = Infinity
+    let maxTs = -Infinity
+    for (const d of donations) {
+      const ts = d.donationDate ? new Date(d.donationDate).getTime() : NaN
+      if (!Number.isNaN(ts) && Number.isFinite(ts)) {
+        if (ts < minTs) minTs = ts
+        if (ts > maxTs) maxTs = ts
+      }
+    }
+
+    const highRisk = lapseRows.filter(r => r.probability >= DONOR_CHURN_THRESHOLDS.donorsCriticalRisk).length
+
+    if (!Number.isFinite(minTs) || !Number.isFinite(maxTs) || donations.length === 0) {
+      return { retentionRate: 0, priorYearCount: 0, highRiskCount: highRisk }
+    }
+
+    // Use the midpoint of the actual data range to split into "prior" and "recent" cohorts.
+    // This makes the metric robust regardless of whether data spans 1 year or 3 years.
+    const midTs = (minTs + maxTs) / 2
 
     const priorYearDonors = new Set<number>()
     const recentDonors = new Set<number>()
@@ -177,10 +188,10 @@ function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapse
       const ts = new Date(d.donationDate).getTime()
       if (Number.isNaN(ts)) continue
 
-      if (ts >= prior12Start.getTime() && ts < last12Start.getTime()) {
+      if (ts >= minTs && ts < midTs) {
         priorYearDonors.add(d.supporterId)
       }
-      if (ts >= last12Start.getTime() && ts <= nowDate.getTime()) {
+      if (ts >= midTs && ts <= maxTs) {
         recentDonors.add(d.supporterId)
       }
     }
@@ -191,7 +202,6 @@ function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapse
     }
 
     const retention = priorYearDonors.size > 0 ? (retained / priorYearDonors.size) * 100 : 0
-    const highRisk = lapseRows.filter(r => r.probability >= DONOR_CHURN_THRESHOLDS.donorsCriticalRisk).length
 
     return {
       retentionRate: retention,
@@ -217,7 +227,7 @@ function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapse
           <div className="rp-okr-value">{Math.round(retentionRate)}%</div>
           <p className="rp-okr-target">
             Target: 40%
-            {priorYearCount > 0 ? ` (${priorYearCount} prior-year donors)` : ''}
+            {priorYearCount > 0 ? ` (${priorYearCount} donors in baseline cohort)` : ''}
           </p>
           <div className="rp-okr-track">
             <div className={`rp-okr-fill rp-okr-fill-${retentionStatus}`} style={{ width: `${retentionProgress}%` }} />
