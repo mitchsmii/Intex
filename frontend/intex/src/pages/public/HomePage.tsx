@@ -83,7 +83,7 @@ function HomePage() {
             <p className="hp-holistic-intro">
               Our residential program responds to the urgent shortage of safe
               shelters for children escaping abuse in the Philippines. At
-              Lighthouse Sanctuary, girls ages 8-18 receive trauma-informed
+              Cove, girls ages 8-18 receive trauma-informed
               support in a secure, stable environment.
             </p>
           </div>
