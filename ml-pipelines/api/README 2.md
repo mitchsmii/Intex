@@ -4,7 +4,7 @@ FastAPI service for serving donor churn and social engagement predictions.
 
 ## Quick Start
 
-From this folder (`ml_pipelines/api`):
+From this folder (`ml-pipelines/api`):
 
 ```bash
 pip install -r requirements.txt

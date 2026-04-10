@@ -6,11 +6,11 @@ Paste everything below the line into Claude Code.
 
 ## Task
 
-Create a Jupyter notebook at `ml_pipelines/models/04_education_outcome/education_outcome.ipynb` that predicts whether a resident will complete their education program using only data available early in their stay. This is a **prospective** (forward-looking) binary classifier, NOT a concurrent one.
+Create a Jupyter notebook at `ml-pipelines/models/04_education_outcome/education_outcome.ipynb` that predicts whether a resident will complete their education program using only data available early in their stay. This is a **prospective** (forward-looking) binary classifier, NOT a concurrent one.
 
 ## Project context
 
-Read the project README at `ml_pipelines/README.md` before starting — it documents the folder structure, shared utilities, data loader, and the required notebook section structure. Follow that structure exactly.
+Read the project README at `ml-pipelines/README.md` before starting — it documents the folder structure, shared utilities, data loader, and the required notebook section structure. Follow that structure exactly.
 
 The notebook must match the section pattern used by the other three pipelines (see `01_donor_churn/donor_churn.ipynb` for the canonical template):
 
@@ -42,7 +42,7 @@ from data.loader import (
 )
 ```
 
-The `.env` file with `DATABASE_URL` is already in `ml_pipelines/`. The loader reads from Supabase Postgres.
+The `.env` file with `DATABASE_URL` is already in `ml-pipelines/`. The loader reads from Supabase Postgres.
 
 ## Target variable
 
@@ -65,7 +65,7 @@ This temporal cutoff is what prevents data leakage. Features must reflect what w
 
 ## Feature engineering
 
-Create a feature engineering function at `ml_pipelines/features/education_features.py` following the pattern in `features/resident_features.py`. Signature:
+Create a feature engineering function at `ml-pipelines/features/education_features.py` following the pattern in `features/resident_features.py`. Signature:
 
 ```python
 def build_education_features(
@@ -153,7 +153,7 @@ Use `StratifiedKFold(n_splits=5, shuffle=True, random_state=42)` for all cross-v
 
 ## Saving
 
-Save to `ml_pipelines/saved_models/`:
+Save to `ml-pipelines/saved_models/`:
 - `education_outcome_model.pkl` — the full fitted pipeline
 - `education_outcome_metadata.json` — training metadata including input features, selected features, CV metrics, best params, and `leakage_prevention: "prospective feature window + SelectFromModel inside pipeline"`
 
@@ -168,6 +168,6 @@ Save to `ml_pipelines/saved_models/`:
 
 ## Update the README
 
-Add a row to the Pipeline Assignments table in `ml_pipelines/README.md`:
+Add a row to the Pipeline Assignments table in `ml-pipelines/README.md`:
 
 | Education Outcome | `04_education_outcome/education_outcome.ipynb` | Will | `completed` | residents, education_records, health, process_recordings, incidents, home_visitations, intervention_plans |

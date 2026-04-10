@@ -65,8 +65,9 @@ function HomePage() {
             <h1 className="hp-hero-title">Cove</h1>
             <p className="hp-hero-tagline">A Sanctuary for Survivors</p>
             <p className="hp-hero-sub">
-              We provide a safe haven where individuals can rebuild their lives
-              and transform trauma into leadership — seen, heard, and loved like family.
+              Cove is a nonprofit safe haven for girls in the Philippines who are
+              survivors of sexual abuse and trafficking. We provide long-term
+              protection, professional care, and a pathway to safe reintegration.
             </p>
             <Link to="/donate" className="hp-btn-primary">Donate Now</Link>
           </div>
@@ -79,9 +80,10 @@ function HomePage() {
           <div className="hp-holistic-content">
             <h2>Comprehensive Care for Whole-Person Healing</h2>
             <p className="hp-holistic-intro">
-              True healing addresses every dimension of a person's life.
-              Our holistic approach meets survivors where they are and walks
-              with them every step of the way.
+              Children in Lighthouse Sanctuary receive counseling, medical support,
+              daily essentials, and individualized education in a secure residential
+              setting. We work with legal and social-service partners to pursue
+              justice and prepare each child for a safe future.
             </p>
           </div>
           <div className="hp-holistic-img">
@@ -150,11 +152,14 @@ function HomePage() {
         <div className="hp-mission-inner">
           <p className="hp-mission-label">Our Mission</p>
           <blockquote className="hp-mission-text">
-            "Our mission is to provide a sanctuary of safety, healing, and
-            empowerment for survivors of abuse. We offer a safe haven where
-            individuals can rebuild their lives and transform trauma into
-            leadership. Here, survivors become part of a community where every
-            person is seen, heard, and loved like family."
+            Cove exists to meet the urgent need for trauma-informed shelter care
+            for child survivors in the Philippines, including girls ages 8 to 18
+            served through Lighthouse Sanctuary.
+            <br /><br />
+            We believe family is the best long-term environment for a child. In
+            coordination with DSWD and partner organizations, we support safe
+            reunification, foster placement, or adoption, and provide family
+            counseling to help each transition succeed.
           </blockquote>
         </div>
       </section>

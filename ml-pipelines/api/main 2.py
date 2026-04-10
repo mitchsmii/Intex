@@ -11,8 +11,9 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
-# Run locally from ml_pipelines/api with: uvicorn main:app --reload
+# Run locally from ml-pipelines/api with: uvicorn main:app --reload
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -53,10 +54,6 @@ RESIDENT_RISK_MODEL_PATH = SAVED_MODELS_DIR / "resident_risk_model.pkl"
 RESIDENT_RISK_METADATA_PATH = SAVED_MODELS_DIR / "resident_risk_metadata.json"
 EDUCATION_OUTCOME_MODEL_PATH = SAVED_MODELS_DIR / "education_outcome_model.pkl"
 EDUCATION_OUTCOME_METADATA_PATH = SAVED_MODELS_DIR / "education_outcome_metadata.json"
-REINTEGRATION_KMEANS_PATH = SAVED_MODELS_DIR / "reintegration_journey_kmeans.pkl"
-REINTEGRATION_SCALER_PATH = SAVED_MODELS_DIR / "reintegration_journey_scaler.pkl"
-REINTEGRATION_FEATURES_PATH = SAVED_MODELS_DIR / "reintegration_journey_features.pkl"
-REINTEGRATION_CLUSTER_NAMES_PATH = SAVED_MODELS_DIR / "reintegration_journey_cluster_names.pkl"
 
 
 def _load_feature_list_from_metadata(path: Path, key: str) -> list[str]:
@@ -172,19 +169,13 @@ def _extract_feature_importance(model: Any, feature_names: list[str]) -> list[di
     (``coef_``). Returns features sorted by descending importance, normalized
     so the values sum to 1.
 
-    If ``model`` is an sklearn ``Pipeline``, the final estimator is taken from
-    ``named_steps['model']`` before reading importances or coefficients.
-
     Args:
-        model: Trained classifier (or Pipeline whose last step exposes importances).
+        model: Trained classifier.
         feature_names: Ordered feature names used by the trained model.
 
     Returns:
         list[dict[str, Any]]: List of ``{"feature": str, "importance": float}``.
     """
-    if hasattr(model, "named_steps"):
-        model = model.named_steps.get("model", model)
-
     raw: np.ndarray | None = None
     if hasattr(model, "feature_importances_"):
         raw = np.asarray(model.feature_importances_, dtype=float)
@@ -220,11 +211,10 @@ def _extract_pipeline_feature_importance(model: Any, feature_names: list[str]) -
     """Extract feature importance for plain models or sklearn Pipelines.
 
     For pipeline models that include a selector step, this maps the final model's
-    importances to only the selected feature names. The selector step is expected
-    as ``selector`` or ``select`` (sklearn Pipeline step names vary).
+    importances to only the selected feature names.
     """
     if hasattr(model, "named_steps"):
-        selector = model.named_steps.get("selector") or model.named_steps.get("select")
+        selector = model.named_steps.get("select")
         inner_model = model.named_steps.get("model", model)
 
         selected_features = feature_names
@@ -253,7 +243,7 @@ def social_engagement_feature_importance() -> dict[str, Any]:
     """
     social_model = _load_artifact(SOCIAL_MODEL_PATH)
     social_features = list(_load_artifact(SOCIAL_FEATURES_PATH))
-    return {"features": _extract_pipeline_feature_importance(social_model, social_features)}
+    return {"features": _extract_feature_importance(social_model, social_features)}
 
 
 @app.get("/feature-importance/resident-risk")
@@ -283,40 +273,12 @@ def resident_risk_feature_importance() -> dict[str, Any]:
 def donor_churn_feature_importance() -> dict[str, Any]:
     """Return global feature importance for the donor churn model.
 
-    Loads the full feature list from ``donor_churn_features.pkl`` and restricts
-    to the columns kept by the pipeline's ``selector`` step (``get_support``).
-
     Returns:
         dict[str, Any]: ``{"features": [{feature, importance}, ...]}``.
     """
-    pipeline = _load_artifact(DONOR_MODEL_PATH)
+    donor_model = _load_artifact(DONOR_MODEL_PATH)
     donor_features = list(_load_artifact(DONOR_FEATURES_PATH))
-
-    if not hasattr(pipeline, "named_steps"):
-        return {"features": _extract_feature_importance(pipeline, donor_features)}
-
-    selector = pipeline.named_steps.get("selector") or pipeline.named_steps.get("select")
-    if selector is None:
-        raise HTTPException(
-            status_code=500,
-            detail="Donor pipeline has no 'selector' (or legacy 'select') step.",
-        )
-    if not hasattr(selector, "get_support"):
-        raise HTTPException(
-            status_code=500,
-            detail="Donor pipeline selector does not support get_support().",
-        )
-    support = selector.get_support()
-    if len(support) != len(donor_features):
-        raise HTTPException(
-            status_code=500,
-            detail="Selector mask length does not match donor_churn_features.pkl length.",
-        )
-    selected_features = [
-        name for name, keep in zip(donor_features, support) if bool(keep)
-    ]
-    inner = pipeline.named_steps.get("model", pipeline)
-    return {"features": _extract_feature_importance(inner, selected_features)}
+    return {"features": _extract_pipeline_feature_importance(donor_model, donor_features)}
 
 
 @app.post("/predict/donor-churn")
@@ -446,75 +408,3 @@ def predict_education_outcome(payload: dict[str, Any]) -> dict[str, Any]:
     will_complete = probability >= 0.5
 
     return {"will_complete": bool(will_complete), "probability": float(probability)}
-
-
-@app.post("/predict/reintegration-journey")
-def predict_reintegration_journey(payload: dict[str, Any]) -> dict[str, Any]:
-    """Assign a resident to a journey cluster based on their features.
-
-    Args:
-        payload: JSON payload with resident feature values matching the 28
-                 clustering features (e.g. days_in_care, avg_health_score, …).
-
-    Returns:
-        dict[str, Any]: cluster_id, cluster_name, and distances to each centroid.
-    """
-    kmeans = _load_artifact(REINTEGRATION_KMEANS_PATH)
-    scaler = _load_artifact(REINTEGRATION_SCALER_PATH)
-    feature_names: list[str] = _load_artifact(REINTEGRATION_FEATURES_PATH)
-    cluster_name_map: dict[int, str] = _load_artifact(REINTEGRATION_CLUSTER_NAMES_PATH)
-
-    aligned = _align_features(payload, feature_names)
-    scaled = scaler.transform(aligned)
-
-    cluster_id = int(kmeans.predict(scaled)[0])
-    cluster_name = cluster_name_map.get(cluster_id, f"Cluster {cluster_id}")
-
-    distances = kmeans.transform(scaled)[0]
-    centroid_distances = {
-        cluster_name_map.get(i, f"Cluster {i}"): float(d)
-        for i, d in enumerate(distances)
-    }
-
-    return {
-        "cluster_id": cluster_id,
-        "cluster_name": cluster_name,
-        "centroid_distances": centroid_distances,
-    }
-
-
-@app.get("/feature-importance/reintegration-journey")
-def reintegration_journey_feature_importance() -> dict[str, Any]:
-    """Return pseudo-importance for reintegration clustering features.
-
-    Uses **max − min** of each dimension across K-means cluster centers (scaled
-    space) as a proxy for how much that feature separates clusters.
-
-    Returns:
-        dict[str, Any]: ``{"features": [{"feature": str, "importance": float}, ...]}``
-        sorted by descending importance.
-    """
-    kmeans = _load_artifact(REINTEGRATION_KMEANS_PATH)
-    feature_names: list[str] = list(_load_artifact(REINTEGRATION_FEATURES_PATH))
-
-    centroids = np.asarray(kmeans.cluster_centers_, dtype=float)
-    if centroids.ndim != 2:
-        raise HTTPException(status_code=500, detail="Invalid KMeans cluster_centers_ shape.")
-    if centroids.shape[1] != len(feature_names):
-        raise HTTPException(
-            status_code=500,
-            detail="Cluster center width does not match feature list length.",
-        )
-
-    # Feature spread: range of centroid coordinates per feature (differentiation signal)
-    spread = centroids.max(axis=0) - centroids.min(axis=0)
-    total = float(np.sum(spread))
-    if total > 0:
-        spread = spread / total
-
-    pairs = [
-        {"feature": str(name), "importance": float(v)}
-        for name, v in zip(feature_names, spread)
-    ]
-    pairs.sort(key=lambda item: item["importance"], reverse=True)
-    return {"features": pairs}

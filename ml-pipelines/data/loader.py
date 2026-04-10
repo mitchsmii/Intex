@@ -12,7 +12,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import PendingRollbackError
 from dotenv import load_dotenv
 
-# Load DATABASE_URL from the .env file in the ml_pipelines directory.
+# Load DATABASE_URL from the .env file in the ml-pipelines directory.
 # Falls back to the environment variable if already set (e.g. in CI/CD).
 _ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 load_dotenv(_ENV_PATH, override=False)

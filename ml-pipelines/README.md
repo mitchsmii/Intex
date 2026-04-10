@@ -14,13 +14,13 @@ git pull
 
 **2. Install dependencies**
 ```bash
-cd ml_pipelines
+cd ml-pipelines
 pip3 install -r requirements.txt
 ```
 
 **3. Create your `.env` file**
 
-Create a file called `.env` inside the `ml_pipelines/` folder. Get the DATABASE_URL value from Mikelle over Slack — do not commit this file.
+Create a file called `.env` inside the `ml-pipelines/` folder. Get the DATABASE_URL value from Mikelle over Slack — do not commit this file.
 
 ```
 DATABASE_URL=postgresql+psycopg2://[ask Mikelle for this]
@@ -31,14 +31,14 @@ DATABASE_URL=postgresql+psycopg2://[ask Mikelle for this]
 python3 -c "from data.loader import get_engine; print(get_engine())"
 ```
 
-You should see `Engine(postgresql+psycopg2://...)` printed. If you get an error, make sure your `.env` file is in the `ml_pipelines/` folder and the DATABASE_URL is correct.
+You should see `Engine(postgresql+psycopg2://...)` printed. If you get an error, make sure your `.env` file is in the `ml-pipelines/` folder and the DATABASE_URL is correct.
 
 ---
 
 ## Folder Structure
 
 ```
-ml_pipelines/
+ml-pipelines/
 ├── data/
 │   └── loader.py              # Database connection + load functions (DO NOT EDIT)
 ├── features/
@@ -83,7 +83,7 @@ import os
 sys.path.insert(0, os.path.abspath('../..'))
 ```
 
-This tells Python to look in `ml_pipelines/` when importing, which is where `data/`, `features/`, and `utils/` live.
+This tells Python to look in `ml-pipelines/` when importing, which is where `data/`, `features/`, and `utils/` live.
 
 ---
 
