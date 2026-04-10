@@ -60,7 +60,11 @@ export default function LoginPage() {
   useEffect(() => {
     if (!isLoading && user && loggedOut) {
       const redirect = searchParams.get('redirect')
-      navigate(redirect ?? getRoleHomePath(user.roles), { replace: true })
+      const safeRedirect =
+        redirect && redirect.startsWith('/') && !redirect.includes('://')
+          ? redirect
+          : null
+      navigate(safeRedirect ?? getRoleHomePath(user.roles), { replace: true })
     }
   }, [user, isLoading, navigate, searchParams, loggedOut])
 

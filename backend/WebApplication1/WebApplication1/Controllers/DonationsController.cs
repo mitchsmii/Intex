@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using WebApplication1.Data;
 
@@ -14,9 +15,14 @@ public class DonationsController : ControllerBase
     public DonationsController(AppDbContext context) => _context = context;
 
     [AllowAnonymous]
+    [EnableRateLimiting("public")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateDonationDto dto)
     {
+        var supporterExists = await _context.Supporters.AnyAsync(s => s.SupporterId == dto.SupporterId);
+        if (!supporterExists)
+            return BadRequest(new { message = "Invalid supporter." });
+
         var donation = new Donation
         {
             SupporterId   = dto.SupporterId,
@@ -43,8 +49,11 @@ public class DonationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 100)
     {
+        if (pageSize > 500) pageSize = 500;
+        if (page < 1) page = 1;
+
         var donations = await (
             from d in _context.Donations
             join s in _context.Supporters on d.SupporterId equals s.SupporterId into sup
@@ -66,7 +75,7 @@ public class DonationsController : ControllerBase
                 d.CampaignName,
                 d.Notes,
             }
-        ).ToListAsync();
+        ).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
         return Ok(donations);
     }

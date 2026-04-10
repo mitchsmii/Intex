@@ -127,11 +127,15 @@ public class AdminController : ControllerBase
             foreach (var code in allCodes)
             {
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = $"""
+                var p = cmd.CreateParameter();
+                p.ParameterName = "code";
+                p.Value = code;
+                cmd.Parameters.Add(p);
+                cmd.CommandText = """
                     INSERT INTO social_workers (full_name, status, created_at, updated_at)
-                    SELECT '{code.Replace("'", "''")}', 'Active', NOW(), NOW()
+                    SELECT @code, 'Active', NOW(), NOW()
                     WHERE NOT EXISTS (
-                        SELECT 1 FROM social_workers WHERE LOWER(TRIM(full_name)) = LOWER('{code.Replace("'", "''")}')
+                        SELECT 1 FROM social_workers WHERE LOWER(TRIM(full_name)) = LOWER(@code)
                     )
                     """;
                 var rows = await cmd.ExecuteNonQueryAsync();
@@ -184,7 +188,7 @@ public class AdminController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Backfill failed");
-            return StatusCode(500, new { message = "Backfill failed", error = ex.Message });
+            return StatusCode(500, new { message = "Backfill failed. Check server logs for details." });
         }
     }
 }
