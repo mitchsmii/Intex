@@ -97,8 +97,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",
                 "https://intex-ochre.vercel.app"
             )
-            .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
-            .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
             .AllowCredentials();
     });
 });
