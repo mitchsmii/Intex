@@ -210,38 +210,63 @@ function DonorOKRBanner({ donations, lapseRows }: { donations: Donation[]; lapse
     }
   }, [donations, lapseRows])
 
+  const retentionGoal = 40
+  const highRiskGoal = 10
+
   const retentionStatus = retentionRate >= 40 ? 'ok' : retentionRate >= 25 ? 'warn' : 'bad'
-  const retentionProgress = Math.min(100, Math.max(0, (retentionRate / 40) * 100))
+  const retentionStatusLabel = retentionStatus === 'ok' ? 'On track' : retentionStatus === 'warn' ? 'Watch' : 'Off track'
+  const retentionProgress = Math.min(100, Math.max(0, (retentionRate / retentionGoal) * 100))
+  const retentionGap = retentionRate - retentionGoal
 
   const highRiskStatus = highRiskCount <= 10 ? 'ok' : highRiskCount <= 20 ? 'warn' : 'bad'
+  const highRiskStatusLabel = highRiskStatus === 'ok' ? 'On track' : highRiskStatus === 'warn' ? 'Watch' : 'Off track'
   const highRiskProgress = highRiskCount <= 10
     ? 100
     : Math.max(0, Math.min(100, ((20 - highRiskCount) / 10) * 100))
+  const highRiskGap = highRiskCount - highRiskGoal
 
   return (
     <section className="rp-okr-banner" aria-label="Donor OKR summary">
       <div className="rp-okr-grid">
-        <article className="rp-okr-card">
+        <article className={`rp-okr-card rp-okr-card-${retentionStatus}`}>
           <div className="rp-okr-label">OBJECTIVE</div>
           <p className="rp-okr-objective"><strong>Retain existing donors</strong></p>
+          <div className="rp-okr-direction">Higher is better</div>
+          <div className={`rp-okr-status rp-okr-status-${retentionStatus}`}>{retentionStatusLabel}</div>
           <div className="rp-okr-value">{Math.round(retentionRate)}%</div>
           <p className="rp-okr-target">
-            Target: 40%
+            Target: {retentionGoal}% · {Math.round(retentionProgress)}% of goal reached
             {priorYearCount > 0 ? ` (${priorYearCount} donors in baseline cohort)` : ''}
+          </p>
+          <p className={`rp-okr-delta ${retentionGap >= 0 ? 'up' : 'down'}`}>
+            {retentionGap >= 0
+              ? `${Math.round(retentionGap)} pts above target`
+              : `${Math.round(Math.abs(retentionGap))} pts below target`}
           </p>
           <div className="rp-okr-track">
             <div className={`rp-okr-fill rp-okr-fill-${retentionStatus}`} style={{ width: `${retentionProgress}%` }} />
           </div>
+          <div className="rp-okr-scale"><span>0%</span><span>{retentionGoal}% target</span></div>
         </article>
 
-        <article className="rp-okr-card">
+        <article className={`rp-okr-card rp-okr-card-${highRiskStatus}`}>
           <div className="rp-okr-label">OBJECTIVE</div>
           <p className="rp-okr-objective"><strong>Reduce high-risk donor lapse</strong></p>
+          <div className="rp-okr-direction">Lower is better</div>
+          <div className={`rp-okr-status rp-okr-status-${highRiskStatus}`}>{highRiskStatusLabel}</div>
           <div className="rp-okr-value">{highRiskCount} donors</div>
-          <p className="rp-okr-target">Target: fewer than 10 · {highRiskCount} donors need outreach</p>
+          <p className="rp-okr-target">
+            Target: fewer than {highRiskGoal} · {Math.round(highRiskProgress)}% toward goal
+          </p>
+          <p className={`rp-okr-delta ${highRiskGap <= 0 ? 'up' : 'down'}`}>
+            {highRiskGap <= 0
+              ? `${Math.abs(highRiskGap)} below target`
+              : `${highRiskGap} above target`}
+          </p>
           <div className="rp-okr-track">
             <div className={`rp-okr-fill rp-okr-fill-${highRiskStatus}`} style={{ width: `${highRiskProgress}%` }} />
           </div>
+          <div className="rp-okr-scale"><span>20+ donors</span><span>{highRiskGoal} donors target</span></div>
         </article>
       </div>
     </section>
