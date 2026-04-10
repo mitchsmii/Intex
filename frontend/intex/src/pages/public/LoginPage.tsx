@@ -59,12 +59,16 @@ export default function LoginPage() {
   // After a fresh login/register, redirect to the appropriate page
   useEffect(() => {
     if (!isLoading && user && loggedOut) {
+      const roleHome = getRoleHomePath(user.roles)
       const redirect = searchParams.get('redirect')
-      const safeRedirect =
-        redirect && redirect.startsWith('/') && !redirect.includes('://')
-          ? redirect
-          : null
-      navigate(safeRedirect ?? getRoleHomePath(user.roles), { replace: true })
+      // Only honour the redirect if it belongs to a section the user's role can access
+      const redirectMatchesRole =
+        redirect &&
+        redirect.startsWith('/') &&
+        !redirect.includes('://') &&
+        (redirect.startsWith(roleHome) ||
+          (user.roles.includes('Admin') && (redirect.startsWith('/admin') || redirect.startsWith('/socialworker') || redirect.startsWith('/donor'))))
+      navigate(redirectMatchesRole ? redirect : roleHome, { replace: true })
     }
   }, [user, isLoading, navigate, searchParams, loggedOut])
 
