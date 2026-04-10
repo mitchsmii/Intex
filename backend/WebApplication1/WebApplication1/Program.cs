@@ -262,6 +262,13 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseHsts();
+    // Return a plain JSON 500 instead of crashing with no response headers
+    app.UseExceptionHandler(err => err.Run(async ctx =>
+    {
+        ctx.Response.StatusCode  = 500;
+        ctx.Response.ContentType = "application/json";
+        await ctx.Response.WriteAsync("{\"message\":\"An internal error occurred.\"}");
+    }));
 }
 
 app.UseCors("AllowFrontend");
