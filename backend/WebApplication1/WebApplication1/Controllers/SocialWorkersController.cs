@@ -65,30 +65,34 @@ public class SocialWorkersController : ControllerBase
         return Ok(allNames);
     }
 
-    [HttpPost]
-    [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Create([FromBody] CreateSocialWorkerDto dto)
-    {
-        var sw = new SocialWorker
-        {
-            FullName    = dto.FullName,
-            Email       = dto.Email,
-            Phone       = dto.Phone,
-            SafehouseId = dto.SafehouseId,
-            Status      = dto.Status ?? "Active",
-            CreatedAt   = DateTime.UtcNow,
-            UpdatedAt   = DateTime.UtcNow,
-        };
-        _context.SocialWorkers.Add(sw);
-        await _context.SaveChangesAsync();
-        return Ok(sw);
-    }
-
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
         var sw = await _context.SocialWorkers.FindAsync(id);
         if (sw == null) return NotFound();
+        return Ok(sw);
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateSocialWorkerDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.FullName))
+            return BadRequest(new { message = "Full name is required." });
+
+        var sw = new SocialWorker
+        {
+            FullName    = dto.FullName.Trim(),
+            Email       = dto.Email?.Trim(),
+            Phone       = dto.Phone?.Trim(),
+            SafehouseId = dto.SafehouseId,
+            Status      = dto.Status ?? "Active",
+            CreatedAt   = DateTime.UtcNow,
+            UpdatedAt   = DateTime.UtcNow,
+        };
+
+        _context.SocialWorkers.Add(sw);
+        await _context.SaveChangesAsync();
         return Ok(sw);
     }
 

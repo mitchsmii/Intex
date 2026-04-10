@@ -88,6 +88,28 @@ public class ResidentsController : ControllerBase
         });
     }
 
+    [HttpPatch("{id:int}")]
+    [Authorize(Roles = "Admin,SocialWorker")]
+    public async Task<IActionResult> PatchResident(int id, [FromBody] PatchResidentDto dto)
+    {
+        var resident = await _context.Residents.FindAsync(id);
+        if (resident == null) return NotFound();
+
+        if (!User.IsInRole("Admin"))
+        {
+            var username = User.Identity?.Name;
+            if (resident.AssignedSocialWorker != username) return Forbid();
+        }
+
+        if (dto.SafehouseId            != null) resident.SafehouseId          = dto.SafehouseId;
+        if (dto.AssignedSocialWorker   != null) resident.AssignedSocialWorker  = dto.AssignedSocialWorker;
+        if (dto.CurrentRiskLevel       != null) resident.CurrentRiskLevel      = dto.CurrentRiskLevel;
+        if (dto.CaseStatus             != null) resident.CaseStatus            = dto.CaseStatus;
+
+        await _context.SaveChangesAsync();
+        return Ok(resident);
+    }
+
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<Resident>> CreateResident([FromBody] CreateResidentDto dto)
